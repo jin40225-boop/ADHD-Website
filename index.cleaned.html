@@ -1,0 +1,257 @@
+<!DOCTYPE html><html lang="zh-TW"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>大A彥宇-ADHD資源創建與實踐日誌</title><script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Kiwi+Maru:wght@300;400;500&family=Noto+Sans+TC:wght@300;400;500;700&family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet"><script src="https://unpkg.com/lucide@latest"></script><script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'base-yellow': '#FFEC8B',
+                        'bg-cream': '#FFFDE7',
+                        'text-brown': '#5D4037',
+                        'accent-teal': '#80CBC4',
+                        'accent-orange': '#FFCC80',
+                        'accent-pink': '#FFB6B9',
+                        'accent-blue': '#B5EAEA',
+                        'line-green': '#06C755',
+                    },
+                    fontFamily: {
+                        'heading': ['"Zen Maru Gothic"', '"Kiwi Maru"', 'sans-serif'],
+                        'body': ['"Noto Sans TC"', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'comic': '4px 4px 0px rgba(93, 64, 55, 1)', 
+                        'comic-hover': '6px 6px 0px rgba(93, 64, 55, 1)',
+                    },
+                    animation: {
+                        'blob': 'blob 10s infinite alternate',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        blob: {
+                            '0%': { transform: 'translate(0, 0) scale(1)' },
+                            '33%': { transform: 'translate(5px, -5px) scale(1.05)' },
+                            '66%': { transform: 'translate(-5px, 5px) scale(0.95)' },
+                            '100%': { transform: 'translate(0, 0) scale(1)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script><style>
+        body {
+            background-color: #FFFDE7;
+            color: #5D4037;
+            font-family: 'Noto Sans TC', sans-serif;
+            background-image: radial-gradient(#FFCC80 1px, transparent 1px);
+            background-size: 30px 30px;
+            overflow-x: hidden;
+        }
+
+        .hand-drawn-border { filter: url(#hand-drawn); }
+
+        .warm-card {
+            background: #FFFFFF;
+            border: 2px solid #5D4037;
+            border-radius: 20px;
+            box-shadow: 4px 4px 0px rgba(93, 64, 55, 0.15);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+            z-index: 10;
+            overflow: hidden;
+        }
+        .warm-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 6px 6px 0px rgba(93, 64, 55, 1);
+            border-color: #5D4037;
+        }
+
+        .hero-section {
+            background: linear-gradient(180deg, #FFEC8B 0%, #FFF9C4 100%);
+            border-bottom: 3px solid #5D4037;
+            border-radius: 0 0 60px 60px;
+            position: relative;
+            padding-bottom: 4rem;
+        }
+
+        .btn-warm {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            border-radius: 12px;
+            border: 2px solid #5D4037;
+            box-shadow: 2px 2px 0px #5D4037;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-warm:hover { transform: translate(-2px, -2px); box-shadow: 4px 4px 0px #5D4037; }
+        .btn-warm:active { transform: translate(0px, 0px); box-shadow: 0px 0px 0px #5D4037; }
+
+        .marker-highlight {
+            position: relative;
+            display: inline-block;
+            z-index: 1;
+        }
+        .marker-highlight::after {
+            content: '';
+            position: absolute;
+            bottom: 2px; left: -2px;
+            width: 105%; height: 10px;
+            background: #B5EAEA;
+            opacity: 0.6;
+            z-index: -1;
+            transform: rotate(-1deg);
+            border-radius: 4px;
+        }
+
+        .session-card {
+            background: white;
+            border: 2px solid #5D4037;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .session-header {
+            padding: 16px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #fff;
+        }
+        .session-header:hover { background-color: #f9f9f9; }
+        .session-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            border-top: 1px dashed #5D4037;
+            background-color: #FFFDE7;
+        }
+        .session-content.open {
+            max-height: 1000px;
+            transition: max-height 0.5s ease-in;
+        }
+        .session-tag {
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            border: 1px solid #5D4037;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .construction-card {
+            background: #FFFDF5;
+            border: 2px dashed #5D4037;
+            border-radius: 16px;
+            padding: 24px;
+            position: relative;
+            margin-bottom: 24px;
+            opacity: 0.9;
+            transition: transform 0.3s ease;
+        }
+        .construction-card:hover { opacity: 1; transform: translateY(-2px); background: #FFFFFF; }
+        .construction-badge {
+            position: absolute;
+            top: -12px;
+            left: 20px;
+            background: #FFCC80;
+            color: #5D4037;
+            font-size: 0.75rem;
+            font-weight: bold;
+            padding: 4px 12px;
+            border-radius: 20px;
+            border: 2px solid #5D4037;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .toast-enter { transform: translateY(10px); opacity: 0; }
+        .toast-enter-active { transform: translateY(0); opacity: 1; transition: all 0.3s ease; }
+    </style></head><body class="min-h-screen pb-0"><svg width="0" height="0" class="hidden"><filter id="hand-drawn"><feTurbulence type="fractalNoise" baseFrequency="0.01" numOctaves="3" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="2" xChannelSelector="R" yChannelSelector="G"/></filter></svg><!-- 導覽列 --><nav class="w-full py-3 px-6 fixed top-0 z-50 bg-[#FFEC8B]/95 backdrop-blur-sm border-b-2 border-[#5D4037]"><div class="max-w-6xl mx-auto flex justify-between items-center"><div class="flex items-center gap-2"><div class="w-9 h-9 bg-white border-2 border-[#5D4037] rounded-full flex items-center justify-center shadow-sm"><span class="font-heading font-black text-[#5D4037] text-lg">彥</span></div><span class="font-heading text-lg font-black tracking-wider text-[#5D4037] hidden md:inline">大A彥宇-ADHD資源創建與實踐日誌</span><span class="font-heading text-lg font-black tracking-wider text-[#5D4037] md:hidden">大A彥宇</span></div><div class="hidden md:flex gap-6 font-bold text-[#5D4037] text-sm"><a href="#about" class="hover:text-accent-orange transition-colors">關於彥宇</a><a href="#actions" class="hover:text-accent-teal transition-colors">實踐項目</a><a href="#groups" class="hover:text-accent-pink transition-colors">115年計畫</a><a href="#line-contact" class="hover:text-line-green transition-colors">官方LINE</a></div></div></nav><!-- Hero Section --><header id="about" class="hero-section pt-32 px-4 mb-16"><div class="absolute top-20 right-[-50px] w-96 h-96 opacity-40 animate-blob pointer-events-none"><svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><path fill="#FFD6BA" d="M44.7,-76.4C58.9,-69.2,71.8,-59,79.6,-45.3C87.4,-31.7,90.2,-14.8,88.2,0.8C86.2,16.5,79.4,30.9,70.1,43.1C60.8,55.3,49,65.3,35.5,72.5C22,79.7,6.7,84.1,-8.9,83.9C-24.5,83.7,-40.4,78.9,-53.2,69.7C-66,60.5,-75.7,46.9,-81.3,31.8C-86.9,16.7,-88.4,0,-85.2,-15.2C-82,-30.4,-74.1,-44.1,-62.8,-52.9C-51.5,-61.7,-36.8,-65.7,-23.4,-73.1C-10,-80.5,2.1,-91.3,16.1,-90.8C30.1,-90.3,46,-83.5,44.7,-76.4Z" transform="translate(100 100)" /></svg></div><div class="max-w-4xl mx-auto flex flex-col items-center relative z-10"><!-- 滿版置中：文案與認識我 --><div class="w-full space-y-8"><div class="text-center md:text-left"><div class="inline-block bg-white border-2 border-[#5D4037] px-4 py-1 rounded-full text-sm font-bold shadow-comic transform -rotate-1 text-accent-teal mb-4">
+                        ✨ 1 永遠比 0 大
+                    </div><h1 class="font-heading text-4xl md:text-5xl font-black leading-tight text-[#5D4037]">
+                        嗨，我是彥宇<br><span class="text-xl md:text-2xl font-bold mt-2 block text-[#5D4037]/80">可以叫我大A彥宇 <span class="text-sm font-medium">(羞)</span></span></h1></div><div class="bg-white/70 p-6 md:p-8 rounded-2xl border-2 border-[#5D4037]/10 backdrop-blur-sm shadow-sm"><div class="font-body text-[#5D4037] leading-relaxed font-medium text-justify text-lg space-y-4"><p>我從小學三年級就診斷ADHD，一路跌跌撞撞成長到大。</p><p>現在是社會工作者-身心障礙者服務中心 社工督導，同時也是受到社團法人台灣赤子心過動症協會總會鼓勵、栽培的倡議工作者。</p><p class="text-xl font-bold text-accent-teal py-1">我希望可以幫助更多像我一樣的人！</p><p>除了本職工作外，我利用下班時間及假日，正在創建各項服務。我相信 <span class="marker-highlight font-bold">從無到有本身就有價值</span>。希望能讓更多的 ADHD 家長、孩童、大A夥伴因此受益。</p><div class="bg-[#FFF9C4]/60 p-4 rounded-xl border border-[#5D4037]/10 mt-4 text-[#5D4037]">
+                            以下是我的實踐，希望可以一路前行，替ADHD族群建構更多資源，獲得更好的環境與生活品質。<br><span class="font-bold text-[#D84315] mt-2 block">也衷心希望像我一樣的孩子，可以過得比我更好，這是我的初衷與祈願。</span></div></div></div><!-- 認識我 --><div class="bg-white/50 p-6 md:p-8 rounded-2xl border-2 border-[#5D4037]/10 backdrop-blur-sm"><h3 class="font-heading text-xl font-bold text-[#5D4037] mb-4 flex items-center gap-2"><i data-lucide="sparkles" class="w-5 h-5 text-accent-orange"></i> 更進一步認識我
+                    </h3><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><a href="https://mountain-sail-ee8.notion.site/2-2098b8084dad80928e66d53a6ba373e7?source=copy_link" target="_blank" class="bg-white p-4 rounded-xl border-2 border-[#5D4037]/20 hover:border-accent-teal hover:shadow-md transition-all group flex flex-col"><div class="flex justify-between items-start mb-2"><span class="bg-[#B2EBF2] text-[#006064] text-xs font-bold px-2 py-1 rounded">新聞報導</span><i data-lucide="arrow-up-right" class="w-4 h-4 text-[#5D4037] group-hover:text-accent-teal"></i></div><div class="font-bold text-[#5D4037] group-hover:text-accent-teal">ADHD長大成助人者</div></a><div class="space-y-3"><a href="https://mountain-sail-ee8.notion.site/ADHD-2098b8084dad807d8c50f4d5c4221ace" target="_blank" class="flex items-center justify-between bg-white p-3 rounded-xl border-2 border-[#5D4037]/20 hover:border-accent-pink hover:shadow-md transition-all group"><span class="text-sm font-bold text-[#5D4037]">友善 ADHD 父母的環境</span><i data-lucide="play-circle" class="w-5 h-5 text-[#5D4037] group-hover:text-accent-pink"></i></a><a href="https://mountain-sail-ee8.notion.site/2098b8084dad8089b914ef5f29bd3fea" target="_blank" class="flex items-center justify-between bg-white p-3 rounded-xl border-2 border-[#5D4037]/20 hover:border-accent-pink hover:shadow-md transition-all group"><span class="text-sm font-bold text-[#5D4037]">跟人相處這麼難嗎？</span><i data-lucide="play-circle" class="w-5 h-5 text-[#5D4037] group-hover:text-accent-pink"></i></a></div></div></div></div></div></header><div class="max-w-6xl mx-auto px-4 space-y-20"><!-- 實踐項目 --><section id="actions"><div class="flex items-center gap-3 mb-8 justify-center md:justify-start"><div class="w-12 h-12 bg-accent-teal rounded-full border-2 border-[#5D4037] flex items-center justify-center text-[#5D4037] shadow-comic"><i data-lucide="flag" class="w-6 h-6"></i></div><h2 class="font-heading text-3xl font-black text-[#5D4037]">我在114年開始實踐至今</h2></div><div class="grid grid-cols-1 md:grid-cols-2 gap-8"><!-- 項目 1: 團體與諮詢 --><div class="warm-card p-8 flex flex-col gap-6 bg-white hover:bg-[#F0FDF4] transition-colors"><div class="flex items-center gap-3 border-b-2 border-[#5D4037]/10 pb-4"><i data-lucide="users" class="w-8 h-8 text-accent-teal"></i><h3 class="text-2xl font-bold text-[#5D4037]">個人行動服務</h3></div><div class="space-y-4 flex-grow"><!-- 服務 1 --><div class="bg-accent-teal/10 p-4 rounded-xl border border-accent-teal/20 relative"><div class="absolute -left-2 top-4 w-4 h-4 bg-accent-teal rounded-full border-2 border-[#5D4037]"></div><strong class="block text-[#5D4037] text-lg mb-1 pl-4">辦理 ADHD 成人同儕線上團體</strong><span class="text-sm text-gray-600 pl-4 block">定期聚會，建立支持網絡。</span></div><!-- 服務 2 --><div class="bg-accent-teal/10 p-4 rounded-xl border border-accent-teal/20 relative"><div class="absolute -left-2 top-4 w-4 h-4 bg-accent-teal rounded-full border-2 border-[#5D4037]"></div><strong class="block text-[#5D4037] text-lg mb-1 pl-4">免費家長諮詢服務</strong><span class="text-sm text-gray-600 pl-4 block">一對一線上諮詢，提供專業建議。</span></div></div></div><!-- 項目 2: 就醫資料庫 --><div id="database" class="warm-card p-0 flex flex-col bg-white overflow-hidden"><div class="bg-gradient-to-r from-[#FFDFD3] to-white p-8 border-b-2 border-[#5D4037]/10 flex-grow"><div class="flex items-center gap-3 mb-4"><i data-lucide="database" class="w-8 h-8 text-[#FF9E80]"></i><h3 class="text-2xl font-bold text-[#5D4037]">ADHD 就醫家長推薦資料庫</h3></div><div class="inline-block bg-[#FF9E80] text-white text-xs font-bold px-3 py-1 rounded-full mb-4 border border-[#5D4037]">
+                            114年版．家長共同建構
+                        </div><p class="text-[#5D4037] leading-relaxed mb-6 font-medium text-lg">
+                            承蒙 <span class="text-[#FF9E80]">台灣ADHD交流園地</span> 與 <span class="text-[#FF9E80]">赤子心社群</span> 信任。
+                            延續舊有資料庫，這是一份由家長們親身經驗匯聚而成的珍貴地圖。
+                        </p></div><div class="p-6 bg-[#FFF3E0]"><a href="https://mountain-sail-ee8.notion.site/" target="_blank" class="btn-warm w-full py-4 bg-[#FF9E80] text-white hover:scale-[1.02] shadow-comic border-[#5D4037]">
+                            前往資料庫查詢 <i data-lucide="arrow-right" class="w-5 h-5 ml-2"></i></a></div></div></div></section><!-- 115年計畫與活動 --><section id="groups"><div class="text-center mb-12"><span class="inline-block bg-[#FFEC8B] border-2 border-[#5D4037] px-8 py-4 rounded-full font-black text-[#5D4037] text-4xl md:text-5xl shadow-comic transform -rotate-1 mb-4">
+                    🚀 現在啟動 115 年計畫！
+                </span></div><!-- Intro Block for Google Meet Info --><div class="bg-white border-2 border-[#5D4037] rounded-3xl p-6 md:p-10 mb-10 relative shadow-[8px_8px_0_rgba(93,64,55,0.15)] flex flex-col gap-8"><!-- 1. 彥宇的話 --><div class="space-y-4 text-[#5D4037]"><h3 class="text-2xl font-black mb-4">【大A彥宇】115年度成人ADHD線上互助聚會</h3><p class="leading-relaxed text-lg font-medium text-justify">
+                        各位大A夥伴大家好，我是彥宇！👋<br>
+                        這是我自辦的線上聚會，歡迎各位嗨咖一起同樂，害羞的朋友也不必擔心，我們邀請了很有特色的來賓，讓大家有玩又有學習！<br>
+                        來賓們都是對我們ADHD生活很有幫助的專業人員，但這絕對不是嚴肅的講座，而是開心快樂的ADHD分享聚會~<br><br>
+                        給我個機會，來參加一次吧！讓我能認識更多的大A夥伴！<br>
+                        新的一年（115年）到來，很開心又能與大家繼續前行。今年邀請了幾位專業的講師好朋友，準備了一系列貼近我們生活的主題。<br></p><div class="text-center mt-6 py-4"><span class="inline-block bg-[#FFF9C4] px-6 py-3 rounded-full font-black text-xl border-2 border-[#5D4037] shadow-sm transform -rotate-1 text-[#D84315]">✨ 無需準備、不必讀書、帶著好奇心就能參加！ ✨</span></div></div><!-- 2. 參加須知 --><div class="bg-[#E0F7FA] border-l-8 border-accent-teal p-6 rounded-r-2xl"><h4 class="font-bold text-[#006064] text-xl mb-3 flex items-center gap-2"><i data-lucide="video" class="w-6 h-6"></i> 參加須知
+                    </h4><ul class="text-[#006064] space-y-2 font-bold list-disc list-inside text-lg"><li>一律採用 <strong class="text-[#004D40] bg-[#B2EBF2] px-1 rounded">GOOGLE MEET 視訊</strong></li><li>可<strong class="text-[#004D40] bg-[#B2EBF2] px-1 rounded">不開鏡頭</strong>，害羞的朋友也不用擔心喔！</li><li>表單是預先統計人數用的！沒報名也可以當天直接參加！</li></ul></div><!-- 3. 超大報名按鈕 --><div class="mt-2 w-full"><a href="https://forms.gle/Up6LFmBe7qCiSe6Z6" target="_blank" class="btn-warm py-5 px-6 bg-accent-orange text-[#5D4037] w-full text-2xl md:text-3xl shadow-comic animate-pulse-slow flex flex-col items-center justify-center border-4 border-[#5D4037]"><span>📝 立即填寫報名表</span><span class="text-base font-bold mt-2 opacity-80 bg-white/40 px-3 py-1 rounded-full border border-[#5D4037]/20">預先報名讓我們更好準備喔！</span></a></div></div><!-- 活動列表 --><div class="border-t-4 border-dashed border-[#5D4037]/20 pt-8"><div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6"><div class="space-y-1"><h3 class="text-2xl font-bold text-[#5D4037] flex items-center gap-2"><span class="bg-accent-teal text-white px-2 py-1 rounded text-lg border border-[#5D4037]">辦理</span>
+                            ADHD 成人同儕線上團體-場次說明
+                        </h3><p class="text-gray-600 font-medium">(點開有詳細介紹喔！)</p></div></div><!-- 3月場 --><div class="session-card"><div class="session-header" onclick="toggleSession(this)"><div class="flex items-center gap-3"><span class="session-tag bg-[#FFB6B9] text-[#5D4037]">3月場</span><span class="font-bold text-[#5D4037] text-lg">聊聊理財這件事：從經驗分享到專業建議</span></div><i data-lucide="chevron-down" class="w-5 h-5 text-[#5D4037] transition-transform duration-300"></i></div><div class="session-content"><div class="p-6 space-y-4"><div class="flex flex-wrap gap-4 text-sm font-bold text-gray-600 bg-white/50 p-3 rounded-lg border border-[#5D4037]/10"><span class="flex items-center gap-1"><i data-lucide="calendar" class="w-4 h-4"></i> 3月 14日 (六)</span><span class="flex items-center gap-1"><i data-lucide="clock" class="w-4 h-4"></i> 14:00 - 16:00</span><span class="flex items-center gap-1"><i data-lucide="user" class="w-4 h-4"></i> 客座嘉賓：博那 (Bona)</span></div><div><h4 class="font-bold text-[#5D4037] mb-2 border-l-4 border-accent-orange pl-2">我們聊什麼：</h4><p class="text-gray-700 leading-relaxed text-justify">
+                                    大家對於管理財務有什麼獨特的心得嗎？或是曾在理財路上遇過什麼難忘的經驗？<br>
+                                    這次讓我們輕鬆聚在一起，分享彼此的理財故事。不管是你發現的好方法，或是希望能改進的地方，都歡迎提出來交流。我們邀請了好朋友博那，除了聽聽大家的故事，若有需要，她也能提供專業的理財觀點與建議喔！
+                                </p></div><div class="flex gap-3 pt-2"><a href="https://meet.google.com/mvz-zyww-sgp" target="_blank" class="btn-warm py-2 px-4 bg-white hover:bg-gray-100 text-sm"><i data-lucide="video" class="w-4 h-4 mr-2"></i> 視訊連結
+                                </a><a href="https://forms.gle/Up6LFmBe7qCiSe6Z6" target="_blank" class="btn-warm py-2 px-4 bg-accent-orange text-[#5D4037] hover:bg-[#FFD180] text-sm">報名表單</a></div></div></div></div><!-- 4月場 --><div class="session-card"><div class="session-header" onclick="toggleSession(this)"><div class="flex items-center gap-3"><span class="session-tag bg-[#B5EAEA] text-[#5D4037]">4月場</span><span class="font-bold text-[#5D4037] text-lg">營養品怎麼選？成為自己的健康管理師</span></div><i data-lucide="chevron-down" class="w-5 h-5 text-[#5D4037] transition-transform duration-300"></i></div><div class="session-content"><div class="p-6 space-y-4"><div class="flex flex-wrap gap-4 text-sm font-bold text-gray-600 bg-white/50 p-3 rounded-lg border border-[#5D4037]/10"><span class="flex items-center gap-1"><i data-lucide="calendar" class="w-4 h-4"></i> 4月 18日 (六)</span><span class="flex items-center gap-1"><i data-lucide="clock" class="w-4 h-4"></i> 14:00 - 16:00</span><span class="flex items-center gap-1"><i data-lucide="user" class="w-4 h-4"></i> 客座嘉賓：食品「魏」管師</span></div><div><h4 class="font-bold text-[#5D4037] mb-2 border-l-4 border-accent-blue pl-2">我們聊什麼：</h4><p class="text-gray-700 leading-relaxed text-justify">
+                                    魚油、B群、鋅......面對琳瑯滿目的營養品，大家平常都怎麼選擇與補充呢？<br>
+                                    歡迎大家帶著自己手邊的「罐罐」上線展示，分享你的使用經驗或疑問。這次特別邀請具備食品安全與營養專業的「魏」管師參與討論，若你對成分標示或如何攝取有任何好奇，都可以直接請教專家，讓我們吃得更安心、更精準！
+                                </p></div><div class="flex gap-3 pt-2"><a href="https://meet.google.com/kwh-qyhy-ckh" target="_blank" class="btn-warm py-2 px-4 bg-white hover:bg-gray-100 text-sm"><i data-lucide="video" class="w-4 h-4 mr-2"></i> 視訊連結
+                                </a><a href="https://forms.gle/Up6LFmBe7qCiSe6Z6" target="_blank" class="btn-warm py-2 px-4 bg-accent-blue text-[#5D4037] hover:bg-[#9ADADA] text-sm">報名表單</a></div></div></div></div><!-- 5月場 --><div class="session-card"><div class="session-header" onclick="toggleSession(this)"><div class="flex items-center gap-3"><span class="session-tag bg-[#E1BEE7] text-[#5D4037]">5月場</span><span class="font-bold text-[#5D4037] text-lg">尋找心靈的平靜：多元的調適與自我照顧</span></div><i data-lucide="chevron-down" class="w-5 h-5 text-[#5D4037] transition-transform duration-300"></i></div><div class="session-content"><div class="p-6 space-y-4"><div class="flex flex-wrap gap-4 text-sm font-bold text-gray-600 bg-white/50 p-3 rounded-lg border border-[#5D4037]/10"><span class="flex items-center gap-1"><i data-lucide="calendar" class="w-4 h-4"></i> 5月 23日 (六)</span><span class="flex items-center gap-1"><i data-lucide="clock" class="w-4 h-4"></i> 14:00 - 16:00</span><span class="flex items-center gap-1"><i data-lucide="user" class="w-4 h-4"></i> 客座嘉賓：鏡子 (Mirror)</span></div><div><h4 class="font-bold text-[#5D4037] mb-2 border-l-4 border-purple-300 pl-2">我們聊什麼：</h4><p class="text-gray-700 leading-relaxed text-justify">
+                                    心情低落或感到壓力時，大家都用什麼方式來陪伴自己？<br>
+                                    是尋求專業諮商、冥想運動，還是透過命理占卜來尋求安定的力量？一起來聊聊各種調適心情的方法吧！本次邀請大A夥伴鏡子，她將分享心理自我照顧的技巧，以及成年ADHD在面對憂鬱、焦慮時的調適建議，陪大家找回內心的平衡。
+                                </p></div><div class="flex gap-3 pt-2"><a href="https://meet.google.com/bux-htfd-ief" target="_blank" class="btn-warm py-2 px-4 bg-white hover:bg-gray-100 text-sm"><i data-lucide="video" class="w-4 h-4 mr-2"></i> 視訊連結
+                                </a><a href="https://forms.gle/Up6LFmBe7qCiSe6Z6" target="_blank" class="btn-warm py-2 px-4 bg-[#E1BEE7] text-[#5D4037] hover:bg-[#CE93D8] text-sm">報名表單</a></div></div></div></div><!-- 6月場 --><div class="session-card"><div class="session-header" onclick="toggleSession(this)"><div class="flex items-center gap-3"><span class="session-tag bg-[#A5D6A7] text-[#5D4037]">6月場</span><span class="font-bold text-[#5D4037] text-lg">握緊方向盤的自信：行車安全與駕駛經驗</span></div><i data-lucide="chevron-down" class="w-5 h-5 text-[#5D4037] transition-transform duration-300"></i></div><div class="session-content"><div class="p-6 space-y-4"><div class="flex flex-wrap gap-4 text-sm font-bold text-gray-600 bg-white/50 p-3 rounded-lg border border-[#5D4037]/10"><span class="flex items-center gap-1"><i data-lucide="calendar" class="w-4 h-4"></i> 6月 6日 (六)</span><span class="flex items-center gap-1"><i data-lucide="clock" class="w-4 h-4"></i> 14:00 - 16:00</span><span class="flex items-center gap-1"><i data-lucide="user" class="w-4 h-4"></i> 客座嘉賓：傑夫 (Jeff)</span></div><div><h4 class="font-bold text-[#5D4037] mb-2 border-l-4 border-green-400 pl-2">我們聊什麼：</h4><p class="text-gray-700 leading-relaxed text-justify">
+                                    大家喜歡開車嗎？在駕駛的過程中，有沒有什麼獨特的習慣或趣事？<br>
+                                    無論你是享受駕駛樂趣，還是對於上路有些許緊張，都歡迎來交流。本次邀請專業的私人駕訓教練傑夫，他非常懂得如何引導駕駛，大家可以從他身上學到實用的行車安全知識與開車訣竅，讓我們上路更安全、更從容！
+                                </p></div><div class="flex gap-3 pt-2"><a href="https://meet.google.com/hkv-gudh-tks" target="_blank" class="btn-warm py-2 px-4 bg-white hover:bg-gray-100 text-sm"><i data-lucide="video" class="w-4 h-4 mr-2"></i> 視訊連結
+                                </a><a href="https://forms.gle/Up6LFmBe7qCiSe6Z6" target="_blank" class="btn-warm py-2 px-4 bg-[#A5D6A7] text-[#5D4037] hover:bg-[#81C784] text-sm">報名表單</a></div></div></div></div><!-- 7月場 --><div class="session-card"><div class="session-header" onclick="toggleSession(this)"><div class="flex items-center gap-3"><span class="session-tag bg-[#FFCC80] text-[#5D4037]">7月場</span><span class="font-bold text-[#5D4037] text-lg">釋放你的創意靈魂：創作不僅是專業，更是樂趣</span></div><i data-lucide="chevron-down" class="w-5 h-5 text-[#5D4037] transition-transform duration-300"></i></div><div class="session-content"><div class="p-6 space-y-4"><div class="flex flex-wrap gap-4 text-sm font-bold text-gray-600 bg-white/50 p-3 rounded-lg border border-[#5D4037]/10"><span class="flex items-center gap-1"><i data-lucide="calendar" class="w-4 h-4"></i> 7月 25日 (六)</span><span class="flex items-center gap-1"><i data-lucide="clock" class="w-4 h-4"></i> 14:00 - 16:00</span><span class="flex items-center gap-1"><i data-lucide="user" class="w-4 h-4"></i> 客座嘉賓：Vtuber 殷緋</span></div><div><h4 class="font-bold text-[#5D4037] mb-2 border-l-4 border-orange-300 pl-2">我們聊什麼：</h4><p class="text-gray-700 leading-relaxed text-justify">
+                                    誰說創作一定要很專業？只要覺得好玩，就是最棒的創作！<br>
+                                    大家對創作有熱情嗎？不論是畫畫、寫小說、寫詩，或是裝置藝術，歡迎來到這裡大聊特聊你的創作世界。這次邀請 Vtuber 殷緋，和大家一起輕鬆聊天，分享創作過程中的樂趣與點滴，一起感受創作帶來的單純快樂。
+                                </p></div><div class="flex gap-3 pt-2"><a href="https://meet.google.com/fzy-kpwu-bcb" target="_blank" class="btn-warm py-2 px-4 bg-white hover:bg-gray-100 text-sm"><i data-lucide="video" class="w-4 h-4 mr-2"></i> 視訊連結
+                                </a><a href="https://forms.gle/Up6LFmBe7qCiSe6Z6" target="_blank" class="btn-warm py-2 px-4 bg-[#FFCC80] text-[#5D4037] hover:bg-[#FFB74D] text-sm">報名表單</a></div></div></div></div><!-- 分隔線：籌備中區塊 --><div class="relative flex items-center py-8"><div class="flex-grow border-t-2 border-dashed border-[#5D4037]/30"></div><span class="flex-shrink-0 mx-4 text-gray-500 font-bold bg-[#FFFDE7] px-2">籌備中與即將推出</span><div class="flex-grow border-t-2 border-dashed border-[#5D4037]/30"></div></div><!-- 籌備中：家長諮詢服務 --><div class="construction-card"><div class="construction-badge"><i data-lucide="hard-hat" class="w-3 h-3"></i> 服務規劃中
+                    </div><div class="flex items-start gap-4"><div class="w-12 h-12 bg-[#B3E5FC] rounded-full flex items-center justify-center border-2 border-[#5D4037] flex-shrink-0"><i data-lucide="message-circle-heart" class="w-6 h-6 text-[#5D4037]"></i></div><div><h3 class="text-xl font-bold text-[#5D4037] mb-2">大A哥哥姐姐-家長諮詢服務</h3><p class="text-gray-600 text-sm leading-relaxed">
+                                由我們成人ADHD與家長解析孩子狀況，提供親職管教建議，目前由兒少社工彥宇、幼兒園老師 迺慧為主要諮詢提供者，但會視家長的疑問與孩子的狀況，邀請不同專業背景與專長之大A。
+                            </p></div></div></div><!-- 籌備中：實體活動 --><div class="construction-card"><div class="construction-badge"><i data-lucide="map-pin" class="w-3 h-3"></i> 場地確認中
+                    </div><div class="flex items-start gap-4"><div class="w-12 h-12 bg-[#FFCCBC] rounded-full flex items-center justify-center border-2 border-[#5D4037] flex-shrink-0"><i data-lucide="users" class="w-6 h-6 text-[#5D4037]"></i></div><div class="flex-grow"><h3 class="text-xl font-bold text-[#5D4037] mb-3">成人ADHD實體活動 <span class="text-sm font-normal text-gray-500">(預計兩場)</span></h3><div class="space-y-4"><div class="bg-white p-3 rounded-lg border border-[#5D4037]/10"><h4 class="font-bold text-[#5D4037] mb-1">🐣 新手大A場</h4><p class="text-gray-600 text-xs leading-relaxed">
+                                        你是近年來診斷ADHD的大A嗎？是否有很多疑問或是徬徨，嘿！我們有一群「老」A也走過很多挫折，累積了一些經驗。歡迎來報名大A新手場，讓我們老手帶新手，一起成為A咖！
+                                        <br><span class="text-[#FF9E80] font-bold">欸！資深大A也別走啊，一起來啦~</span></p></div><div class="bg-white p-3 rounded-lg border border-[#5D4037]/10"><h4 class="font-bold text-[#5D4037] mb-1">🎭 大A實驗室-一人一故事劇場演出過動人生</h4><p class="text-gray-600 text-xs leading-relaxed">
+                                        目前正在跟團隊接洽與商議費用，並尋找經濟支持，盡量以不收費為前提，找到贊助者或是單位輔助，時間地點正在喬定中。
+                                    </p></div></div></div></div></div><!-- 籌備中：親職講座 --><div class="construction-card"><div class="construction-badge"><i data-lucide="calendar-clock" class="w-3 h-3"></i> 預計11月
+                    </div><div class="flex items-start gap-4"><div class="w-12 h-12 bg-[#C5E1A5] rounded-full flex items-center justify-center border-2 border-[#5D4037] flex-shrink-0"><i data-lucide="book-open" class="w-6 h-6 text-[#5D4037]"></i></div><div><h3 class="text-xl font-bold text-[#5D4037] mb-2">家長向-親職教育講座</h3><p class="text-gray-600 text-sm leading-relaxed">
+                                預計11月會有一場，地點待訂。
+                            </p></div></div></div></div></section></div><!-- 官方 LINE 區塊 --><div id="line-contact" class="bg-[#F0FDF4] border-t border-[#06C755]/20 py-16 mt-20"><div class="max-w-3xl mx-auto px-4 flex flex-col items-center text-center gap-6"><h4 class="text-3xl font-black text-[#5D4037] mb-2">加入官方 LINE</h4><p class="text-[#5D4037]/80 mb-4 text-lg">取得最新活動資訊、連結以及即時提醒！<br>不錯過任何一場聚會。</p><a href="https://line.me/R/ti/p/@823pawtr?oat_content=url&ts=06051740" target="_blank" class="btn-warm py-4 px-12 bg-[#06C755] text-white hover:opacity-90 shadow-comic border-transparent text-xl w-full md:w-auto"><i data-lucide="message-circle" class="w-6 h-6 mr-2"></i> 立即加入好友
+            </a></div></div><!-- 扁平化支持區塊 (置底 - 極小化版) --><div id="donate" class="bg-gray-100 border-t border-gray-200 py-6"><div class="max-w-2xl mx-auto px-4 text-center"><h4 class="text-sm font-bold text-gray-500 mb-1">支持我的行動</h4><p class="text-[10px] text-gray-400 mb-3 leading-tight">服務均為無償進行。若認同理念，歡迎小額贊助維持營運。<br>(不論是否打賞，都歡迎來信打氣！)</p><div class="inline-block text-left text-xs"><div class="flex items-center justify-center gap-2 text-gray-500"><span>005 土地銀行</span><span class="font-mono">016-212-34037-9</span><button id="copyButton" class="text-[10px] bg-gray-200 hover:bg-gray-300 text-gray-600 py-1 px-2 rounded transition-colors flex items-center gap-1"><i data-lucide="copy" class="w-3 h-3"></i> 複製
+                    </button></div></div><div id="copyMessage" class="text-[10px] text-green-500 font-bold mt-1 hidden">✓ 已複製</div><div class="flex justify-center gap-4 mt-4 text-[10px] text-gray-400"><a href="mailto:jin40225@gmail.com" class="hover:text-gray-500 flex items-center gap-1"><i data-lucide="mail" class="w-3 h-3"></i> Email</a><span>© 2026 大A彥宇</span></div></div></div><script>
+        lucide.createIcons();
+
+        // 複製功能
+        document.addEventListener('DOMContentLoaded', function() {
+            const accountNumber = "016-212-34037-9";
+            const copyButton = document.getElementById('copyButton');
+            const copyMessage = document.getElementById('copyMessage');
+            
+            copyButton.addEventListener('click', function() {
+                navigator.clipboard.writeText(accountNumber).then(() => {
+                    copyMessage.classList.remove('hidden');
+                    setTimeout(() => {
+                        copyMessage.classList.add('hidden');
+                    }, 2000);
+                });
+            });
+        });
+
+        // 摺疊卡片功能
+        function toggleSession(header) {
+            const content = header.nextElementSibling;
+            const icon = header.querySelector('i');
+            content.classList.toggle('open');
+            if (content.classList.contains('open')) {
+                icon.style.transform = 'rotate(180deg)';
+            } else {
+                icon.style.transform = 'rotate(0deg)';
+            }
+        }
+    </script></body></html>
