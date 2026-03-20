@@ -173,16 +173,39 @@ if match:
 # 4. 移除舊版籌備中的家長諮詢
 text = re.sub(r'<!-- 籌備中：家長諮詢服務 -->.*?</div>\s*</div>\s*</div>', '', text, flags=re.DOTALL)
 
-# 主修訂版 index.html 寫入
+def inject_meta_tags(html_content, title, desc, url_path=""):
+    # 建立要插入的 meta 標籤
+    full_url = f"https://jin40225-boop.github.io/ADHD-Website/{url_path}"
+    meta_tags = f"""<title>{title}</title>
+    <meta name="description" content="{desc}">
+    <meta property="og:title" content="{title}">
+    <meta property="og:description" content="{desc}">
+    <meta property="og:url" content="{full_url}">
+    <meta property="og:type" content="website">"""
+    
+    # 替換原有的 <title>
+    html_content = re.sub(r'<title>.*?</title>', meta_tags, html_content, count=1)
+    return html_content
+
+# 備份一個原始乾淨的 base_text 給子網頁用
+base_text = text
+
+# 主修訂版 index.html 注入專屬 SEO 並寫入
+text_index = inject_meta_tags(
+    base_text, 
+    title="大A彥宇-ADHD資源創建與實踐日誌 | 官方主頁（資源入口）", 
+    desc="彙整醫療資料庫與各項計畫進度",
+    url_path=""
+)
 with open('index.html', 'w', encoding='utf-8') as f:
-    f.write(text)
+    f.write(text_index)
 
 # --------------------
 # 產生三個子網頁 (依照最新的版面)
 # --------------------
 
 author_block_regex = r'(<div class="bg-white/70 p-6 md:p-8 rounded-2xl border-2 border-\[\#5D4037\]/10 backdrop-blur-sm shadow-sm">.*?)</div>\s*</div>\s*</header>'
-m_auth = re.search(author_block_regex, text, re.DOTALL)
+m_auth = re.search(author_block_regex, base_text, re.DOTALL)
 author_block_content = m_auth.group(1).strip() if m_auth else ""
 
 author_bottom_section = f'''
@@ -199,7 +222,6 @@ author_bottom_section = f'''
 </section>
 '''
 
-# 抓出三個乾淨的單一區塊！使用 positive lookahead 確保不抓過頭
 b1_regex = r'(<!-- Intro Block for Google Meet Info -->.*?)(?=<!-- Intro Block for 公益諮詢服務 -->)'
 b2_regex = r'(<!-- Intro Block for 公益諮詢服務 -->.*?)(?=<!-- Intro Block for 家長諮詢服務 -->)'
 b3_regex = r'(<!-- Intro Block for 家長諮詢服務 -->.*?)(?=<!-- 活動列表 -->)'
@@ -217,11 +239,13 @@ def extract_title_and_intro(service_block):
     intro_html = m_intro.group(1).strip() if m_intro else ""
     return title, intro_html
 
-def generate_subpage(filename, service_block, keep_acts=False):
+def generate_subpage(filename, service_block, meta_title, meta_desc, url_path, keep_acts=False):
     title, intro = extract_title_and_intro(service_block)
     page = text
     
-    # 移除 Header 裡的作者資訊，換成此頁的專屬標題與介紹
+    # 注入專屬 SEO
+    page = inject_meta_tags(page, meta_title, meta_desc, url_path)
+    
     page = re.sub(author_block_regex, '\n</div>\n</div>\n</header>', page, flags=re.DOTALL)
     page = re.sub(r'<h1 class="font-heading text-4xl[^>]*>.*?</h1>', f'<h1 class="font-heading text-4xl md:text-5xl font-black leading-tight text-[#5D4037]">{title}</h1>', page, flags=re.DOTALL)
     page = re.sub(r'✨ 1 永遠比 0 大', '✨ 專屬單項服務介紹', page)
@@ -235,12 +259,10 @@ def generate_subpage(filename, service_block, keep_acts=False):
     '''
     page = re.sub(r'(</h1>\s*</div>)', r'\1' + hero_intro_wrapped, page, flags=re.DOTALL)
     
-    # 原始服務卡片中，去掉標題與介紹段落 (因為移到網頁上方了)
     clean_service_block = service_block
     clean_service_block = clean_service_block.replace(f'<h3 class="text-2xl font-black mb-4">{title}</h3>', '')
     clean_service_block = clean_service_block.replace(intro, '')
     
-    # 將唯一的服務區塊與必要的活動列表組合
     inner_groups = clean_service_block
     if keep_acts:
         inner_groups += '\n' + acts
@@ -248,18 +270,29 @@ def generate_subpage(filename, service_block, keep_acts=False):
     replacement_groups = f'<section id="groups">\n{inner_groups}\n</section>'
     page = re.sub(r'<section id="groups">.*?</section>', replacement_groups, page, flags=re.DOTALL)
     
-    # 子網頁隱藏上方的 "實踐項目"
     page = re.sub(r'<section id="actions">.*?</section>', '', page, flags=re.DOTALL)
-    
-    # 作者區塊塞入最底部的 Line 聯絡前
     page = page.replace('<!-- 官方 LINE 區塊 -->', author_bottom_section + '\n<!-- 官方 LINE 區塊 -->')
     
     with open(filename, 'w', encoding='utf-8') as f:
         f.write(page)
     print(f"Generated {filename}")
 
-generate_subpage('peer-group.html', b1, keep_acts=True)
-generate_subpage('welfare-consultation.html', b2, keep_acts=False)
-generate_subpage('parent-consultation.html', b3, keep_acts=False)
+generate_subpage('peer-group.html', b1, 
+                 meta_title="成人 ADHD 主題互助聚會 | 大A彥宇", 
+                 meta_desc="線上與實體交流，一起在生活中尋找解方", 
+                 url_path="peer-group.html", 
+                 keep_acts=True)
+                 
+generate_subpage('welfare-consultation.html', b2, 
+                 meta_title="免費公益線上諮詢- 諮商心理師鏡子 | 大A彥宇", 
+                 meta_desc="為生活卡關的 ADHD 族群提供初步釐清與資源連結", 
+                 url_path="welfare-consultation.html", 
+                 keep_acts=False)
 
-print("完成所有重構與子網頁建置！")
+generate_subpage('parent-consultation.html', b3, 
+                 meta_title="成人ADHD哥哥姐姐提供諮詢-ADHD 家長專屬諮詢 | 大A彥宇", 
+                 meta_desc="由前兒少社工提供教養策略討論與大A、專業夥伴支持", 
+                 url_path="parent-consultation.html", 
+                 keep_acts=False)
+
+print("完成所有重構與 SEO 子網頁建置！")
