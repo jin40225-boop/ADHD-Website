@@ -270,7 +270,7 @@ def generate_subpage(filename, service_block, meta_title, meta_desc, url_path, k
     
     inner_groups = clean_service_block
     if keep_acts:
-        inner_groups += '\n' + acts
+        inner_groups += '\n' + acts + '\n</div>'
         
     replacement_groups = f'<section id="groups">\n{inner_groups}\n</section>'
     page = re.sub(r'<section id="groups">.*?</section>', replacement_groups, page, flags=re.DOTALL)
