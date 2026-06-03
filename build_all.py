@@ -183,8 +183,13 @@ def inject_meta_tags(html_content, title, desc, url_path=""):
     <meta property="og:url" content="{full_url}">
     <meta property="og:type" content="website">"""
     
-    # 替換原有的 <title>
-    html_content = re.sub(r'<title>.*?</title>', meta_tags, html_content, count=1)
+    # 替換原有的 <title> 以及隨後相鄰的 meta 標籤，避免重複注入
+    html_content = re.sub(
+        r'<title>.*?</title>(?:\s*<meta (?:name|property)="[^"]+" content="[^"]+">)*',
+        meta_tags,
+        html_content,
+        count=1
+    )
     return html_content
 
 # 備份一個原始乾淨的 base_text 給子網頁用
