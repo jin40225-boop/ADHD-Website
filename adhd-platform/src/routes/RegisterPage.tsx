@@ -118,21 +118,21 @@ export default function RegisterPage({ slug }: { slug: string }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#FFFDF5] text-[#5D4037] py-12 px-4 md:px-8">
+    <div className="min-h-screen bg-cream text-brown py-12 px-4 md:px-8">
       <div className="max-w-2xl mx-auto space-y-6">
         {state === 'loading' ? (
           <div className="warm-card p-10 text-center text-brown/60">載入報名資料中…</div>
         ) : state === 'unavailable' ? (
           <div className="warm-card p-10 text-center space-y-3">
             <h1 className="text-2xl font-extrabold">報名系統暫時無法使用</h1>
-            <p className="text-sm text-[#5D4037]/80">
+            <p className="text-sm text-brown/80">
               請稍後再試，或改用該服務頁面上的外部報名連結。
             </p>
             <Link to="/" className="btn-warm inline-block">回首頁</Link>
           </div>
         ) : done ? (
-          <div className="warm-card p-10 text-center space-y-4 border-[#06C755]">
-            <h1 className="text-2xl font-extrabold text-[#06C755]">報名已送出！</h1>
+          <div className="warm-card p-10 text-center space-y-4 border-line-green">
+            <h1 className="text-2xl font-extrabold text-line-green">報名已送出！</h1>
             <p className="text-sm leading-relaxed">
               感謝您的報名。我們收到後會進行審核，
               <strong>審核結果將以 Email 通知</strong>（請留意垃圾信件匣）。
@@ -143,13 +143,13 @@ export default function RegisterPage({ slug }: { slug: string }) {
           </div>
         ) : (
           <>
-            <div className="bg-[#FFEC8B] border-2 border-[#5D4037] rounded-3xl p-6 md:p-8 shadow-[4px_4px_0px_0px_#5D4037]">
-              <span className="inline-block bg-white border border-[#5D4037] text-xs font-bold px-3 py-1 rounded-full mb-2">
+            <div className="bg-base-yellow border-2 border-brown rounded-3xl p-6 md:p-8 shadow-warm">
+              <span className="inline-block bg-white border border-brown text-xs font-bold px-3 py-1 rounded-full mb-2">
                 站內報名
               </span>
               <h1 className="text-2xl md:text-3xl font-extrabold">{project?.name}</h1>
               {project?.description ? (
-                <p className="mt-2 text-sm text-[#5D4037]/90">{project.description}</p>
+                <p className="mt-2 text-sm text-brown/90">{project.description}</p>
               ) : null}
             </div>
 
@@ -162,7 +162,7 @@ export default function RegisterPage({ slug }: { slug: string }) {
               </p>
             ) : null}
 
-            <div className="bg-white border-2 border-[#5D4037] rounded-3xl p-6 md:p-8 shadow-[6px_6px_0px_0px_#5D4037]">
+            <div className="bg-white border-2 border-brown rounded-3xl p-6 md:p-8 shadow-warm-lg">
               {effectiveSchema ? (
                 <SchemaForm
                   key={reloadKey}

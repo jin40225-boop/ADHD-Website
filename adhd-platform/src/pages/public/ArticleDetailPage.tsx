@@ -27,11 +27,11 @@ export default function ArticleDetailPage({ slug = 'knowledge-meetup' }: Props) 
   const renderContent = ARTICLE_CONTENT[slug];
 
   return (
-    <div className="min-h-screen bg-[#FFFDF5] text-[#5D4037] py-12 px-4 md:px-8">
-      <div className="max-w-4xl mx-auto bg-white border-2 border-[#5D4037] rounded-3xl p-6 md:p-10 shadow-[6px_6px_0px_0px_#5D4037]">
+    <div className="min-h-screen bg-cream text-brown py-12 px-4 md:px-8">
+      <div className="max-w-4xl mx-auto bg-white border-2 border-brown rounded-3xl p-6 md:p-10 shadow-warm-lg">
         <Link
           to="/articles"
-          className="inline-block text-sm font-bold text-[#D84315] hover:underline mb-6"
+          className="inline-block text-sm font-bold text-highlight hover:underline mb-6"
         >
           ← 返回專欄列表
         </Link>
@@ -40,7 +40,7 @@ export default function ArticleDetailPage({ slug = 'knowledge-meetup' }: Props) 
         ) : (
           <div className="py-12 text-center space-y-3">
             <h1 className="text-2xl font-extrabold">找不到這篇文章</h1>
-            <p className="text-sm text-[#5D4037]/80">文章可能已搬移或網址有誤，請回到專欄列表查看。</p>
+            <p className="text-sm text-brown/80">文章可能已搬移或網址有誤，請回到專欄列表查看。</p>
           </div>
         )}
       </div>
