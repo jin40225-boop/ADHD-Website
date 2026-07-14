@@ -1,0 +1,120 @@
+import { useState } from 'react';
+import { Send, AlertCircle, Heart } from 'lucide-react';
+
+export default function SubmitRecommendationPage() {
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitted(true);
+  };
+
+  return (
+    <div className="min-h-screen bg-[#FFFDF5] text-[#5D4037] py-12 px-4 md:px-8">
+      <div className="max-w-2xl mx-auto bg-white border-2 border-[#5D4037] rounded-3xl p-6 md:p-8 shadow-[6px_6px_0px_0px_#5D4037] space-y-6">
+        <div>
+          <span className="inline-flex items-center gap-1 bg-[#FFEC8B] text-[#5D4037] font-bold text-xs px-3 py-1 rounded-full border border-[#5D4037] mb-2">
+            <Heart className="w-3.5 h-3.5 text-[#D84315]" /> 社群共創
+          </span>
+          <h1 className="text-2xl md:text-3xl font-extrabold">推薦 ADHD 友善醫師 / 資源</h1>
+          <p className="text-sm text-[#5D4037]/80 mt-2">
+            感謝您願意分享優質醫療與諮商資源。為營造信任共好的支持網絡，本資料庫採取「僅正向推薦」政策。
+          </p>
+        </div>
+
+        <div className="bg-[#FFFDF5] border-l-4 border-[#D84315] p-4 rounded-r-xl text-sm leading-relaxed">
+          <p className="font-bold text-[#D84315] flex items-center gap-1">
+            <AlertCircle className="w-4 h-4" /> 投稿須知
+          </p>
+          <ul className="list-disc pl-5 mt-1 space-y-1">
+            <li>請填寫您親身看診、評估或參與的優質體驗。</li>
+            <li>我們不會直接發布攻擊或不實評價，感謝您的理解與支持。</li>
+          </ul>
+        </div>
+
+        {submitted ? (
+          <div className="bg-[#F0FDF4] border-2 border-[#06C755] rounded-2xl p-6 text-center space-y-3">
+            <h3 className="text-xl font-bold text-[#06C755]">感謝您的寶貴分享！</h3>
+            <p className="text-sm">您的投稿內容已送至社群審核排程，經確認後將會同步至 ADHD 友善地圖。</p>
+            <button
+              onClick={() => setSubmitted(false)}
+              className="mt-4 bg-[#FFEC8B] border-2 border-[#5D4037] px-4 py-2 rounded-xl font-bold shadow-[2px_2px_0px_0px_#5D4037]"
+            >
+              繼續投稿另一筆
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4 font-medium">
+            <div>
+              <label className="block text-sm font-bold mb-1">所在縣市地區 *</label>
+              <select required className="w-full px-4 py-2.5 bg-[#FFFDF5] border-2 border-[#5D4037] rounded-xl">
+                <option value="">請選擇縣市</option>
+                {['台北市','新北市','基隆市','桃園市','新竹縣市','苗栗縣市','臺中市','彰化縣市','南投縣','雲林縣','嘉義縣市','臺南市','高雄市','屏東縣','宜蘭縣','花蓮縣','臺東縣','澎湖金馬','線上/其他'].map(region => (
+                  <option key={region} value={region}>{region}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold mb-1">資源分類 *</label>
+              <select required className="w-full px-4 py-2.5 bg-[#FFFDF5] border-2 border-[#5D4037] rounded-xl">
+                <option value="doctor">精神科/身心科診所與醫院</option>
+                <option value="assessment">心理與特教評估</option>
+                <option value="therapy">心理諮商與職能治療</option>
+                <option value="community">支持社群與相關資源</option>
+                <option value="other">其他資源</option>
+              </select>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-bold mb-1">醫療院所/機構名稱 *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="例如：台大醫院 / 某身心科診所"
+                  className="w-full px-4 py-2.5 bg-[#FFFDF5] border-2 border-[#5D4037] rounded-xl"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold mb-1">醫師/治療師姓名 *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="例如：王醫師 / 醫療團隊"
+                  className="w-full px-4 py-2.5 bg-[#FFFDF5] border-2 border-[#5D4037] rounded-xl"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold mb-1">適合對象</label>
+              <select className="w-full px-4 py-2.5 bg-[#FFFDF5] border-2 border-[#5D4037] rounded-xl">
+                <option value="all">不限 / 兒童與成人皆適合</option>
+                <option value="child">兒童與青少年</option>
+                <option value="adult">成人 ADHD</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold mb-1">推薦原因與看診心得 *</label>
+              <textarea
+                rows={5}
+                required
+                placeholder="請分享看診風格、同理心表現、用藥討論方式或心理支持心得..."
+                className="w-full px-4 py-2.5 bg-[#FFFDF5] border-2 border-[#5D4037] rounded-xl"
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-3.5 bg-[#FFEC8B] border-2 border-[#5D4037] rounded-2xl font-extrabold text-base shadow-[4px_4px_0px_0px_#5D4037] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#5D4037] transition-all flex items-center justify-center gap-2"
+            >
+              <Send className="w-5 h-5" /> 送出推薦
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}

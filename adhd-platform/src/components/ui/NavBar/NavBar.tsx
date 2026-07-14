@@ -1,0 +1,7 @@
+import { Menu, X } from 'lucide-react';
+import { useState } from 'react';
+import type { ElementType, ReactNode } from 'react';
+export interface NavItem { label: string; href: string; current?: boolean; }
+export interface NavBarProps { /** Brand text shown at left. */ brand: string; /** Destination for the brand. */ homeHref?: string; /** Navigation entries. */ items: NavItem[]; /** Additional action rendered at right of links. */ action?: ReactNode; /** Anchor component to render links with (e.g. a router-aware adapter that maps href to SPA navigation). Defaults to 'a'. */ linkAs?: ElementType; }
+/** Sticky responsive site navigation with a mobile hamburger menu. */
+export function NavBar({ brand, homeHref='/', items, action, linkAs }: NavBarProps) { const [open,setOpen]=useState(false); const LinkComp: ElementType = linkAs ?? 'a'; return <header className="ui-navbar"><nav className="ui-navbar__inner" aria-label="主要導覽"><LinkComp className="ui-navbar__brand" href={homeHref}>{brand}</LinkComp><button className="ui-navbar__toggle" type="button" aria-label={open ? '關閉選單' : '開啟選單'} aria-expanded={open} onClick={() => setOpen(value => !value)}>{open ? <X /> : <Menu />}</button><div className={`ui-navbar__links ${open ? 'ui-navbar__links--open' : ''}`}>{items.map(item => <LinkComp key={item.href} className="ui-navbar__link" href={item.href} aria-current={item.current ? 'page' : undefined} onClick={() => setOpen(false)}>{item.label}</LinkComp>)}{action}</div></nav></header>; }

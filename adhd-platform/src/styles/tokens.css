@@ -1,0 +1,111 @@
+/* =============================================================
+   設計代幣（CSS 變數版）—— 00 檔第 4 節唯一真實來源之一
+   與 tailwind.config.js 雙軌同步。【CLAUDE 建立後凍結】
+   其他方一律 import 使用、絕不修改。
+   ============================================================= */
+
+/* ---------- 自托管字體（不用 Google Fonts CDN） ----------
+   woff2 子集檔請放到 public/fonts/，檔名對照 public/fonts/README.md。
+   檔案尚未放入時會自動 fallback 到系統中文字體，build 不受影響。 */
+@font-face {
+  font-family: 'Zen Maru Gothic';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/zen-maru-gothic.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Kiwi Maru';
+  font-style: normal;
+  font-weight: 400 500;
+  font-display: swap;
+  src: url('/fonts/kiwi-maru.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Noto Sans TC';
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url('/fonts/noto-sans-tc.woff2') format('woff2');
+}
+
+:root {
+  /* 品牌底色與主色 */
+  --bg-cream: #FFFDF5;          /* 頁面底色（統一自 #FFFDE7 → #FFFDF5） */
+  --base-yellow: #FFEC8B;       /* 導覽列底 */
+  --text-brown: #5D4037;        /* 主文字、邊框 */
+  --accent-highlight: #D84315;  /* 強調橘紅 */
+
+  /* 輔助色 */
+  --accent-teal: #80CBC4;
+  --accent-orange: #FFCC80;
+  --accent-pink: #FFB6B9;
+  --accent-blue: #B5EAEA;
+
+  /* 功能色 */
+  --line-green: #06C755;
+  --alert-red: #FF8A80;
+
+  /* 字體堆疊 */
+  --font-heading: 'Zen Maru Gothic', 'Kiwi Maru', 'Noto Sans TC',
+    'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  --font-body: 'Noto Sans TC', 'Zen Maru Gothic',
+    'PingFang TC', 'Microsoft JhengHei', sans-serif;
+
+  /* 招牌樣式參數 */
+  --warm-radius: 20px;
+  --warm-border: 2px solid var(--text-brown);
+  --warm-shadow: 4px 4px 0 0 var(--text-brown);
+  --warm-shadow-sm: 2px 2px 0 0 var(--text-brown);
+}
+
+/* ---------- 招牌樣式（component class） ---------- */
+
+/* warm-card：白底、2px 棕框、圓角 20、4px 硬陰影、hover 浮起 */
+.warm-card {
+  background: #ffffff;
+  border: var(--warm-border);
+  border-radius: var(--warm-radius);
+  box-shadow: var(--warm-shadow);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.warm-card--hoverable:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 0 var(--text-brown);
+}
+
+/* btn-warm：2px 棕框 + 2px 硬陰影，hover 位移、active 按壓 */
+.btn-warm {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: var(--warm-border);
+  border-radius: 9999px;
+  box-shadow: var(--warm-shadow-sm);
+  background: var(--base-yellow);
+  color: var(--text-brown);
+  font-family: var(--font-heading);
+  font-weight: 500;
+  padding: 0.5rem 1.25rem;
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+.btn-warm:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 0 var(--text-brown);
+}
+.btn-warm:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 0 var(--text-brown);
+}
+
+/* 背景點陣 */
+.bg-dots {
+  background-image: radial-gradient(var(--accent-orange) 1px, transparent 1px);
+  background-size: 30px 30px;
+}
+
+/* marker-highlight：標題螢光底線 */
+.marker-highlight {
+  background: linear-gradient(transparent 60%, var(--accent-orange) 60%);
+}

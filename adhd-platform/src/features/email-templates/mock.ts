@@ -1,0 +1,1 @@
+import type { EmailTemplate } from '@contracts/types';export const mockTemplates:EmailTemplate[]=[{id:'template-1',name:'確認時段',subject:'{{姓名}}您好',body:'您選擇的{{場次}}已確認。\n{{Meet連結}}',createdAt:'2026-07-11T00:00:00+08:00'}];

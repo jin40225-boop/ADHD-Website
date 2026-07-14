@@ -1,0 +1,1971 @@
+[
+  {
+    "id": "rec-001",
+    "category": "doctor",
+    "audience": "child",
+    "region": "彰化縣市",
+    "hospital": "彰化基督教醫療財團法人鹿港基督教醫院 / 鹿東基督教醫院",
+    "doctorOrName": "江瑞豐(鹿港分院)",
+    "urls": [
+      "http://www.rc.cch.org.tw/opd/opd/service-e.aspx?id=0501&Page=11&zone=D&#p"
+    ],
+    "experience": "耐心聽家長的需求，也會同理家長的感受，並且給予情緒支持。",
+    "recommender": "朱小姐",
+    "verified": false,
+    "verifiedNote": "已核實-1141110彥宇備註"
+  },
+  {
+    "id": "rec-002",
+    "category": "doctor",
+    "audience": "all",
+    "region": "台北市",
+    "hospital": "萬芳醫院 / 木柵身心診所",
+    "doctorOrName": "張勝傑",
+    "urls": [
+      "https://www.facebook.com/muzhapsy/?locale=zh_TW",
+      "https://www.wanfang.gov.tw/departments/team/cb18756decbeffdd"
+    ],
+    "experience": "萬芳醫院只有禮拜六的診，很滿!  張醫師另有在木柵身心診所服務(禮拜三、禮拜五)。",
+    "recommender": "雯",
+    "verified": true
+  },
+  {
+    "id": "rec-003",
+    "category": "doctor",
+    "audience": "all",
+    "region": "新竹縣市",
+    "hospital": "國立臺灣大學醫學院附設醫院新竹臺大分院",
+    "doctorOrName": "王彥欽",
+    "urls": [
+      "https://www.ntuh.gov.tw/PSY/Vcard.action?q_type=A02&q_itemCode=2580"
+    ],
+    "experience": "有耐心且問診很仔細",
+    "recommender": "北極熊",
+    "verified": true,
+    "verifiedNote": "1140318彥宇驗證與補充。\n我也與王醫師打過數次照面，王醫師很溫和、細心，也願意和患者深談。推薦者北極熊有補充，王醫師後續會調院區，屆時再請各位夥伴協助更新。"
+  },
+  {
+    "id": "rec-004",
+    "category": "doctor",
+    "audience": "all",
+    "region": "苗栗縣市",
+    "hospital": "吳四維診所",
+    "doctorOrName": "吳四維",
+    "urls": [],
+    "experience": "",
+    "verified": true,
+    "verifiedNote": "柯柯已查核。"
+  },
+  {
+    "id": "rec-005",
+    "category": "doctor",
+    "audience": "all",
+    "region": "臺南市",
+    "hospital": "嘉南療養院",
+    "doctorOrName": "李吉特",
+    "urls": [
+      "https://www.cnpc.mohw.gov.tw/?aid=51&pid=34"
+    ],
+    "experience": "",
+    "verified": true,
+    "verifiedNote": "0929柯柯已查核。"
+  },
+  {
+    "id": "rec-006",
+    "category": "other",
+    "audience": "all",
+    "region": "臺南市",
+    "hospital": "安南醫院",
+    "doctorOrName": "黃雪婷",
+    "urls": [
+      "https://www.tmanh.org.tw/Doctor/Department?detail=27&current=3"
+    ],
+    "experience": "介紹",
+    "recommender": "小慧",
+    "verified": true,
+    "verifiedNote": "兒童發展諮詢及評估。0929柯柯已查核。"
+  },
+  {
+    "id": "rec-007",
+    "category": "doctor",
+    "audience": "all",
+    "region": "臺南市",
+    "hospital": "誼仁診所",
+    "doctorOrName": "李姿誼",
+    "urls": [
+      "https://tncomu-news.com/tag/%E5%8D%97%E9%83%A8%E7%A7%91%E5%AD%B8%E5%9C%92%E5%8D%80/"
+    ],
+    "experience": "醫生很細心",
+    "recommender": "丫丫",
+    "verified": true,
+    "verifiedNote": "0929柯柯已查核。"
+  },
+  {
+    "id": "rec-008",
+    "category": "doctor",
+    "audience": "all",
+    "region": "臺南市",
+    "hospital": "柳營奇美醫院",
+    "doctorOrName": "劉俊宏",
+    "urls": [
+      "http://sub.chimei.org.tw/77790/index.php/members/13-2023-04-11-03-39-00/6-2023-04-19-08-11-27"
+    ],
+    "experience": "醫師很溫和友善傾聽並給予建議。",
+    "recommender": "毛毛",
+    "verified": true,
+    "verifiedNote": "0929柯柯已查核。"
+  },
+  {
+    "id": "rec-009",
+    "category": "doctor",
+    "audience": "all",
+    "region": "臺南市",
+    "hospital": "樂行診所",
+    "doctorOrName": "李吉特",
+    "urls": [
+      "https://www.cjclinic.com.tw/doctor.html"
+    ],
+    "experience": "原嘉南療養院精神科醫師，去年在台南仁德開業，目前仍有在嘉療掛職。",
+    "recommender": "谷",
+    "verified": true,
+    "verifiedNote": "0929柯柯已查核。"
+  },
+  {
+    "id": "rec-010",
+    "category": "doctor",
+    "audience": "all",
+    "region": "臺南市",
+    "hospital": "嘉南療養院",
+    "doctorOrName": "李冠瑩",
+    "urls": [
+      "https://www.cnpc.mohw.gov.tw/?aid=51&pid=34"
+    ],
+    "experience": "細心，耐心，",
+    "recommender": "PP",
+    "verified": true,
+    "verifiedNote": "0929柯柯已查核。"
+  },
+  {
+    "id": "rec-011",
+    "category": "doctor",
+    "audience": "child",
+    "region": "臺東縣",
+    "hospital": "台東基督教醫院",
+    "doctorOrName": "黃懷德",
+    "urls": [
+      "https://www.tch.org.tw/"
+    ],
+    "experience": "因孩子課表無法與翁菁菁醫師門診時間配合，故經同為職能治療的家長推薦，轉診至黃醫師，對孩子友善，目前孩子固定回診拿藥",
+    "recommender": "Aloe",
+    "verified": true,
+    "verifiedNote": "0929柯柯已查核。"
+  },
+  {
+    "id": "rec-012",
+    "category": "doctor",
+    "audience": "all",
+    "region": "臺東縣",
+    "hospital": "台東基督教醫院",
+    "doctorOrName": "翁菁菁",
+    "urls": [
+      "https://www.tch.org.tw/"
+    ],
+    "experience": "從北部來的專科醫師，印象中隔週週四才有診，上午門診開放2名現場掛號名額，醫師很專業有耐心。",
+    "recommender": "Aloe",
+    "verified": true,
+    "verifiedNote": "0929柯柯已查核。"
+  },
+  {
+    "id": "rec-013",
+    "category": "other",
+    "audience": "all",
+    "region": "台北市",
+    "hospital": "臺北市立聯合醫院中興院區",
+    "doctorOrName": "鄒國蘇",
+    "urls": [],
+    "experience": "會提供額外資訊協助治療\n    好溝通",
+    "recommender": "Jane",
+    "verified": true,
+    "verifiedNote": "0929柯柯已查核。"
+  },
+  {
+    "id": "rec-014",
+    "category": "doctor",
+    "audience": "child",
+    "region": "台北市",
+    "hospital": "馬偕兒童醫院",
+    "doctorOrName": "劉恵青",
+    "urls": [],
+    "experience": "劉醫師是唯一一位用心為我孩子看診時間超過半小時的（非評估）很感動也很感謝",
+    "recommender": "Ryan媽媽",
+    "verified": true,
+    "verifiedNote": "0929柯柯已查核。"
+  },
+  {
+    "id": "rec-015",
+    "category": "doctor",
+    "audience": "all",
+    "region": "台北市",
+    "hospital": "振興醫療財團法人振興醫院",
+    "doctorOrName": "陳麗淇",
+    "urls": [
+      "https://reg.chgh.org.tw/registd_cload2.aspx?pidm=8B851A78CE5BD1E7"
+    ],
+    "experience": "看陳醫師好幾年了，從以前在北榮就剛好掛到她，陳醫師很親切也很有耐心，不會只開藥，有很多方法與說明來讓我了解孩子到底是哪裡有問題，畢竟有時候不只是注意力，就這樣一直陪伴我們家哥哥到現在進步很多到國中了（前面中年級時有一段時間確實很不穩定），媽媽我自己都要憂鬱了，幸好都度過了。說真的，其實這樣的醫師應該也不少，只是我自己特別跟她聊的來，小孩也很聽她的話。帶小孩做評估看醫生真的很辛苦，我覺得我剛好是幸運的遇到陳醫師，現在她病人很多，但兒子相對也穩定，有時候我只會拿藥門口打個招呼就離開了，希望把醫師的時間留給更需要的人。",
+    "recommender": "黃媽媽",
+    "verified": true,
+    "verifiedNote": "已確認-1131019彥宇備註"
+  },
+  {
+    "id": "rec-016",
+    "category": "doctor",
+    "audience": "all",
+    "region": "台北市",
+    "hospital": "開馨診所 / 臺北市立聯合醫院松德院區",
+    "doctorOrName": "黃彥勳",
+    "urls": [
+      "https://webreg.tpech.gov.tw/RegOnline1_2.aspx?ChaId=A105&tab=1&ZCode=K&DeptCode=1301&deptname=%E5%85%92%E7%AB%A5%E9%9D%92%E5%B0%91%E5%B9%B4%E7%B2%BE%E7%A5%9E%E7%A7%91&thidname=%E6%9D%BE%E5%BE%B7%E9%99%A2%E5%8D%80&rom_dr=DAF28"
+    ],
+    "experience": "醫師很有耐心，可以帶評鑑報告加速治療。剛開始會安排密集回診調整藥物，流程比醫院快速。在診所治療成效良好",
+    "recommender": "Mimi",
+    "verified": true,
+    "verifiedNote": "松德院區兒童青少年精神科兼任醫師、並有在開馨診所看診，原推荐推薦開馨診所，搜尋過程中補上臺北市立聯合醫院松德院區。已確認-1131019彥宇備註"
+  },
+  {
+    "id": "rec-017",
+    "category": "doctor",
+    "audience": "child",
+    "region": "台北市",
+    "hospital": "馬偕兒童醫院",
+    "doctorOrName": "李宗翰",
+    "urls": [],
+    "experience": "李醫師非常有耐心也很細心，除了在診間觀察和孩子的互動外，若有提供心理師的報告或是老師的意見、問卷等，都會很仔細的看過再下診斷。針對家長對於用藥的疑慮，也會不厭其煩地提出科學佐證。-小薰\n\n\n李醫師很有耐心，很仔細的問診他看診時間都很長孩子很信任李醫師，因為他看診時間很長所以要耐心等待，他的診不好掛，建議看診時間去詢問並預約就診時間-lóusìng mǎrì",
+    "recommender": "小薰、lóusìng mǎrì",
+    "verified": true,
+    "verifiedNote": "0929柯柯已查核。1140430再次查核-彥宇"
+  },
+  {
+    "id": "rec-018",
+    "category": "doctor",
+    "audience": "all",
+    "region": "台北市",
+    "hospital": "三總醫院松山分院",
+    "doctorOrName": "莊偉辰",
+    "urls": [
+      "https://wwwv.tsgh.ndmctsgh.edu.tw/docdet/193/20081/28114/2821"
+    ],
+    "experience": "中規中矩的醫生，蠻有處理ADHD患者的經驗，會配合心理師做諮商和進一步測驗診斷",
+    "recommender": "落星子",
+    "verified": true,
+    "verifiedNote": "已核實-1131019彥宇備註"
+  },
+  {
+    "id": "rec-019",
+    "category": "doctor",
+    "audience": "adult",
+    "region": "台北市",
+    "hospital": "夏凱納身心診所",
+    "doctorOrName": "劉鴻徽",
+    "urls": [
+      "https://g.co/kgs/6dGSPjQ"
+    ],
+    "experience": "因憂鬱症狀經朋友介紹，初診後診斷憂鬱為ADHD共病症狀；\n    劉醫師以成人型ADHD為主要專長看診項目之一。",
+    "recommender": "阿紹",
+    "verified": true,
+    "verifiedNote": "已核實-1131019彥宇備註"
+  },
+  {
+    "id": "rec-020",
+    "category": "doctor",
+    "audience": "child",
+    "region": "台北市",
+    "hospital": "台北馬偕紀念醫院",
+    "doctorOrName": "劉珣瑛",
+    "urls": [
+      "https://www.mmh.org.tw/register_single_doctor3.php?depid=21&did=603&area=ts"
+    ],
+    "experience": "以前是看青少年，現在看老年，我是給她看才知道我有注意力不足的問題，她很有耐心，對於這類的疾病也很了解，有時也會給病人擁抱。是一位非常資深的精神科女醫師，但現在都不太接初診，需要透過介紹才能看她。",
+    "recommender": "太空人",
+    "verified": true,
+    "verifiedNote": "查核起來淡水也有，如原推薦註解。已核實-1131019彥宇備註"
+  },
+  {
+    "id": "rec-021",
+    "category": "doctor",
+    "audience": "child",
+    "region": "臺中市",
+    "hospital": "中國醫藥大學附設醫院",
+    "doctorOrName": "林秀縵",
+    "urls": [
+      "https://www.cmuh.cmu.edu.tw/Doctor/DoctorInfo?docId=D33767"
+    ],
+    "experience": "孩子小二開始看秀縵醫生，目前已國二，醫生會傾聽也會建議教養方針及建議改善過敏資訊。幫助很大-Kelly\n細心耐心-魚",
+    "recommender": "Kelly、魚",
+    "verified": true,
+    "verifiedNote": "已核實-1131019彥宇備註"
+  },
+  {
+    "id": "rec-022",
+    "category": "doctor",
+    "audience": "child",
+    "region": "臺中市",
+    "hospital": "中國醫藥大學附設醫院",
+    "doctorOrName": "廖伊鐸",
+    "urls": [
+      "https://www.cmuh.cmu.edu.tw/Doctor/DoctorInfo?docId=100745"
+    ],
+    "experience": "非常有耐心，對小孩或青年都有耐心的溝通",
+    "recommender": "小瑜",
+    "verified": true,
+    "verifiedNote": "已核實-1131019彥宇備註"
+  },
+  {
+    "id": "rec-023",
+    "category": "doctor",
+    "audience": "all",
+    "region": "臺中市",
+    "hospital": "台中榮民總醫院",
+    "doctorOrName": "劉珈倩",
+    "urls": [
+      "https://www.vghtc.gov.tw/APIPage/DoctorInfoDetail?WebMenuID=DC264319-1D78-4AD8-A7BA-647440DBAD6B&InSect=PSY&InSectC=%E7%B2%BE%E7%A5%9E%E9%83%A8&DocNo=5497J"
+    ],
+    "experience": "女醫生說話溫柔有耐心、包容力大，有問題提出詢問能互相討論提供意見和方式。",
+    "recommender": "咕咕霍",
+    "verified": true,
+    "verifiedNote": "已核實-1131019彥宇備註"
+  },
+  {
+    "id": "rec-024",
+    "category": "doctor",
+    "audience": "all",
+    "region": "臺中市",
+    "hospital": "潭子好晴天診所",
+    "doctorOrName": "鄭晴",
+    "urls": [
+      "https://sogoodday.com.tw/doctor/cheng/"
+    ],
+    "experience": "醫生有耐心講解且溫柔，可以針對提問給予回應，並適時的關心用藥情形。",
+    "recommender": "何",
+    "verified": true,
+    "verifiedNote": "已核實-1131019彥宇備註"
+  },
+  {
+    "id": "rec-025",
+    "category": "doctor",
+    "audience": "all",
+    "region": "彰化縣市",
+    "hospital": "財團法人彰化基督教醫院",
+    "doctorOrName": "陳力源",
+    "urls": [
+      "https://dpt.cch.org.tw/layout/layout_1/doctor.aspx?ID=500&Key=1291"
+    ],
+    "experience": "大暖男醫生，就醫經驗非常舒服，很重視病人反應的狀態和需求",
+    "recommender": "JJ",
+    "verified": true,
+    "verifiedNote": "已核實-1131019彥宇備註"
+  },
+  {
+    "id": "rec-026",
+    "category": "other",
+    "audience": "all",
+    "region": "彰化縣市",
+    "hospital": "彰化基督教醫院",
+    "doctorOrName": "張通銘",
+    "urls": [
+      "https://www1.cch.org.tw/opd/Service-e.aspx?id=4601&Page=11#ppp"
+    ],
+    "experience": "很專業、細心、耐心的對待每位病人及家人",
+    "verified": true,
+    "verifiedNote": "已核實-1131129家誠備註"
+  },
+  {
+    "id": "rec-027",
+    "category": "other",
+    "audience": "all",
+    "region": "彰化縣市",
+    "hospital": "彰化基督教醫院",
+    "doctorOrName": "張明裕",
+    "urls": [
+      "https://www1.cch.org.tw/opd/Service-e.aspx?id=4601&Page=11#ppp"
+    ],
+    "experience": "人還不錯，如果對心智科或身心科字眼敏感的話，看神經內科也一樣",
+    "verified": true,
+    "verifiedNote": "有開學障特別門診.\n已核實-1131129家誠備註"
+  },
+  {
+    "id": "rec-028",
+    "category": "doctor",
+    "audience": "all",
+    "region": "彰化縣市",
+    "hospital": "彰化基督教醫院",
+    "doctorOrName": "江瑞豐",
+    "urls": [
+      "https://www1.cch.org.tw/opd/Service-e.aspx?id=4601&Page=11#ppp"
+    ],
+    "experience": "耐心跟孩子聊天，了解孩子想法，會給予建議，請孩子自己決定用藥。",
+    "verified": true,
+    "verifiedNote": "已核實-1131129家誠備註"
+  },
+  {
+    "id": "rec-029",
+    "category": "doctor",
+    "audience": "child",
+    "region": "嘉義縣市",
+    "hospital": "長庚醫院分院",
+    "doctorOrName": "陳錦宏",
+    "urls": [
+      "https://www.jah.org.tw/JCHReg/Department/J/J3600A"
+    ],
+    "experience": "經驗豐富、充滿愛心、英俊、細心，能與孩子交心。為台灣的ADHD孩子與家長費心衛教宣導，創立心動家族兒童青少年關懷協會。",
+    "recommender": "魏良各",
+    "verified": true,
+    "verifiedNote": "目前在大里仁愛醫院\n已核實-1131129家誠備註"
+  },
+  {
+    "id": "rec-030",
+    "category": "doctor",
+    "audience": "child",
+    "region": "嘉義縣市",
+    "hospital": "長庚醫院嘉義分院",
+    "doctorOrName": "蔡景淑",
+    "urls": [
+      "https://www.cgmh.org.tw/tw/Services/DoctorInfo/6247"
+    ],
+    "experience": "會用不同方式引導孩子說話，沒有醫生的架子，非常體諒家長與孩子的立場，非絕對必要，不會輕易用藥及增加劑量。",
+    "recommender": "蔡惠華",
+    "verified": true,
+    "verifiedNote": "已核實-1131129家誠備註"
+  },
+  {
+    "id": "rec-031",
+    "category": "doctor",
+    "audience": "all",
+    "region": "嘉義縣市",
+    "hospital": "台中榮民總醫院嘉義分院",
+    "doctorOrName": "黃聖雲醫師",
+    "urls": [
+      "https://www.vghtc.gov.tw/APIPage/DoctorInfoDetail?WebMenuID=dc264319-1d78-4ad8-a7ba-647440dbad6b&InSect=PSYC&InSectC=%E5%85%92%E7%AB%A5%E5%BF%83%E6%99%BA&DocNo=5897D"
+    ],
+    "experience": "很細心的聆聽小朋友的感受並與做小朋友溝通",
+    "recommender": "Venus",
+    "verified": true,
+    "verifiedNote": "已核實-1131129家誠備註"
+  },
+  {
+    "id": "rec-032",
+    "category": "doctor",
+    "audience": "all",
+    "region": "新竹縣市",
+    "hospital": "新竹台大生醫",
+    "doctorOrName": "林建亨",
+    "urls": [
+      "https://www.hch.gov.tw/?aid=51&pid=24&page_name=detail&iid=159"
+    ],
+    "experience": "專長\n    1.兒童注意力不足過動症\n    2.青少年心理疾患\n    3.學習障礙\n    4.自閉症\n    5.一般成人精神疾患\n    6.憂鬱症\n    7.思覺失調症（長效針劑治療）\n    8.早發型思覺失調症診斷及治療\n    \n    接觸經驗\n    清楚說明醫療評估讓就診者理解，同時說明如何在生活中透過藥物外調整及每款用藥開立的原因",
+    "recommender": "Q",
+    "verified": true,
+    "verifiedNote": "已核實-1131129家誠備註"
+  },
+  {
+    "id": "rec-033",
+    "category": "doctor",
+    "audience": "adult",
+    "region": "新竹縣市",
+    "hospital": "東元綜合醫院",
+    "doctorOrName": "張夢涵",
+    "urls": [
+      "https://w3.tyh.com.tw/WebRegList_Doct.aspx?dn=2416&d=24"
+    ],
+    "experience": "張醫生在東元的疾病介紹網頁中，有發表關於成人ADHD的文章，我也是因為這個文章去找她看的，張醫生本身還有在心裡診所接診(周伯翰身心醫學診所)，但我本身是在東元看的，所以就推薦東元。\n    \n   \n  第一次去就診，張醫生很快就判斷我確實有ADHD的症狀，於是就開始吃藥，真正做ADHD檢測大約是半年之後(醫院要排隊)，之後有持續關心吃藥狀況與心情，人很溫和。",
+    "recommender": "94",
+    "verified": true,
+    "verifiedNote": "已核實-1131129家誠備註"
+  },
+  {
+    "id": "rec-034",
+    "category": "doctor",
+    "audience": "child",
+    "region": "新竹縣市",
+    "hospital": "台大生醫",
+    "doctorOrName": "劉子瑜",
+    "urls": [
+      "https://www.hch.gov.tw/?aid=51&pid=24&page_name=detail&iid=457"
+    ],
+    "experience": "劉醫師看著小二的弟弟，診間跑來跑去，完全坐不住，雖然尚未完成心理衡鑑，但劉醫師願意積極給藥治療，控制弟弟過動的狀況。\n    2024/10月，劉醫師從竹北台大轉至新竹台大看診。",
+    "recommender": "Jessie",
+    "verified": true,
+    "verifiedNote": "已核實-1131129家誠備註"
+  },
+  {
+    "id": "rec-035",
+    "category": "doctor",
+    "audience": "all",
+    "region": "新竹縣市",
+    "hospital": "親禾身心診所",
+    "doctorOrName": "謝采燁",
+    "urls": [
+      "https://www.sproutpsyclinic.com.tw/"
+    ],
+    "experience": "謝醫師對ADHD的了解很深，除了兒童外，對成人ADHD也很清楚，且會花心思對症下藥，也很尊重患者特質的個體差異，超用心又有耐心，超級推薦！",
+    "recommender": "荷豆",
+    "verified": true,
+    "verifiedNote": "已查核-1131019彥宇備註"
+  },
+  {
+    "id": "rec-036",
+    "category": "other",
+    "audience": "all",
+    "region": "新竹縣市",
+    "hospital": "中國醫藥大學附設醫院新竹分院",
+    "doctorOrName": "王明鈺",
+    "urls": [
+      "https://www.cmu-hch.cmu.edu.tw/Doctor/DoctorInfo/143"
+    ],
+    "experience": "　",
+    "recommender": "Connie Lee",
+    "verified": true,
+    "verifiedNote": "已核實-1131129家誠備註"
+  },
+  {
+    "id": "rec-037",
+    "category": "other",
+    "audience": "child",
+    "region": "新竹縣市",
+    "hospital": "林正修診所",
+    "doctorOrName": "林正修",
+    "urls": [
+      "https://www.mainpi.com/query?i=699"
+    ],
+    "experience": "是新竹區精神科方面的前兩把交椅，經驗非常豐富(不過有時會忽略掉家長情緒)大體來說是非常為孩子著想的醫師。還有，他也是新竹區鑑輔會諮詢的精神科醫師，他診所的其他醫師也都不錯不過就不特別另外推薦",
+    "recommender": "賴正瑋",
+    "verified": true,
+    "verifiedNote": "已核實-1131129家誠備註"
+  },
+  {
+    "id": "rec-038",
+    "category": "doctor",
+    "audience": "child",
+    "region": "新竹縣市",
+    "hospital": "中國醫藥大學附設醫院",
+    "doctorOrName": "王明鈺",
+    "urls": [
+      "https://www.cmuh.cmu.edu.tw/Doctor/DoctorInfo?docId=D16211"
+    ],
+    "experience": "家長推薦，忘記註明，我是看自閉，不是Adhd",
+    "verified": true,
+    "verifiedNote": "已核實-1131129家誠備註"
+  },
+  {
+    "id": "rec-039",
+    "category": "other",
+    "audience": "child",
+    "region": "新北市",
+    "hospital": "台北慈濟",
+    "doctorOrName": "蔡文心",
+    "urls": [
+      "https://taipei.tzuchi.com.tw/%E8%94%A1%E6%96%87%E5%BF%83-%E9%86%AB%E5%B8%AB/"
+    ],
+    "experience": "和藹可親好溝通，可以好好聆聽家長想法",
+    "recommender": "Vanessa",
+    "verified": true,
+    "verifiedNote": "林口長庚\n已核實-1131129家誠備註"
+  },
+  {
+    "id": "rec-040",
+    "category": "doctor",
+    "audience": "child",
+    "region": "新北市",
+    "hospital": "林口長庚",
+    "doctorOrName": "謝依璇",
+    "urls": [
+      "https://www.cgmh.org.tw/tw/Services/DoctorInfo/7436"
+    ],
+    "experience": "謝醫師看診時有耐性  也會詳細記錄父母回饋孩子的狀況",
+    "recommender": "小米",
+    "verified": true,
+    "verifiedNote": "已核實-1131129家誠備註"
+  },
+  {
+    "id": "rec-041",
+    "category": "doctor",
+    "audience": "all",
+    "region": "新北市",
+    "hospital": "關渡",
+    "doctorOrName": "藍彣烜",
+    "urls": [
+      "https://www.gandau.gov.tw/%E8%AA%8D%E8%AD%98%E9%97%9C%E6%B8%A1/%E9%86%AB%E7%99%82%E5%9C%98%E9%9A%8A/%E9%86%AB%E5%8B%99%E9%83%A8/%E7%A7%91%E5%88%A5%E4%BB%8B%E7%B4%B9/%E8%BA%AB%E5%BF%83%E7%A7%91/"
+    ],
+    "experience": "初診和調藥量時有困擾會很仔細\n    穩定沒事時速度很快\n    覺得有效率有仔細 不錯",
+    "recommender": "屁桃",
+    "verified": true,
+    "verifiedNote": "已核實-1131129家誠備註"
+  },
+  {
+    "id": "rec-042",
+    "category": "doctor",
+    "audience": "all",
+    "region": "新北市",
+    "hospital": "土城長庚",
+    "doctorOrName": "楊緯聖",
+    "urls": [
+      "https://www.cgmh.org.tw/tw/Services/DoctorInfo/0490"
+    ],
+    "experience": "很年前 觀念很新\n  也不會限制很多\n    很好溝通的醫生🧑‍⚕️",
+    "recommender": "Tuna",
+    "verified": true,
+    "verifiedNote": "已核實-1131129家誠備註"
+  },
+  {
+    "id": "rec-043",
+    "category": "other",
+    "audience": "all",
+    "region": "新北市",
+    "hospital": "亞東醫院",
+    "doctorOrName": "施顯學",
+    "urls": [
+      "https://www.femh.org.tw/section/sectionDetail2.aspx?CID=0293&&DoctorID=98132"
+    ],
+    "experience": "以前在台大看adhd多年，看診會有耐心聽患者講話。",
+    "recommender": "sherry chen",
+    "verified": true,
+    "verifiedNote": "原台大醫師\n已核實-1131129家誠備註"
+  },
+  {
+    "id": "rec-044",
+    "category": "doctor",
+    "audience": "child",
+    "region": "新北市",
+    "hospital": "淡水馬偕醫院",
+    "doctorOrName": "陳苡芃",
+    "urls": [
+      "https://www.mmh.org.tw/doctor_view.php?depid=52&did=614"
+    ],
+    "experience": "幾乎每個人都談至少半小時。並且會馬上安排心理師。那時心理師評估就評估家長和孩子花了一個早上。並也有給老師一個量表。算很詳細哦",
+    "recommender": "曹靈玉",
+    "verified": true,
+    "verifiedNote": "已核實-1131129家誠備註"
+  },
+  {
+    "id": "rec-045",
+    "category": "doctor",
+    "audience": "child",
+    "region": "新北市",
+    "hospital": "八里療養院",
+    "doctorOrName": "張介信",
+    "urls": [
+      "https://server.ttpc.mohw.gov.tw/OINetReg.WebRwd/Reg/Doctor"
+    ],
+    "experience": "很有耐心, 另外草療本身有很多課程.\n  心理師團隊堅強.蔡佳芳媽媽特推",
+    "recommender": "黃瑞佳",
+    "verified": true,
+    "verifiedNote": "原草屯療養院張院長已換到八里療養院.\n\n（目前在草屯療養院）\n已核實-1131129家誠備註"
+  },
+  {
+    "id": "rec-046",
+    "category": "doctor",
+    "audience": "child",
+    "region": "台北市",
+    "hospital": "內湖三總",
+    "doctorOrName": "葉啟斌",
+    "urls": [
+      "https://wwwv.tsgh.ndmctsgh.edu.tw/docdet/191/10058/25045/671"
+    ],
+    "experience": "溫和有耐心，尊重父母選擇，專業，助理也很棒",
+    "recommender": "GILL YEN",
+    "verified": true,
+    "verifiedNote": "已核實-1131129家誠備註\n已修改-1140419彥宇備註"
+  },
+  {
+    "id": "rec-047",
+    "category": "other",
+    "audience": "all",
+    "region": "新北市",
+    "hospital": "八里療養院蘆洲院區",
+    "doctorOrName": "馬景野",
+    "urls": [],
+    "experience": "不用說了. 特別長於看亞斯. 可惜現在門診時間很少了. ",
+    "recommender": "黃瑞佳",
+    "verified": true,
+    "verifiedNote": "現已擔任衛生局副局長\n（目前沒有門診）\n已核實-1131129家誠備註"
+  },
+  {
+    "id": "rec-048",
+    "category": "doctor",
+    "audience": "all",
+    "region": "新北市",
+    "hospital": "雙和醫院",
+    "doctorOrName": "張勝傑",
+    "urls": [
+      "https://old.wanfang.gov.tw/p5_team_specialty_detail.aspx?d=230&DeptCode=3600"
+    ],
+    "experience": "　",
+    "recommender": "周麗雅",
+    "verified": true,
+    "verifiedNote": "萬芳醫院有診\n已核實-1131129家誠備註"
+  },
+  {
+    "id": "rec-049",
+    "category": "doctor",
+    "audience": "child",
+    "region": "新北市",
+    "hospital": "慈濟醫院台北",
+    "doctorOrName": "王宗熙",
+    "urls": [
+      "https://taipei.tzuchi.com.tw/%E7%8E%8B%E5%AE%97%E7%86%99-%E9%86%AB%E5%B8%AB/"
+    ],
+    "experience": "願意花時間有耐心給家長和孩子時間說話的醫師",
+    "recommender": "周麗雅",
+    "verified": true,
+    "verifiedNote": "已核實-1131129家誠備註"
+  },
+  {
+    "id": "rec-050",
+    "category": "doctor",
+    "audience": "child",
+    "region": "新北市",
+    "hospital": "亞東醫院",
+    "doctorOrName": "林育如",
+    "urls": [
+      "https://www.femh.org.tw/section/sectionDetail2.aspx?CID=0293&&DoctorID=88077"
+    ],
+    "experience": "願意花時間有耐心給家長和孩子時間說話的醫師",
+    "recommender": "周麗雅",
+    "verified": true,
+    "verifiedNote": "已核實-1131129家誠備註"
+  },
+  {
+    "id": "rec-051",
+    "category": "doctor",
+    "audience": "child",
+    "region": "新北市",
+    "hospital": "雙和醫院",
+    "doctorOrName": "林宜正",
+    "urls": [
+      "https://www.shh.org.tw/page/TeamDocDetail.aspx?deptCode=13&docCode=63145"
+    ],
+    "experience": "願意花時間有耐心給家長和孩子時間說話的醫師",
+    "recommender": "周麗雅",
+    "verified": true,
+    "verifiedNote": "已核實-1131129家誠備註"
+  },
+  {
+    "id": "rec-052",
+    "category": "other",
+    "audience": "all",
+    "region": "新北市",
+    "hospital": "愛家自然診所",
+    "doctorOrName": "陳惟華",
+    "urls": [
+      "http://drchenwh.blogspot.com/"
+    ],
+    "experience": "陳醫師是英國牛津大學自律神經博士...基隆海軍醫院前院長...有上過電視...採自然療法...吃食品膠囊...不吃藥品....我兒子有妥瑞加情緒障礙問題....看了一年多....現在妥瑞的外在症狀幾乎不見...情緒也很穩定...學習力很強...變得可愛許多....中班時確診....目前小一...個人親身經歷....",
+    "recommender": "李秀連",
+    "verified": true,
+    "verifiedNote": "已核實-1131129家誠備註"
+  },
+  {
+    "id": "rec-053",
+    "category": "other",
+    "audience": "all",
+    "region": "雲林縣",
+    "hospital": "台大醫院",
+    "doctorOrName": "高維治",
+    "urls": [
+      "https://reg.ntuh.gov.tw/WebReg/WebReg/RegDoctorInfo?vHospCode=Y0&drID=Y04065"
+    ],
+    "experience": "人親切又專業",
+    "recommender": "Second",
+    "verified": true,
+    "verifiedNote": "已核實-1131129家誠備註"
+  },
+  {
+    "id": "rec-054",
+    "category": "doctor",
+    "audience": "all",
+    "region": "雲林縣",
+    "hospital": "台大醫院雲林分院及虎尾分院",
+    "doctorOrName": "高維治",
+    "urls": [
+      "https://reg.ntuh.gov.tw/WebReg/WebReg/RegDoctorInfo?vHospCode=Y0&drID=Y04065"
+    ],
+    "experience": "這個醫生在該醫院看診多年，醫生會向病人解釋各項藥物的原理。",
+    "recommender": "Sherry Chen",
+    "verified": true,
+    "verifiedNote": "醫生會視病人報到順序，調整看診順序，先報到但號碼後面者，有機會提前被叫號。\n已核實-1131129家誠備註"
+  },
+  {
+    "id": "rec-055",
+    "category": "doctor",
+    "audience": "child",
+    "region": "雲林縣",
+    "hospital": "長庚醫院",
+    "doctorOrName": "蔡景淑",
+    "urls": [
+      "https://www.cgmh.org.tw/tw/Services/DoctorInfo/6247"
+    ],
+    "experience": "會用不同方式引導孩子說話，沒有醫生的架子，非常體諒家長與孩子的立場，非絕對必要，不會輕易用藥及增加劑量。",
+    "verified": true,
+    "verifiedNote": "嘉義長庚有診\n已核實-1131129家誠備註"
+  },
+  {
+    "id": "rec-056",
+    "category": "doctor",
+    "audience": "all",
+    "region": "高雄市",
+    "hospital": "長庚",
+    "doctorOrName": "王亮人",
+    "urls": [
+      "https://www.cgmh.org.tw/tw/Services/DoctorInfo/3874"
+    ],
+    "experience": "醫師願意和孩子互動，有自己的研究團隊，助理會在候診區邀請家長加入ADHD注意力測驗、益生菌檢測",
+    "recommender": "黃",
+    "verified": true,
+    "verifiedNote": "已核實-1131129家誠備註"
+  },
+  {
+    "id": "rec-057",
+    "category": "doctor",
+    "audience": "child",
+    "region": "高雄市",
+    "hospital": "榮總",
+    "doctorOrName": "李旻靜",
+    "urls": [
+      "https://webreg.vghks.gov.tw/RSMKS/onlineReg/2"
+    ],
+    "experience": "可以接住同理家長的情緒",
+    "recommender": "熊之熊貓",
+    "verified": true,
+    "verifiedNote": "已核實-1131129家誠備註"
+  },
+  {
+    "id": "rec-058",
+    "category": "doctor",
+    "audience": "child",
+    "region": "高雄市",
+    "hospital": "長庚",
+    "doctorOrName": "王亮人",
+    "urls": [
+      "https://www.cgmh.org.tw/tw/Services/DoctorInfo/3874"
+    ],
+    "experience": "人很溫柔，很有耐心的聆聽家長和孩子說話並給予建議。",
+    "recommender": "(=ﾟωﾟ)ﾉ",
+    "verified": true,
+    "verifiedNote": "已核實-1131129家誠備註"
+  },
+  {
+    "id": "rec-059",
+    "category": "other",
+    "audience": "child",
+    "region": "高雄市",
+    "hospital": "和誼診所",
+    "doctorOrName": "陳睿安",
+    "urls": [
+      "https://www.yehiclinic.com/the-clinic-1"
+    ],
+    "experience": "孩子願意接受的醫生，給照顧者信心的醫生。溫柔，專業。",
+    "recommender": "LeS",
+    "verified": true,
+    "verifiedNote": "已核實-1131129家誠備註"
+  },
+  {
+    "id": "rec-060",
+    "category": "doctor",
+    "audience": "adult",
+    "region": "高雄市",
+    "hospital": "元和雅身心科診所",
+    "doctorOrName": "周妙純",
+    "urls": [
+      "https://www.5550056.com.tw/product_1620860.html"
+    ],
+    "experience": "會持續關心病患的用藥狀況跟副作用，針對生活或工作上的煩惱也會有耐心、溫柔的傾聽並給予建議\n  (但不能講太久，因為還有很多病患🤣)",
+    "recommender": "Egg",
+    "verified": true,
+    "verifiedNote": "已核實-1131129家誠備註"
+  },
+  {
+    "id": "rec-061",
+    "category": "doctor",
+    "audience": "all",
+    "region": "高雄市",
+    "hospital": "長庚醫院",
+    "doctorOrName": "周妙純",
+    "urls": [
+      "https://www.cgmh.org.tw/tw/Services/DoctorInfo/4953"
+    ],
+    "experience": "周醫師也有在元和雅身心科診所看診，若是平常只需拿藥可以在診所掛號領藥即可，可以省下很多去大醫院排隊等待的時間，還有昂貴的掛號費喔！",
+    "recommender": "Lucy",
+    "verified": true,
+    "verifiedNote": "已核實-1131129家誠備註"
+  },
+  {
+    "id": "rec-062",
+    "category": "doctor",
+    "audience": "all",
+    "region": "高雄市",
+    "hospital": "長庚醫院",
+    "doctorOrName": "蔡景淑",
+    "urls": [
+      "https://www.cgmh.org.tw/tw/Services/DoctorInfo/6247"
+    ],
+    "experience": "親切有耐心在討論",
+    "recommender": "Fan",
+    "verified": true,
+    "verifiedNote": "已核實-1131129家誠備註"
+  },
+  {
+    "id": "rec-063",
+    "category": "other",
+    "audience": "all",
+    "region": "高雄市",
+    "hospital": "長庚醫院",
+    "doctorOrName": "周妙純",
+    "urls": [
+      "https://www.cgmh.org.tw/tw/Services/DoctorInfo/4953"
+    ],
+    "experience": "　",
+    "recommender": "任日昇",
+    "verified": true,
+    "verifiedNote": "已核實-1131129家誠備註"
+  },
+  {
+    "id": "rec-064",
+    "category": "other",
+    "audience": "all",
+    "region": "高雄市",
+    "hospital": "長庚醫院",
+    "doctorOrName": "周文君",
+    "urls": [
+      "https://www.cgmh.org.tw/tw/Services/DoctorInfo/4986"
+    ],
+    "experience": "　",
+    "recommender": "任日昇",
+    "verified": true,
+    "verifiedNote": "已核實-1131129家誠備註"
+  },
+  {
+    "id": "rec-065",
+    "category": "doctor",
+    "audience": "child",
+    "region": "高雄市",
+    "hospital": "高醫附醫",
+    "doctorOrName": "楊品珍",
+    "urls": [],
+    "experience": "很專業，會多方位考量孩子的情況，給予很實際適當的建議和處理。不會隨意用藥。較敏感的家長可能覺得醫師講話急，但楊醫師是很為兒童著想的好醫師。在兒科開的聯評門診常額滿",
+    "verified": true,
+    "verifiedNote": "已退休\n已核實-1131129家誠備註"
+  },
+  {
+    "id": "rec-066",
+    "category": "doctor",
+    "audience": "child",
+    "region": "高雄市",
+    "hospital": "高雄醫學院附設醫院",
+    "doctorOrName": "顏正芳",
+    "urls": [
+      "https://www.kmuh.org.tw/Web/WebRegistration/DocIntro/DocDetail?lang=tw&doctorID=820222#scheduleBlock"
+    ],
+    "experience": "願意花時間與家長和小孩說話",
+    "recommender": "張芸綺",
+    "verified": true,
+    "verifiedNote": "專長:網路/3c 成癮,\n  這方面高醫做很多的研究\n    顏醫師很擅長. \n已核實-1131129家誠備註"
+  },
+  {
+    "id": "rec-067",
+    "category": "doctor",
+    "audience": "all",
+    "region": "高雄市",
+    "hospital": "元和雅診所",
+    "doctorOrName": "王雅琴",
+    "urls": [
+      "https://www.5550056.com.tw/product_1620860.html"
+    ],
+    "experience": "PTT 鄉民推荐. 很有耐心回應. 舒緩了就醫者的焦慮",
+    "verified": true,
+    "verifiedNote": "高醫附醫也有診\n\n（採電話預約制，電話：07-5550066）\n已核實-1131129家誠備註"
+  },
+  {
+    "id": "rec-068",
+    "category": "doctor",
+    "audience": "child",
+    "region": "高雄市",
+    "hospital": "長庚醫院高雄分院",
+    "doctorOrName": "王亮人",
+    "urls": [
+      "https://register.cgmh.org.tw/Register/8"
+    ],
+    "experience": "細心,有愛心,會傾聽家長說明孩子狀況並且會討論在給予適當建議的良醫",
+    "recommender": "Chang Yu Cheng",
+    "verified": true,
+    "verifiedNote": "已核實- 1131127家誠備註"
+  },
+  {
+    "id": "rec-069",
+    "category": "doctor",
+    "audience": "child",
+    "region": "高雄市",
+    "hospital": "柯偉恭診所",
+    "doctorOrName": "柯偉恭",
+    "urls": [
+      "https://kb.commonhealth.com.tw/hospitals/13207.html"
+    ],
+    "experience": "願意花時間與家長和小孩說話",
+    "recommender": "張芸綺",
+    "verified": true,
+    "verifiedNote": "柯偉恭診所是位於 高雄市新興區的身心科診所，為衛福部核可之醫事機構，主要服務項目有注意力不集中、失眠、焦慮、憂鬱、頭痛、酒癮、藥癮、自律神經失調、神經衰弱、情緒障礙\n已核實-1131019柯柯備註"
+  },
+  {
+    "id": "rec-070",
+    "category": "doctor",
+    "audience": "child",
+    "region": "高雄市",
+    "hospital": "高雄市立聯合醫院",
+    "doctorOrName": "陳億倖",
+    "urls": [
+      "https://www.kmuh.gov.tw/News_InformationContent.aspx?n=E5C0F6A40A13E849&sms=3AAAF95486579FCA&s=769E1FE88CFEAD57"
+    ],
+    "experience": " \n  會和孩子互動，傾聽家長的敘述",
+    "recommender": "Jin Wu",
+    "verified": true,
+    "verifiedNote": "1.身心科:主治焦慮、失眠、腦神經衰弱、緊張性頭痛、身心症、憂鬱症、恐慌症、強迫症及各種精神官能症、精神疾患、妄想症、幻聽、老人失智症、婦女身心疾患、經前症候群、產後憂鬱、更年期情緒障礙。\n2.兒童心智科:發展遲緩、注意力缺失、過動兒、自閉症、兒童青少年憂鬱症、焦慮症、適應障礙、學習障礙。 • 3.身心障礙鑑定:可依規定執行精神障礙、智能障礙、失智症\n已核實-1131019柯柯備註"
+  },
+  {
+    "id": "rec-071",
+    "category": "doctor",
+    "audience": "child",
+    "region": "桃園市",
+    "hospital": "聖保祿醫院",
+    "doctorOrName": "黃琦棻",
+    "urls": [
+      "https://rms.sph.org.tw/RMSTimeTable.aspx?dpt=S3600B"
+    ],
+    "experience": "醫生很有經驗，和孩子交流無礙",
+    "recommender": "涼夏",
+    "verified": true,
+    "verifiedNote": "週一上午、週二下午精神科門診，限十八歲以上掛號，未滿十八歲之身心或精神困擾請掛兒童青少年心智健康門診。　       已核實-1131019柯柯備註"
+  },
+  {
+    "id": "rec-072",
+    "category": "doctor",
+    "audience": "child",
+    "region": "桃園市",
+    "hospital": "聯新國際醫院",
+    "doctorOrName": "林博",
+    "urls": [
+      "https://www.landseedhospital.com.tw/tw/team/team_detail/%E7%B2%BE%E7%A5%9E%E7%A7%91%E8%BA%AB%E5%BF%83%E7%97%87%E9%96%80%E8%A8%BA/%E6%9E%97%E5%8D%9A"
+    ],
+    "experience": "孩子是給林醫師看診的！會先評估再給予建議，或是使用藥物，每兩週回診觀察用藥狀況有無進步，慢慢找到適合的藥物！我們目前也還在調藥階段，但孩子的確有在進步中，醫師建議孩子做對時多給孩子鼓勵讓她有成就感就會繼續努力。",
+    "recommender": "Mina",
+    "verified": true,
+    "verifiedNote": "已核實-1131019柯柯備註"
+  },
+  {
+    "id": "rec-073",
+    "category": "doctor",
+    "audience": "child",
+    "region": "桃園市",
+    "hospital": "林口長庚醫院",
+    "doctorOrName": "黃玉書",
+    "urls": [
+      "https://www.cgmh.org.tw/tw/Services/DoctorInfo/2956"
+    ],
+    "experience": "醫師有耐心的傾聽做評估，因為小孩也有過敏症狀，造成睡眠呼吸中止，醫師也是這方面的專家",
+    "recommender": "Summer",
+    "verified": true,
+    "verifiedNote": "週一下午診-竹北東元綜合醫院-精神科\n週一晚上診-竹北東元綜合醫院-精神科\n週二上午診-台北長庚醫院-精神科\n週三下午診-林口長庚醫院-兒童心智科\n週四上午診-林口長庚醫院-睡眠中心\n週五下午診-林口長庚醫院-睡眠中心\n週六下午診-桃園長庚醫院-睡眠中心\n已核實-1131019柯柯備註"
+  },
+  {
+    "id": "rec-074",
+    "category": "doctor",
+    "audience": "child",
+    "region": "台北市",
+    "hospital": "台北市",
+    "doctorOrName": "許元彰",
+    "urls": [
+      "https://old.wanfang.gov.tw/p5_team_specialty_detail.aspx?d=898&DeptCode=3600"
+    ],
+    "experience": "青少年情緒障礙",
+    "recommender": "王桓奇",
+    "verified": true,
+    "verifiedNote": "原推荐為桃園療養院，後核實已改為臺北市立萬芳醫院-委託臺北醫學大學辦理。限16歲以下看診，故不推薦成人ADHD就診。已核實-1131019彥宇備註"
+  },
+  {
+    "id": "rec-075",
+    "category": "doctor",
+    "audience": "child",
+    "region": "桃園市",
+    "hospital": "桃園療養院",
+    "doctorOrName": "宋成賢",
+    "urls": [
+      "https://www.typc.mohw.gov.tw/?aid=51&pid=42"
+    ],
+    "experience": "青少年情緒障礙",
+    "recommender": "王桓奇",
+    "verified": true,
+    "verifiedNote": "已核實-1131019彥宇備註"
+  },
+  {
+    "id": "rec-076",
+    "category": "doctor",
+    "audience": "all",
+    "region": "新竹縣市",
+    "hospital": "新竹馬偕紀念醫院",
+    "doctorOrName": "吳洽明",
+    "urls": [
+      "https://www.hc.mmh.org.tw/doctor_view.php?depid=218&did=2675"
+    ],
+    "experience": "　",
+    "recommender": "王桓奇",
+    "verified": true,
+    "verifiedNote": "原推荐為桃園療養院醫師，現已改於新竹馬偕醫院。已核實-1131019彥宇備註"
+  },
+  {
+    "id": "rec-077",
+    "category": "doctor",
+    "audience": "all",
+    "region": "桃園市",
+    "hospital": "桃園療養院",
+    "doctorOrName": "李國平",
+    "urls": [
+      "https://register.typc.mohw.gov.tw/OINetReg.WebRwd/Reg/DeptCalendar?DeptId=1302"
+    ],
+    "experience": "　",
+    "recommender": "王桓奇",
+    "verified": true,
+    "verifiedNote": "已核實-1131019彥宇備註"
+  },
+  {
+    "id": "rec-078",
+    "category": "doctor",
+    "audience": "all",
+    "region": "桃園市",
+    "hospital": "林口長庚醫院",
+    "doctorOrName": "倪信章",
+    "urls": [
+      "https://www.cgmh.org.tw/tw/Services/DoctorInfo/0926"
+    ],
+    "experience": "　",
+    "recommender": "李如梅",
+    "verified": true,
+    "verifiedNote": "已核實-1131019彥宇備註"
+  },
+  {
+    "id": "rec-079",
+    "category": "doctor",
+    "audience": "all",
+    "region": "桃園市",
+    "hospital": "林口長庚醫院",
+    "doctorOrName": "梁歆宜",
+    "urls": [
+      "https://cghdpt.cgmh.org.tw/branch/hel/doctor/detail/5142"
+    ],
+    "experience": "看診很有耐心,常看到很晚, 不好掛號",
+    "recommender": "BABY HOME 討論區",
+    "verified": true,
+    "verifiedNote": "已核實-1131019彥宇備註"
+  },
+  {
+    "id": "rec-080",
+    "category": "doctor",
+    "audience": "child",
+    "region": "桃園市",
+    "hospital": "桃園療養院",
+    "doctorOrName": "陳質采",
+    "urls": [],
+    "experience": "看診仔細，很受小朋友歡迎。\n\n1140303日更新，感謝提供意見與回饋~\n「桃療陳質采醫師還沒有退休，目前只看舊病患，如果要掛號，需打電話到桃療青少年精神科報到室，分機2216請報到室人工掛號，可能這些病患看完她就真的退休了」",
+    "recommender": "李如梅",
+    "verified": true,
+    "verifiedNote": "陳錦宏醫師也大力推薦喔-原備註。\n1131019彥宇註記-質采醫師是非常厲害的醫師，我在進行兒少相關工作時很仰賴她，有許多孩子都是由她診療，是至關重要的人物。但目前應該是已經退休狀態。我網路上找不太到怎麼掛號...…。\n1140303日更新，感謝提供意見與回饋~\n「桃療陳質采醫師還沒有退休，目前只看舊病患，如果要掛號，需打電話到桃療青少年精神科報到室，分機2216請報到室人工掛號，可能這些病患看完她就真的退休了」"
+  },
+  {
+    "id": "rec-081",
+    "category": "other",
+    "audience": "all",
+    "region": "桃園市",
+    "hospital": "迎旭診所 / 台齡身心診所",
+    "doctorOrName": "陳麗卿",
+    "urls": [],
+    "experience": "新竹區精神科方面(特別是過動兒專長)的前兩把交椅，有跟醫師們聊過，它們說全新竹市資歷最深的幾個，就是陳麗卿和林正修(精神科醫師反正不多XD)但是非常難掛到號",
+    "recommender": "賴正瑋",
+    "verified": true,
+    "verifiedNote": "原台大新竹分院醫師。原推荐者推薦桃園區，排查發現也有在新竹縣，可參考。-1131010彥宇備註"
+  },
+  {
+    "id": "rec-082",
+    "category": "doctor",
+    "audience": "child",
+    "region": "桃園市",
+    "hospital": "聯新國際醫療壢新醫院",
+    "doctorOrName": "林博",
+    "urls": [
+      "https://www.landseedhospital.com.tw/tw/team/team_detail/%E7%B2%BE%E7%A5%9E%E7%A7%91%E8%BA%AB%E5%BF%83%E7%97%87%E9%96%80%E8%A8%BA/%E6%9E%97%E5%8D%9A"
+    ],
+    "experience": "兒子在苗栗看了快二年了，林醫師希望家長可以常和醫師討論小孩的狀況，對孩子的行為提出有效的改善方法（行為治療），若家長有問題，醫師也會一一的回答，林博醫師１０７年８月起，林醫師會改到桃園的壢新醫院服務，從醫師那裡學到許多方法來教ADHD的孩子。",
+    "recommender": "呂蓓蓓",
+    "verified": true,
+    "verifiedNote": "已確認-1131010彥宇備註"
+  },
+  {
+    "id": "rec-083",
+    "category": "doctor",
+    "audience": "child",
+    "region": "苗栗縣市",
+    "hospital": "吳四維診所",
+    "doctorOrName": "吳四維",
+    "urls": [
+      "https://g.co/kgs/LStjB15"
+    ],
+    "experience": "吳醫生原本在頭份為恭醫院看診，是頭份地區兒童精神科權威，在吳醫生自行開業前，曾經看吳醫生的診等到半夜11點多，吳醫生對於兒童精神非常有研究，看診時會著重於與孩子對話，而非單方面聽家長陳述。",
+    "recommender": "佺",
+    "verified": true,
+    "verifiedNote": "已確認-1131010彥宇備註"
+  },
+  {
+    "id": "rec-084",
+    "category": "doctor",
+    "audience": "all",
+    "region": "苗栗縣市",
+    "hospital": "為恭醫院",
+    "doctorOrName": "梁珪瑜",
+    "urls": [
+      "https://www.weigong.org.tw/CMUHPagesDetail/%E7%B6%B2%E8%B7%AF%E6%8E%9B%E8%99%9F%E5%AD%90%E9%A0%81%E9%9D%A2/%E4%B8%80%E8%88%AC%E7%B2%BE%E7%A5%9E%E7%A7%91(%E5%88%9D%E8%A8%BA)"
+    ],
+    "experience": "醫生雖然主要專長是看老人醫學，但以前是研究孩童學習，所以都有看診，醫生非常和藹，親切。",
+    "recommender": "佺小妞",
+    "verified": true,
+    "verifiedNote": "該醫師為老年精神科主任，但一般精神科也有看診。另該醫師於馬大元診所 有看診。(新竹市光復路一段544巷36號)-1131010彥宇備註"
+  },
+  {
+    "id": "rec-085",
+    "category": "doctor",
+    "audience": "all",
+    "region": "屏東縣",
+    "hospital": "衛生福利部屏東醫院",
+    "doctorOrName": "林懷道",
+    "urls": [
+      "https://netreg.pntn.mohw.gov.tw/OINetReg.WebRwd/Reg/DoctorCalendar?DrId=1324"
+    ],
+    "experience": "林懷道醫師看診詳細,為人和善,細心耐心,講解病情,十分專業",
+    "verified": true,
+    "verifiedNote": "推薦人遺失。-1131010彥宇備註"
+  },
+  {
+    "id": "rec-086",
+    "category": "doctor",
+    "audience": "all",
+    "region": "南投縣",
+    "hospital": "佑民醫療社團法人佑民醫院",
+    "doctorOrName": "王雅甄",
+    "urls": [
+      "https://web.yumin.com.tw/OReg/OpoDoctorsVisitListPage?sectcategory=%E8%BA%AB%E5%BF%83%E9%86%AB%E5%AD%B8%E7%A7%91&sectid=500&sectname=%E8%BA%AB%E5%BF%83%E7%A7%91&showcd=N"
+    ],
+    "experience": "　",
+    "recommender": "蔡佳芳",
+    "verified": true,
+    "verifiedNote": "原推荐醫院-草屯療養院社區中心-1131010彥宇備註"
+  },
+  {
+    "id": "rec-087",
+    "category": "doctor",
+    "audience": "child",
+    "region": "南投縣",
+    "hospital": "埔里基督教醫院",
+    "doctorOrName": "趙若梅",
+    "urls": [
+      "https://www.pch.org.tw/department_doctor.php?depid=13&id=113"
+    ],
+    "experience": "不只是兒童心智科醫師,而且是薩提爾的講師，",
+    "verified": true,
+    "verifiedNote": "原推薦人遺失-1131010彥宇備註"
+  },
+  {
+    "id": "rec-088",
+    "category": "doctor",
+    "audience": "all",
+    "region": "花蓮縣",
+    "hospital": "同心診所",
+    "doctorOrName": "王春惠",
+    "urls": [
+      "https://g.co/kgs/371uCjt"
+    ],
+    "experience": "她是位非常有耐心的好醫生，兒子每回看診都會跟醫生聊內心困擾的事，她也是慈濟醫院精神科主治醫生，尤其在用藥方面很小心，目前我兒小六了，每次回診都會跟醫生討論自己用藥的感受與心事。",
+    "recommender": "洪至韻",
+    "verified": true,
+    "verifiedNote": "同心診所資料較難查詢，但有找到王春惠醫師自113年7月13日起，於台北市的心禾診所(週六)提供兒童青少年之精神科門診服務。-1131010彥宇備註"
+  },
+  {
+    "id": "rec-089",
+    "category": "doctor",
+    "audience": "all",
+    "region": "宜蘭縣",
+    "hospital": "五餅二魚身心科診所",
+    "doctorOrName": "吳俊漢",
+    "urls": [
+      "https://g.co/kgs/cL3sGCN"
+    ],
+    "experience": "我是今年才在這邊看的，但經過這幾個月的接觸下來，比我之前在宜蘭遇到的身心科都更適合ADHD，相當有耐心的評估、了解狀況，每個看診的時間比較長，可以比較有系統的分享與調整用藥。",
+    "recommender": "謙謙",
+    "verified": true,
+    "verifiedNote": "已核實-1131010彥宇備註"
+  },
+  {
+    "id": "rec-090",
+    "category": "other",
+    "audience": "all",
+    "region": "宜蘭縣",
+    "hospital": "羅東平和身心診所",
+    "doctorOrName": "陳建州",
+    "urls": [
+      "https://g.co/kgs/9u3AXFA"
+    ],
+    "experience": "兒童青少年專科醫師. 有朋友成人去看很有耐心.\n  由於宜蘭醫師不多. 如要找診所可以選擇",
+    "recommender": "黃瑞佳",
+    "verified": true,
+    "verifiedNote": "已經核實，推薦成人-1131008彥宇備註"
+  },
+  {
+    "id": "rec-091",
+    "category": "other",
+    "audience": "all",
+    "region": "臺南市",
+    "hospital": "以恩身心科診所",
+    "doctorOrName": "范家彰",
+    "urls": [],
+    "experience": "台中家扶中心推建",
+    "recommender": "高銘",
+    "verified": true,
+    "verifiedNote": "原備註：前中國附醫醫師。-1131008彥宇備註以恩診所查無資料，故暫不推薦。"
+  },
+  {
+    "id": "rec-092",
+    "category": "doctor",
+    "audience": "all",
+    "region": "臺南市",
+    "hospital": "衛生福利部嘉南療養院",
+    "doctorOrName": "李冠瑩",
+    "urls": [
+      "https://webreg.cnpc.gov.tw/OINetReg.WebRwd/Reg/DoctorCalendar?DrId=0613"
+    ],
+    "experience": "　",
+    "recommender": "呂晴天",
+    "verified": true,
+    "verifiedNote": "已核實-1131008彥宇備註"
+  },
+  {
+    "id": "rec-093",
+    "category": "doctor",
+    "audience": "all",
+    "region": "臺南市",
+    "hospital": "奇美醫院樹林院區",
+    "doctorOrName": "林健禾",
+    "urls": [
+      "http://sub.chimei.org.tw/57790/index.php/members/members01/33-members-list-01/38-chien-ho-lin"
+    ],
+    "experience": "光看一個醫師願意去念特教碩博士, 這一點就讓我感動.\n  網路上看過很多他好的文章.",
+    "recommender": "黃瑞佳",
+    "verified": true,
+    "verifiedNote": "該醫師有特教背景，以及相關文章，供家長參考。-1131008彥宇備註"
+  },
+  {
+    "id": "rec-094",
+    "category": "doctor",
+    "audience": "all",
+    "region": "臺南市",
+    "hospital": "麻大新樓醫院",
+    "doctorOrName": "黃韋哲",
+    "urls": [
+      "https://www.sinlau.org.tw/times_dept.asp?da=2&num=50"
+    ],
+    "experience": "麻豆新樓黃韋哲醫生，醫生人很好有耐心",
+    "recommender": "莊惠美",
+    "verified": true,
+    "verifiedNote": "已檢核完畢-1131008彥宇備註"
+  },
+  {
+    "id": "rec-095",
+    "category": "other",
+    "audience": "all",
+    "region": "臺南市",
+    "hospital": "成大附醫",
+    "doctorOrName": "陳永榮",
+    "urls": [
+      "https://tandem.hosp.ncku.edu.tw/Tandem/DocRegTimeUI.aspx?Lang=&skv=%2fUOk0negQqyN%2f4gxXAbKlw%3d%3d"
+    ],
+    "experience": "　",
+    "recommender": "YR Chen",
+    "verified": true,
+    "verifiedNote": "家長或成人ADHD推薦，但未有相關推薦訊息。就診科目為小兒神經科，目前可確認該醫師確實在成大有小兒神經科門診，供家長參考。-1131005彥宇備註"
+  },
+  {
+    "id": "rec-096",
+    "category": "doctor",
+    "audience": "all",
+    "region": "臺南市",
+    "hospital": "誼仁診所",
+    "doctorOrName": "李姿誼",
+    "urls": [
+      "https://www.facebook.com/yijenclinic?locale=zh_CN"
+    ],
+    "experience": "很有耐心. ",
+    "recommender": "薛晴方/黃郁銘",
+    "verified": true,
+    "verifiedNote": "原推荐醫院為成大附醫，但經目前更新核實，查無李姿誼門診資訊，故改為較明確之診所資訊。-1131005彥宇備註"
+  },
+  {
+    "id": "rec-097",
+    "category": "doctor",
+    "audience": "child",
+    "region": "臺南市",
+    "hospital": "心樂活診所 / 成大附醫",
+    "doctorOrName": "紀美宏",
+    "urls": [
+      "https://mind-yoho.com/medical-team/doctor/"
+    ],
+    "experience": "女醫師，\n  溫和，看診過程感覺不會讓人感覺壓力，小孩在診間也很自在(有玩具)",
+    "recommender": "Sheauchii Chen",
+    "verified": true,
+    "verifiedNote": "於兩處看診，已核實可參考-1131005彥宇備註"
+  },
+  {
+    "id": "rec-098",
+    "category": "doctor",
+    "audience": "all",
+    "region": "臺南市",
+    "hospital": "台灣台南市立醫院",
+    "doctorOrName": "胡慧芳",
+    "urls": [
+      "https://www.tmh.org.tw/tmh2016/RegCal.aspx?Key=aDVodTZ1L011YzAyNG9DMHBrNlN6dz09"
+    ],
+    "experience": "胡醫師也是正念的督導. 常於正念.",
+    "recommender": "Wei Hsu",
+    "verified": true,
+    "verifiedNote": "已核實可參考-1131005彥宇備註"
+  },
+  {
+    "id": "rec-099",
+    "category": "doctor",
+    "audience": "adult",
+    "region": "臺南市",
+    "hospital": "奇美醫院樹林院區",
+    "doctorOrName": "黃隆正",
+    "urls": [
+      "http://sub.chimei.org.tw/57790/index.php/members/members01/33-members-list-01/44-%E9%BB%83%E9%9A%86%E6%AD%A3%E4%B8%BB%E4%BB%BB"
+    ],
+    "experience": "國內率先開辦成人ADHD特別門診，呼籲醫界重視成人ADHD(2014，中時)，在門診過程中，自己若有任何疑問都會給予意見",
+    "recommender": "Ju Fun",
+    "verified": true,
+    "verifiedNote": "原推荐者備註：雖然查詢的資料還甚少，但他也是位國內研究ADHD醫師之一。\n\n備註：\n有多筆推薦可參考。\n少數直接標榜看16歲以上、成年ADHD的醫師，建議成A可考慮。\n• 1.每週五上午黃隆正主任--「成人ADHD特別門診」，針對年齡16歲以上者；及「rTMS特別門診(重複經顱磁刺激特別門診」。\n• 看診地點:奇美醫院樹林院區\n• 2.「網路成癮防治門診-每週一下午及每週三下午」\n• 看診地點：奇美醫院樹林院區\n• 3.「網路成癮防治門診-每週五上午」\n• 看診地點:奇美醫院\n已核實可參考-1131005彥宇備註"
+  },
+  {
+    "id": "rec-100",
+    "category": "other",
+    "audience": "all",
+    "region": "台北市",
+    "hospital": "夏凱納生活診所",
+    "doctorOrName": "劉鴻徽",
+    "urls": [
+      "https://g.co/kgs/v4gFQyt"
+    ],
+    "experience": "醫生\n  人非常溫和有耐性，願意傾聽，也會回應病人的疑惑，說話也很中性",
+    "recommender": "JJ CIN",
+    "verified": true,
+    "verifiedNote": "已核實-1131005彥宇備註"
+  },
+  {
+    "id": "rec-101",
+    "category": "doctor",
+    "audience": "adult",
+    "region": "台北市",
+    "hospital": "臺北市立萬芳醫院",
+    "doctorOrName": "張勝傑",
+    "urls": [
+      "https://old.wanfang.gov.tw/p3_register_e3.aspx?depttype=B&deptcode=3600&doccode=64961"
+    ],
+    "experience": "我是成人去看，會一個問題一個問題問最近狀況；當又要重大事情時，會關心你，問你問題，幫助你釐清思緒。",
+    "recommender": "賴品妤(黃瑞佳代填)",
+    "verified": true,
+    "verifiedNote": "原推薦備註該醫師在雙和醫院亦有門診。本次僅查核萬芳醫院。-1131005彥宇備註"
+  },
+  {
+    "id": "rec-102",
+    "category": "doctor",
+    "audience": "all",
+    "region": "台北市",
+    "hospital": "台北馬階醫院",
+    "doctorOrName": "劉惠青",
+    "urls": [
+      "https://www.mmh.org.tw/register_single_doctor.php?depid=21&did=602&area=tp"
+    ],
+    "experience": "　",
+    "verified": true,
+    "verifiedNote": "已核實-1131005彥宇備註"
+  },
+  {
+    "id": "rec-103",
+    "category": "doctor",
+    "audience": "all",
+    "region": "台北市",
+    "hospital": "新佑泉診所",
+    "doctorOrName": "葉佐偉",
+    "urls": [
+      "http://www.wellspsy.com.tw/"
+    ],
+    "experience": "PTT網友心聲:他是專門看兒童跟青少年的 雖然成人也非常的多\n  但是我覺得他對於青少年的問題真 的很有研究 他可以體諒你的家庭 你的爸媽 你的老師 偶而跟你一起幹譙他們 XD",
+    "recommender": "陳錦宏醫師",
+    "verified": true,
+    "verifiedNote": "已核實-1131005彥宇備註"
+  },
+  {
+    "id": "rec-104",
+    "category": "doctor",
+    "audience": "all",
+    "region": "台北市",
+    "hospital": "台北市立聯合醫院陽明分院",
+    "doctorOrName": "楊逸鴻",
+    "urls": [
+      "https://webreg.tpech.gov.tw/RegOnline1_2.aspx?ZCode=M&DeptCode=1300&deptname=%e7%b2%be%e7%a5%9e%e7%a7%91"
+    ],
+    "experience": "個人看了兩年多了~ 我的症狀:是位妥瑞兒~ 併有過動症 強迫症\n  睡眠障礙 閱讀障礙 情緒障礙 擬身體化症 看了之後大幅改善!! 希望對大家有幫助~ 謝謝^\"^",
+    "recommender": "劉有哲",
+    "verified": true,
+    "verifiedNote": "妥瑞症互助會版主推薦。-1131005彥宇備註"
+  },
+  {
+    "id": "rec-105",
+    "category": "doctor",
+    "audience": "adult",
+    "region": "台北市",
+    "hospital": "三軍總醫院北投分院身心科 / 北辰身心醫學診所",
+    "doctorOrName": "楊立光",
+    "urls": [],
+    "experience": "成人adhd，高醫師推薦，高淑芬醫師表示成人adhd可以找楊醫師-Amanda hsu\n耐心謹慎診斷，建議方向明確，藥物處方劑量適宜~-傑克\n\n1140318 比啾推薦\n\n本來在其他醫院用心理衡鑑診斷是混合型ADHD，單純服用ADHD的藥物有效果但會造成其他情緒上的問題。但這個醫生在與我初診後，提出了我可能是躁鬱+偏ADD的狀況，所以加入治療躁鬱的藥物，在過程中可以感受到兩種藥在彼此影響，但撐過之後就明顯可以感受ADHD的藥物的效果（少了躁鬱的高度情緒起伏）\n",
+    "recommender": "Amanda hsu、傑克",
+    "verified": true,
+    "verifiedNote": "原推薦與備註修改：原推荐台大醫院，目前已查無該醫師資料。原備註：赤子心過動症總會前理事長何美華理事長推薦看成人ADHD。\n已完成驗證，該名醫師在兩處任職，家長可以選擇比較好掛號的那邊。網址更新在醫院名稱裡，直接按下去就有超連結，希望可以讓家長感覺便利。-1130929彥宇備註\n\n1140318更新夥伴 比啾 的推薦"
+  },
+  {
+    "id": "rec-106",
+    "category": "doctor",
+    "audience": "child",
+    "region": "台北市",
+    "hospital": "宇寧身心診所 / 林口長庚紀念醫院",
+    "doctorOrName": "吳佑佑",
+    "urls": [],
+    "experience": "國內兒心科名醫之一，醫生人美又溫柔，會跟孩子聊天，會聽家長及孩子說話。",
+    "recommender": "秦鳳雙",
+    "verified": true,
+    "verifiedNote": "原備註：林口長庚，聯合醫院松德院區也有少數門診。1130929日查詢林口長庚113年9月後停診，松德院區則查無該醫師掛號資訊。-1130929彥宇備註"
+  },
+  {
+    "id": "rec-107",
+    "category": "doctor",
+    "audience": "child",
+    "region": "台北市",
+    "hospital": "心禾診所",
+    "doctorOrName": "林亮吟",
+    "urls": [],
+    "experience": "國內研究ADHD名醫之一，會跟孩子聊天。",
+    "recommender": "吳迺慧",
+    "verified": true,
+    "verifiedNote": "原備註及推薦者著名該醫師於聯合醫院松德院區有看診，1130929日查詢已無該名醫師掛號資訊。-1130929彥宇備註"
+  },
+  {
+    "id": "rec-108",
+    "category": "doctor",
+    "audience": "child",
+    "region": "台北市",
+    "hospital": "台北市立關渡醫院 / 臺北榮民總醫院精神部",
+    "doctorOrName": "劉弘仁",
+    "urls": [],
+    "experience": "對驚慌的家長超有耐心，願意陪伴半小時以上，對孩子也是正向鼓勵，極有愛心及醫德的好醫生，大推！！！",
+    "recommender": "Amanda Wu",
+    "verified": true,
+    "verifiedNote": "已完成驗證，該名醫師在兩處任職，家長可以選擇比較好掛號的那邊。網址更新在醫院名稱裡，直接按下去就有超連結，希望可以讓家長感覺便利。-1130929彥宇備註"
+  },
+  {
+    "id": "rec-109",
+    "category": "doctor",
+    "audience": "child",
+    "region": "台北市",
+    "hospital": "遠東聯合診所 / 黃雅芬兒童心智診所",
+    "doctorOrName": "黃雅芬",
+    "urls": [
+      "https://www.xn--eh1ao52bmzf.tw/index-2_staff_Dr_Huang.html"
+    ],
+    "experience": "會跟小孩聊，會幫小孩備畫册和筆",
+    "recommender": "台灣ADHD(注意力不足過動症)交流園地(家長匿名推薦)",
+    "verified": true,
+    "verifiedNote": "自費黃雅芬兒童心智診所。\n黃醫師在兩處任職，診所部分是全自費診所，適合有經濟能力並需要快速得到幫助的家長-1130929彥宇備註"
+  },
+  {
+    "id": "rec-110",
+    "category": "doctor",
+    "audience": "all",
+    "region": "台北市",
+    "hospital": "國立臺灣大學醫學院附設醫院",
+    "doctorOrName": "高淑芬",
+    "urls": [
+      "https://reg.ntuh.gov.tw/webadministration/DoctorServiceQueryByDrName.aspx?HospCode=T0&QueryName=%E9%AB%98%E6%B7%91%E8%8A%AC"
+    ],
+    "experience": "目前不接受新病人",
+    "recommender": "秦鳳雙/Amanda hsu",
+    "verified": true,
+    "verifiedNote": "僅接受初診，且113年的診已經全數停診。-1130929彥宇備註"
+  },
+  {
+    "id": "rec-111",
+    "category": "other",
+    "audience": "child",
+    "region": "台北市",
+    "hospital": "臺北榮民總醫院",
+    "doctorOrName": "陳牧宏",
+    "urls": [
+      "https://www.vghtpe.gov.tw/Index.action"
+    ],
+    "experience": "很專業. 很會找話跟孩子聊天, 對孩子很有耐心,\n  門診時間也很願意開導家長, \n    讓家長理解小孩狀況, 且會跟家長討論治療方向, 非開藥為主的醫生\n    會讓孩子家長了解現況.並給予家長方向\n\n榮總兒童心理科的醫生都是精神科額外在經過訓練的醫生,\n  在adhd 方面榮總醫師我覺得算是很專業\n    若是第一次家長沒有方向的我會推薦去榮總\n    避免走很多的冤枉路",
+    "recommender": "sophia lee",
+    "verified": true,
+    "verifiedNote": "原備註：榮總兒童心理科的醫生都是精神科額外在經過訓練的醫生,\n  在adhd 方面榮總醫師我覺得算是很專業\n    若是第一次家長沒有方向的我會推薦去榮總\n    避免走很多的冤枉路\n\n已核實-1131104彥宇備註"
+  },
+  {
+    "id": "rec-112",
+    "category": "doctor",
+    "audience": "all",
+    "region": "臺中市",
+    "hospital": "大里仁愛醫院 / 嘉義長庚紀念醫院",
+    "doctorOrName": "陳錦宏",
+    "urls": [
+      "https://cghdpt.cgmh.org.tw/branch/jia"
+    ],
+    "experience": "　",
+    "recommender": "黃瑞佳",
+    "verified": true,
+    "verifiedNote": "新病人可能需要醫師幫忙掛."
+  },
+  {
+    "id": "rec-113",
+    "category": "doctor",
+    "audience": "child",
+    "region": "臺中市",
+    "hospital": "衛生福利部臺中醫院",
+    "doctorOrName": "章秉純",
+    "urls": [
+      "https://www03.taic.mohw.gov.tw/OINetReg.WebRwd/Reg/Dept"
+    ],
+    "experience": "聽過他與青少年的對話，真的是一位很棒有耐心與技巧的兒青科醫師。",
+    "recommender": "tzuling\n  huang",
+    "verified": true,
+    "verifiedNote": "原北榮醫師。衛生福利部臺中醫院有精神科及兒童青少年精神科，精神科需16歲以上才可掛號。目前查詢兒童精神科通常是掛號額滿狀態，但精神科比較好掛，因此成人ADHD可考慮。-1130929彥宇備註"
+  },
+  {
+    "id": "rec-114",
+    "category": "other",
+    "audience": "all",
+    "region": "臺中市",
+    "hospital": "新活力身心醫學診所",
+    "doctorOrName": "吳元欽",
+    "urls": [
+      "https://g.co/kgs/aZ3C7jv"
+    ],
+    "experience": "　",
+    "recommender": "Rios Tsai",
+    "verified": true,
+    "verifiedNote": "已確認-1130929彥宇備註"
+  },
+  {
+    "id": "rec-115",
+    "category": "other",
+    "audience": "all",
+    "region": "臺中市",
+    "hospital": "佳樂身心診所",
+    "doctorOrName": "蔡佳叡",
+    "urls": [
+      "https://cheer-clinic.com/"
+    ],
+    "experience": "年輕新一代的身心科醫師.\n  心動家族理事",
+    "recommender": "黃瑞佳",
+    "verified": true,
+    "verifiedNote": "已確認-1130929彥宇備註"
+  },
+  {
+    "id": "rec-116",
+    "category": "doctor",
+    "audience": "child",
+    "region": "臺中市",
+    "hospital": "中山醫學大學附設醫院",
+    "doctorOrName": "朱柏全",
+    "urls": [
+      "https://www.csh.org.tw/"
+    ],
+    "experience": "家長推薦，問診有耐心",
+    "recommender": "魏良各",
+    "verified": true,
+    "verifiedNote": "已確認-1130929彥宇備註"
+  },
+  {
+    "id": "rec-117",
+    "category": "other",
+    "audience": "child",
+    "region": "臺中市",
+    "hospital": "心森林身心診所",
+    "doctorOrName": "蕭亦伶",
+    "urls": [
+      "https://www.mindforest.com.tw/"
+    ],
+    "experience": "耐心的女醫師.\n也常在台中心動家族演講. 社團媽媽推",
+    "recommender": "黃瑞佳/王姝尹",
+    "verified": true,
+    "verifiedNote": "已確認-1130929彥宇備註"
+  },
+  {
+    "id": "rec-118",
+    "category": "doctor",
+    "audience": "all",
+    "region": "臺中市",
+    "hospital": "衛生福利部臺中醫院",
+    "doctorOrName": "蔡禮后",
+    "urls": [
+      "https://www03.taic.mohw.gov.tw/OINetReg.WebRwd/Reg/Dept"
+    ],
+    "experience": "很有耐心且細心問診，也讓孩子認識ADHD,讓我小孩悅納自己狀況，且評估後很尊重家長感受及提供良好建議供參考",
+    "recommender": "台灣ADHD(注意力不足過動症)交流園地(家長匿名推薦)",
+    "verified": true,
+    "verifiedNote": "衛生福利部臺中醫院有精神科及兒童青少年精神科，精神科需16歲以上才可掛號。目前查詢兒童精神科通常是掛號額滿狀態，但精神科比較好掛，因此成人ADHD可考慮。-1130929彥宇備註"
+  },
+  {
+    "id": "rec-119",
+    "category": "doctor",
+    "audience": "child",
+    "region": "臺中市",
+    "hospital": "中山醫學大學附設醫院",
+    "doctorOrName": "廖尹鐸",
+    "urls": [
+      "https://www.csh.org.tw/"
+    ],
+    "experience": "陳錦宏醫師推薦，年輕、英俊、細心，能與孩子交心。可以成為ADHD孩子的哥兒們",
+    "recommender": "魏良各",
+    "verified": true,
+    "verifiedNote": "已確認-1130929彥宇備註"
+  },
+  {
+    "id": "rec-120",
+    "category": "doctor",
+    "audience": "child",
+    "region": "新竹縣市",
+    "hospital": "中國醫藥大學新竹附設醫院",
+    "doctorOrName": "林洪異精神科醫師",
+    "urls": [],
+    "experience": "願意先聽完孩子說，說完，機會教育，再最後問家長有無要補充，並確認孩子家長補充內容有出入或有想法之處，做家庭討論與溝通，並給予調整建議。",
+    "recommender": "張00",
+    "verified": true,
+    "verifiedNote": "115年度最新版回報驗證（2026-02-23）",
+    "updatedAt": "2026-02-23"
+  },
+  {
+    "id": "rec-121",
+    "category": "doctor",
+    "audience": "all",
+    "region": "臺中市",
+    "hospital": "台安醫院（進化院區）",
+    "doctorOrName": "台安醫院（進化院區）陳錦宏醫師",
+    "urls": [],
+    "experience": "醫師很有耐心（心動家族推動者）",
+    "recommender": "Windy",
+    "verified": true,
+    "verifiedNote": "115年度最新版回報驗證（2026-02-23）",
+    "updatedAt": "2026-02-23"
+  },
+  {
+    "id": "rec-122",
+    "category": "therapy",
+    "audience": "child",
+    "region": "新北市",
+    "hospital": "米露谷心理諮商所（中和所）",
+    "doctorOrName": "吳翠殷臨床心理師",
+    "urls": [
+      "https://www.mirukupsy.com/3"
+    ],
+    "experience": "能精準的抓住自閉症光譜孩子的心理卡關的地方，也會一次次帶領孩子們突破自己的舒適圈。",
+    "recommender": "Tracy",
+    "verified": true,
+    "verifiedNote": "115年度最新版回報驗證（2026-02-23）",
+    "updatedAt": "2026-02-23"
+  },
+  {
+    "id": "rec-123",
+    "category": "doctor",
+    "audience": "child",
+    "region": "宜蘭縣",
+    "hospital": "羅東聖母醫院",
+    "doctorOrName": "廖子賢主治醫師- 精神科",
+    "urls": [
+      "https://www.smh.org.tw/?aid=82&pid=83&page_name=detail&iid=252"
+    ],
+    "experience": "對孩子很有耐心、愛心、也會問的很詳細",
+    "recommender": "慶齡",
+    "verified": true,
+    "verifiedNote": "115年度最新版回報驗證（2026-02-23）",
+    "updatedAt": "2026-02-23"
+  },
+  {
+    "id": "rec-124",
+    "category": "doctor",
+    "audience": "child",
+    "region": "新竹縣市",
+    "hospital": "能清安欣診所",
+    "doctorOrName": "余正元醫師",
+    "urls": [
+      "https://www.provenceclinic.com.tw/clinic.htm"
+    ],
+    "experience": "醫師具高度同理心，能耐心與家屬討論病情進行藥物調整，並給予照護建議。",
+    "recommender": "捨眾",
+    "verified": true,
+    "verifiedNote": "115年度最新版回報驗證（2026-02-23）",
+    "updatedAt": "2026-02-23"
+  },
+  {
+    "id": "rec-125",
+    "category": "doctor",
+    "audience": "child",
+    "region": "台北市",
+    "hospital": "台大",
+    "doctorOrName": "高淑芬",
+    "urls": [],
+    "experience": "願意陪孩子聊，以孩子的需求調整用藥",
+    "recommender": "路卡",
+    "verified": true,
+    "verifiedNote": "115年度最新版回報驗證（2026-02-23）",
+    "updatedAt": "2026-02-23"
+  },
+  {
+    "id": "rec-126",
+    "category": "doctor",
+    "audience": "child",
+    "region": "台北市",
+    "hospital": "台北榮總",
+    "doctorOrName": "徐如維主任",
+    "urls": [],
+    "experience": "徐如維主任溫柔的言語與眼神，聽得懂家長所說的話，判斷明確明快，回應家長摘要且明確，可再詢問其他問題",
+    "recommender": "yaya",
+    "verified": true,
+    "verifiedNote": "115年度最新版回報驗證（2026-02-24）",
+    "updatedAt": "2026-02-24"
+  },
+  {
+    "id": "rec-127",
+    "category": "other",
+    "audience": "all",
+    "region": "臺南市",
+    "hospital": "成大醫院、心樂活診所/醫師",
+    "doctorOrName": "紀美紅",
+    "urls": [
+      "https://www.mindlohas.com.tw/doctor/%E5%BF%83%E6%A8%82%E6%B4%BB/detail/l1EP9V"
+    ],
+    "experience": "資料庫中的紀美紅醫師為誤植，應為紀美宏才對。",
+    "recommender": "Silvia_K",
+    "verified": true,
+    "verifiedNote": "115年度最新版回報驗證（2026-02-24）",
+    "updatedAt": "2026-02-24"
+  },
+  {
+    "id": "rec-128",
+    "category": "doctor",
+    "audience": "all",
+    "region": "台北市",
+    "hospital": "亞東醫院",
+    "doctorOrName": "林育如",
+    "urls": [],
+    "experience": "精神科醫師",
+    "recommender": "深藍海豚",
+    "verified": true,
+    "verifiedNote": "115年度最新版回報驗證（2026-02-24）",
+    "updatedAt": "2026-02-24"
+  },
+  {
+    "id": "rec-129",
+    "category": "doctor",
+    "audience": "all",
+    "region": "台北市",
+    "hospital": "沐慕身心診所",
+    "doctorOrName": "陳宗杰醫師",
+    "urls": [
+      "https://www.lumosclinic.com.tw/"
+    ],
+    "experience": "陳醫師問診有耐心，溫和傾聽且鼓勵與肯定，對於成年後確診的ADHD討論用藥與身心狀況都很推薦。",
+    "recommender": "鏡子",
+    "verified": true,
+    "verifiedNote": "115年度最新版回報驗證（2026-02-25）",
+    "updatedAt": "2026-02-25"
+  },
+  {
+    "id": "rec-130",
+    "category": "other",
+    "audience": "child",
+    "region": "臺中市",
+    "hospital": "中國醫",
+    "doctorOrName": "廖尹鐸醫師（異動）",
+    "urls": [],
+    "experience": "目前廖醫師全面停診，不知道什麼時候會恢復",
+    "recommender": "Luca",
+    "verified": true,
+    "verifiedNote": "115年度最新版回報驗證（2026-02-25）",
+    "updatedAt": "2026-02-25"
+  },
+  {
+    "id": "rec-131",
+    "category": "doctor",
+    "audience": "child",
+    "region": "台北市",
+    "hospital": "臺北市立聯合醫院中興院區兒童發展評估療育中心 何淑賢醫生",
+    "doctorOrName": "何淑賢",
+    "urls": [],
+    "experience": "醫師很有耐心，幾乎每次問診都差不多在20分鐘，甚至醫生願意留email，若遇到緊急狀況寫信給醫生也很快能收到回信。",
+    "recommender": "kt",
+    "verified": true,
+    "verifiedNote": "115年度最新版回報驗證（2026-03-06）",
+    "updatedAt": "2026-03-06"
+  },
+  {
+    "id": "rec-132",
+    "category": "doctor",
+    "audience": "child",
+    "region": "臺南市",
+    "hospital": "台南嘉南療養院",
+    "doctorOrName": "李冠瑩，謝建宏",
+    "urls": [],
+    "experience": "有專業的心理資商師輔導",
+    "recommender": "小米",
+    "verified": true,
+    "verifiedNote": "115年度最新版回報驗證（2026-03-06）",
+    "updatedAt": "2026-03-06"
+  },
+  {
+    "id": "rec-133",
+    "category": "therapy",
+    "audience": "adult",
+    "region": "台北市",
+    "hospital": "初色心理治療所",
+    "doctorOrName": "陳勁秀 心理師",
+    "urls": [],
+    "experience": "除了諮商外，同時也是ADHD生活教練",
+    "recommender": "milk",
+    "verified": true,
+    "verifiedNote": "115年度最新版回報驗證（2026-03-08）",
+    "updatedAt": "2026-03-08"
+  },
+  {
+    "id": "rec-134",
+    "category": "therapy",
+    "audience": "all",
+    "region": "台北市",
+    "hospital": "道南心理治療所",
+    "doctorOrName": "陳婉真/道南心理治療所所長",
+    "urls": [
+      "https://daonan.com.tw/index.aspx"
+    ],
+    "experience": "由政大心諮所新設立的道南心理治療所，所長陳婉真教授擁有多年臨床心理師經驗，非常溫柔、親切有耐心，每次諮商都能讓我放鬆、暢所欲言，每次諮商結束都像充電完畢，推薦！",
+    "recommender": "Rosie",
+    "verified": true,
+    "verifiedNote": "115年度最新版回報驗證（2026-03-08）",
+    "updatedAt": "2026-03-08"
+  }
+]

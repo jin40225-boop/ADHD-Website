@@ -1,0 +1,455 @@
+[
+  {
+    "id": "slot-parent-001",
+    "projectId": "parent-consult",
+    "title": "【四月場】4/18（六）10:00–11:00",
+    "startsAt": "2026-04-18T10:00:00+08:00",
+    "endsAt": "2026-04-18T11:00:00+08:00",
+    "capacity": 1,
+    "bookedCount": 1,
+    "status": "full",
+    "instructorIds": [
+      "yanyu"
+    ]
+  },
+  {
+    "id": "slot-parent-002",
+    "projectId": "parent-consult",
+    "title": "【四月場】4/18（六）11:00–12:00",
+    "startsAt": "2026-04-18T11:00:00+08:00",
+    "endsAt": "2026-04-18T12:00:00+08:00",
+    "capacity": 1,
+    "bookedCount": 1,
+    "status": "full",
+    "instructorIds": [
+      "yanyu"
+    ]
+  },
+  {
+    "id": "slot-parent-003",
+    "projectId": "parent-consult",
+    "title": "【四月場】4/18（六）12:00–12:30(特別加開)",
+    "startsAt": "2026-04-18T12:00:00+08:00",
+    "endsAt": "2026-04-18T12:30:00+08:00",
+    "capacity": 1,
+    "bookedCount": 1,
+    "status": "full",
+    "instructorIds": [
+      "yanyu"
+    ]
+  },
+  {
+    "id": "slot-parent-004",
+    "projectId": "parent-consult",
+    "title": "【五月場】5/23（六）09:00–10:00",
+    "startsAt": "2026-05-23T09:00:00+08:00",
+    "endsAt": "2026-05-23T10:00:00+08:00",
+    "capacity": 1,
+    "bookedCount": 1,
+    "status": "full",
+    "instructorIds": [
+      "yanyu"
+    ]
+  },
+  {
+    "id": "slot-parent-005",
+    "projectId": "parent-consult",
+    "title": "【五月場】5/23（六）10:00–11:00",
+    "startsAt": "2026-05-23T10:00:00+08:00",
+    "endsAt": "2026-05-23T11:00:00+08:00",
+    "capacity": 1,
+    "bookedCount": 1,
+    "status": "full",
+    "instructorIds": [
+      "yanyu"
+    ]
+  },
+  {
+    "id": "slot-parent-006",
+    "projectId": "parent-consult",
+    "title": "【五月場】5/23（六）11:00–12:00",
+    "startsAt": "2026-05-23T11:00:00+08:00",
+    "endsAt": "2026-05-23T12:00:00+08:00",
+    "capacity": 1,
+    "bookedCount": 1,
+    "status": "full",
+    "instructorIds": [
+      "yanyu"
+    ]
+  },
+  {
+    "id": "slot-parent-007",
+    "projectId": "parent-consult",
+    "title": "【六月場】6/6（六）09:00–10:00",
+    "startsAt": "2026-06-06T09:00:00+08:00",
+    "endsAt": "2026-06-06T10:00:00+08:00",
+    "capacity": 1,
+    "bookedCount": 1,
+    "status": "full",
+    "instructorIds": [
+      "yanyu"
+    ]
+  },
+  {
+    "id": "slot-parent-008",
+    "projectId": "parent-consult",
+    "title": "【六月場】6/6（六）10:00–11:00",
+    "startsAt": "2026-06-06T10:00:00+08:00",
+    "endsAt": "2026-06-06T11:00:00+08:00",
+    "capacity": 1,
+    "bookedCount": 1,
+    "status": "full",
+    "instructorIds": [
+      "yanyu"
+    ]
+  },
+  {
+    "id": "slot-parent-009",
+    "projectId": "parent-consult",
+    "title": "【六月場】6/6（六）11:00–12:00",
+    "startsAt": "2026-06-06T11:00:00+08:00",
+    "endsAt": "2026-06-06T12:00:00+08:00",
+    "capacity": 1,
+    "bookedCount": 1,
+    "status": "full",
+    "instructorIds": [
+      "yanyu"
+    ]
+  },
+  {
+    "id": "slot-nav-001",
+    "projectId": "navigator",
+    "title": "2026/05/09（六）20:00–21:00",
+    "startsAt": "2026-05-09T20:00:00+08:00",
+    "endsAt": "2026-05-09T21:00:00+08:00",
+    "capacity": 1,
+    "bookedCount": 1,
+    "status": "full",
+    "instructorIds": [
+      "yanyu",
+      "mirror"
+    ]
+  },
+  {
+    "id": "slot-nav-002",
+    "projectId": "navigator",
+    "title": "2026/05/17（日）09:00–10:00",
+    "startsAt": "2026-05-17T09:00:00+08:00",
+    "endsAt": "2026-05-17T10:00:00+08:00",
+    "capacity": 1,
+    "bookedCount": 1,
+    "status": "full",
+    "instructorIds": [
+      "yanyu",
+      "mirror"
+    ]
+  },
+  {
+    "id": "slot-nav-003",
+    "projectId": "navigator",
+    "title": "2026/06/08（一）20:00–21:00",
+    "startsAt": "2026-06-08T20:00:00+08:00",
+    "endsAt": "2026-06-08T21:00:00+08:00",
+    "capacity": 1,
+    "bookedCount": 1,
+    "status": "full",
+    "instructorIds": [
+      "yanyu",
+      "mirror"
+    ]
+  },
+  {
+    "id": "slot-nav-004",
+    "projectId": "navigator",
+    "title": "2026/06/13（六）20:00–21:00",
+    "startsAt": "2026-06-13T20:00:00+08:00",
+    "endsAt": "2026-06-13T21:00:00+08:00",
+    "capacity": 1,
+    "bookedCount": 1,
+    "status": "full",
+    "instructorIds": [
+      "yanyu",
+      "mirror"
+    ]
+  },
+  {
+    "id": "slot-nav-005",
+    "projectId": "navigator",
+    "title": "2026/06/14（日）09:00–10:00",
+    "startsAt": "2026-06-14T09:00:00+08:00",
+    "endsAt": "2026-06-14T10:00:00+08:00",
+    "capacity": 1,
+    "bookedCount": 1,
+    "status": "full",
+    "instructorIds": [
+      "yanyu",
+      "mirror"
+    ]
+  },
+  {
+    "id": "slot-nav-006",
+    "projectId": "navigator",
+    "title": "2026/06/20（六）20:00–21:00",
+    "startsAt": "2026-06-20T20:00:00+08:00",
+    "endsAt": "2026-06-20T21:00:00+08:00",
+    "capacity": 1,
+    "bookedCount": 1,
+    "status": "full",
+    "instructorIds": [
+      "yanyu",
+      "mirror"
+    ]
+  },
+  {
+    "id": "slot-nav-007",
+    "projectId": "navigator",
+    "title": "2026/07/06（一）20:00–21:00",
+    "startsAt": "2026-07-06T20:00:00+08:00",
+    "endsAt": "2026-07-06T21:00:00+08:00",
+    "capacity": 1,
+    "bookedCount": 1,
+    "status": "full",
+    "instructorIds": [
+      "yanyu",
+      "mirror"
+    ]
+  },
+  {
+    "id": "slot-nav-008",
+    "projectId": "navigator",
+    "title": "2026/07/11（六）20:00–21:00",
+    "startsAt": "2026-07-11T20:00:00+08:00",
+    "endsAt": "2026-07-11T21:00:00+08:00",
+    "capacity": 1,
+    "bookedCount": 1,
+    "status": "full",
+    "instructorIds": [
+      "yanyu",
+      "mirror"
+    ]
+  },
+  {
+    "id": "slot-nav-009",
+    "projectId": "navigator",
+    "title": "2026/07/18（六）20:00–21:00",
+    "startsAt": "2026-07-18T20:00:00+08:00",
+    "endsAt": "2026-07-18T21:00:00+08:00",
+    "capacity": 1,
+    "bookedCount": 1,
+    "status": "full",
+    "instructorIds": [
+      "yanyu",
+      "mirror"
+    ]
+  },
+  {
+    "id": "slot-nav-010",
+    "projectId": "navigator",
+    "title": "2026/08/03（一）20:00–21:00",
+    "startsAt": "2026-08-03T20:00:00+08:00",
+    "endsAt": "2026-08-03T21:00:00+08:00",
+    "capacity": 1,
+    "bookedCount": 0,
+    "status": "open",
+    "instructorIds": [
+      "yanyu",
+      "mirror"
+    ]
+  },
+  {
+    "id": "slot-nav-011",
+    "projectId": "navigator",
+    "title": "2026/08/08（六）20:00–21:00",
+    "startsAt": "2026-08-08T20:00:00+08:00",
+    "endsAt": "2026-08-08T21:00:00+08:00",
+    "capacity": 1,
+    "bookedCount": 0,
+    "status": "open",
+    "instructorIds": [
+      "yanyu",
+      "mirror"
+    ]
+  },
+  {
+    "id": "slot-nav-012",
+    "projectId": "navigator",
+    "title": "2026/08/15（六）20:00–21:00",
+    "startsAt": "2026-08-15T20:00:00+08:00",
+    "endsAt": "2026-08-15T21:00:00+08:00",
+    "capacity": 1,
+    "bookedCount": 0,
+    "status": "open",
+    "instructorIds": [
+      "yanyu",
+      "mirror"
+    ]
+  },
+  {
+    "id": "slot-nav-013",
+    "projectId": "navigator",
+    "title": "2026/09/07（一）20:00–21:00",
+    "startsAt": "2026-09-07T20:00:00+08:00",
+    "endsAt": "2026-09-07T21:00:00+08:00",
+    "capacity": 1,
+    "bookedCount": 0,
+    "status": "open",
+    "instructorIds": [
+      "yanyu",
+      "mirror"
+    ]
+  },
+  {
+    "id": "slot-nav-014",
+    "projectId": "navigator",
+    "title": "2026/09/12（六）20:00–21:00",
+    "startsAt": "2026-09-12T20:00:00+08:00",
+    "endsAt": "2026-09-12T21:00:00+08:00",
+    "capacity": 1,
+    "bookedCount": 0,
+    "status": "open",
+    "instructorIds": [
+      "yanyu",
+      "mirror"
+    ]
+  },
+  {
+    "id": "slot-nav-015",
+    "projectId": "navigator",
+    "title": "2026/09/19（六）20:00–21:00",
+    "startsAt": "2026-09-19T20:00:00+08:00",
+    "endsAt": "2026-09-19T21:00:00+08:00",
+    "capacity": 1,
+    "bookedCount": 0,
+    "status": "open",
+    "instructorIds": [
+      "yanyu",
+      "mirror"
+    ]
+  },
+  {
+    "id": "slot-nav-016",
+    "projectId": "navigator",
+    "title": "2026/10/05（一）20:00–21:00",
+    "startsAt": "2026-10-05T20:00:00+08:00",
+    "endsAt": "2026-10-05T21:00:00+08:00",
+    "capacity": 1,
+    "bookedCount": 0,
+    "status": "open",
+    "instructorIds": [
+      "yanyu",
+      "mirror"
+    ]
+  },
+  {
+    "id": "slot-nav-017",
+    "projectId": "navigator",
+    "title": "2026/10/10（六）20:00–21:00",
+    "startsAt": "2026-10-10T20:00:00+08:00",
+    "endsAt": "2026-10-10T21:00:00+08:00",
+    "capacity": 1,
+    "bookedCount": 0,
+    "status": "open",
+    "instructorIds": [
+      "yanyu",
+      "mirror"
+    ]
+  },
+  {
+    "id": "slot-nav-018",
+    "projectId": "navigator",
+    "title": "2026/10/17（六）20:00–21:00",
+    "startsAt": "2026-10-17T20:00:00+08:00",
+    "endsAt": "2026-10-17T21:00:00+08:00",
+    "capacity": 1,
+    "bookedCount": 0,
+    "status": "open",
+    "instructorIds": [
+      "yanyu",
+      "mirror"
+    ]
+  },
+  {
+    "id": "slot-nav-019",
+    "projectId": "navigator",
+    "title": "2026/11/02（一）20:00–21:00",
+    "startsAt": "2026-11-02T20:00:00+08:00",
+    "endsAt": "2026-11-02T21:00:00+08:00",
+    "capacity": 1,
+    "bookedCount": 0,
+    "status": "open",
+    "instructorIds": [
+      "yanyu",
+      "mirror"
+    ]
+  },
+  {
+    "id": "slot-nav-020",
+    "projectId": "navigator",
+    "title": "2026/11/07（六）20:00–21:00",
+    "startsAt": "2026-11-07T20:00:00+08:00",
+    "endsAt": "2026-11-07T21:00:00+08:00",
+    "capacity": 1,
+    "bookedCount": 0,
+    "status": "open",
+    "instructorIds": [
+      "yanyu",
+      "mirror"
+    ]
+  },
+  {
+    "id": "slot-nav-021",
+    "projectId": "navigator",
+    "title": "2026/11/14（六）20:00–21:00",
+    "startsAt": "2026-11-14T20:00:00+08:00",
+    "endsAt": "2026-11-14T21:00:00+08:00",
+    "capacity": 1,
+    "bookedCount": 0,
+    "status": "open",
+    "instructorIds": [
+      "yanyu",
+      "mirror"
+    ]
+  },
+  {
+    "id": "slot-nav-022",
+    "projectId": "navigator",
+    "title": "2026/12/07（一）20:00–21:00",
+    "startsAt": "2026-12-07T20:00:00+08:00",
+    "endsAt": "2026-12-07T21:00:00+08:00",
+    "capacity": 1,
+    "bookedCount": 0,
+    "status": "open",
+    "instructorIds": [
+      "yanyu",
+      "mirror"
+    ]
+  },
+  {
+    "id": "slot-nav-023",
+    "projectId": "navigator",
+    "title": "2026/12/12（六）20:00–21:00",
+    "startsAt": "2026-12-12T20:00:00+08:00",
+    "endsAt": "2026-12-12T21:00:00+08:00",
+    "capacity": 1,
+    "bookedCount": 0,
+    "status": "open",
+    "instructorIds": [
+      "yanyu",
+      "mirror"
+    ]
+  },
+  {
+    "id": "slot-nav-024",
+    "projectId": "navigator",
+    "title": "2026/12/19（六）20:00–21:00",
+    "startsAt": "2026-12-19T20:00:00+08:00",
+    "endsAt": "2026-12-19T21:00:00+08:00",
+    "capacity": 1,
+    "bookedCount": 0,
+    "status": "open",
+    "instructorIds": [
+      "yanyu",
+      "mirror"
+    ]
+  }
+]

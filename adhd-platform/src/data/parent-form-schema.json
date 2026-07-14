@@ -1,0 +1,142 @@
+{
+  "projectId": "parent-consult",
+  "fields": [
+    {
+      "key": "childName",
+      "label": "孩子姓名或代號",
+      "type": "text",
+      "required": true,
+      "helpText": "複數孩子用、填寫，例如：小蘭(姊)、小紅(弟)。以有ADHD的孩子為主要諮詢對象。"
+    },
+    {
+      "key": "parentName",
+      "label": "報名家長姓名",
+      "type": "text",
+      "required": true
+    },
+    {
+      "key": "relationship",
+      "label": "與孩子的關係",
+      "type": "select",
+      "required": true,
+      "options": [
+        "父/母",
+        "祖父母／外祖父母",
+        "親戚",
+        "主要照顧者"
+      ]
+    },
+    {
+      "key": "email",
+      "label": "電子信箱",
+      "type": "email",
+      "required": true,
+      "helpText": "將用於寄送審核結果通知信，請務必填寫正確。"
+    },
+    {
+      "key": "phone",
+      "label": "聯繫手機號碼",
+      "type": "phone",
+      "required": true
+    },
+    {
+      "key": "childGender",
+      "label": "孩子性別",
+      "type": "select",
+      "required": true,
+      "options": [
+        "男",
+        "女"
+      ]
+    },
+    {
+      "key": "childAge",
+      "label": "孩子年齡",
+      "type": "text",
+      "required": true,
+      "helpText": "複數孩子用、填寫。例如：8歲、11歲。"
+    },
+    {
+      "key": "childGrade",
+      "label": "孩子年級/就學狀況",
+      "type": "text",
+      "required": true,
+      "helpText": "幾年級/何種班級/IEP或自學等等均可填寫"
+    },
+    {
+      "key": "familyDesc",
+      "label": "家中組成描述",
+      "type": "textarea",
+      "required": true,
+      "helpText": "請簡要談談家中同住的有誰、孩子有幾個手足、排行第幾等等資訊"
+    },
+    {
+      "key": "childStatus",
+      "label": "孩子目前狀況",
+      "type": "select",
+      "required": true,
+      "options": [
+        "已確診（ADHD／ASD／其他）",
+        "疑似／評估中",
+        "尚未就醫",
+        "其他"
+      ]
+    },
+    {
+      "key": "issueDesc",
+      "label": "欲諮詢的困擾議題簡述",
+      "type": "textarea",
+      "required": true
+    },
+    {
+      "key": "preferredSlots",
+      "label": "欲報名場次與時段",
+      "type": "multiselect",
+      "required": true,
+      "options": [
+        {
+          "value": "【四月場】4/18（六）10:00–11:00",
+          "label": "【四月場】4/18（六）10:00–11:00",
+          "disabled": true,
+          "disabledLabel": "（額滿）"
+        },
+        {
+          "value": "【四月場】4/18（六）11:00–12:00",
+          "label": "【四月場】4/18（六）11:00–12:00",
+          "disabled": true,
+          "disabledLabel": "（額滿）"
+        },
+        {
+          "value": "【五月場】5/23（六）10:00–11:00",
+          "label": "【五月場】5/23（六）10:00–11:00",
+          "disabled": true,
+          "disabledLabel": "（額滿）"
+        },
+        {
+          "value": "【五月場】5/23（六）11:00–12:00",
+          "label": "【五月場} 5/23（六）11:00–12:00",
+          "disabled": true,
+          "disabledLabel": "（額滿）"
+        },
+        {
+          "value": "【六月場】6/6（六）10:00–11:00",
+          "label": "【六月場】6/6（六）10:00–11:00",
+          "disabled": true,
+          "disabledLabel": "（額滿）"
+        },
+        {
+          "value": "【六月場】6/6（六）11:00–12:00",
+          "label": "【六月場】6/6（六）11:00–12:00",
+          "disabled": true,
+          "disabledLabel": "（額滿）"
+        }
+      ]
+    },
+    {
+      "key": "note",
+      "label": "留言",
+      "type": "textarea",
+      "required": false
+    }
+  ]
+}

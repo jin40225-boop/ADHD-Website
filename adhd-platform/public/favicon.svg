@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- 品牌色占位 favicon；ANTIGRAVITY 任務 4 可替換為正式版 -->
+  <rect width="32" height="32" rx="8" fill="#FFEC8B" stroke="#5D4037" stroke-width="2"/>
+  <text x="16" y="22" font-family="sans-serif" font-size="16" font-weight="700"
+        text-anchor="middle" fill="#5D4037">A</text>
+</svg>

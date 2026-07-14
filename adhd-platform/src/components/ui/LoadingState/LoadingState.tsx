@@ -1,0 +1,2 @@
+export interface LoadingStateProps { /** Accessible loading message. */ label?:string; }
+/** Lightweight CSS-only loading state. */ export function LoadingState({label='資料載入中…'}:LoadingStateProps){return <div className="ui-loading" role="status" aria-live="polite"><div className="ui-loading__dots" aria-hidden="true"><span className="ui-loading__dot"/><span className="ui-loading__dot"/><span className="ui-loading__dot"/></div><span>{label}</span></div>}

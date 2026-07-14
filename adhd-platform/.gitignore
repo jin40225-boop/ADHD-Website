@@ -1,0 +1,32 @@
+# 依賴與建置
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# 環境變數與金鑰（00 檔第 6 節：金鑰一律走環境變數，絕不進 git）
+.env
+.env.*
+!.env.example
+
+# 資料遷移暫存（絕不進 git —— 含真實個資）
+scripts/.migration-cache/
+scripts/*.private.*
+
+# 含真實報名者個資的遷移檔（已套用至 Supabase，僅存本機備份，絕不進公開 repo）
+supabase/migrations/20260713000001_k4_notion_registrations.sql
+
+# 內部工作紀錄（含專案內部資訊與個人姓名，不進公開 repo）
+交付紀錄/
+
+# 編輯器
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+
+# 日誌
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*

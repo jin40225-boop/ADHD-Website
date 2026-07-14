@@ -1,0 +1,1 @@
+import type { RecommendationSubmission } from '@contracts/types'; export const mockSubmissions:RecommendationSubmission[]=[{id:'submission-1',type:'doctor',answers:{醫師名稱:'陳醫師',院所:'示範診所',推薦原因:'溝通清楚。'},nickname:'小樹',status:'pending',createdAt:'2026-07-11T10:00:00+08:00'}];

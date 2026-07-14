@@ -1,0 +1,1 @@
+import type { AvailabilityPoll } from '@contracts/types';export const mockPoll:AvailabilityPoll={id:'poll-1',projectId:'demo',candidateSlots:[{id:'slot-1',title:'示範時段',startsAt:'2026-07-20T19:00',endsAt:'2026-07-20T20:00'}],instructorIds:['instructor-1'],status:'open',replies:[],createdAt:'2026-07-11T00:00:00+08:00'};

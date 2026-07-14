@@ -1,0 +1,5 @@
+import { X } from 'lucide-react'; import { useEffect } from 'react';
+import type { ReactNode } from 'react';
+export interface DrawerProps { /** Shows or hides the side drawer. */ open: boolean; /** Called for overlay click and Escape. */ onClose: () => void; /** Accessible drawer title. */ title: string; /** Drawer content. */ children: ReactNode; }
+/** Right-side administrative drawer. */
+export function Drawer({ open,onClose,title,children }: DrawerProps) { useEffect(()=>{if(!open)return;const handler=(event:KeyboardEvent)=>{if(event.key==='Escape')onClose()};window.addEventListener('keydown',handler);return()=>window.removeEventListener('keydown',handler)},[open,onClose]); if(!open)return null; return <div className="ui-overlay ui-drawer-wrap" role="presentation" onMouseDown={event=>{if(event.target===event.currentTarget)onClose()}}><aside className="ui-drawer" role="dialog" aria-modal="true" aria-label={title}><header className="ui-modal__header"><strong>{title}</strong><button className="ui-icon-button" type="button" onClick={onClose} aria-label="關閉"><X /></button></header><div className="ui-modal__body">{children}</div></aside></div>; }

@@ -1,0 +1,3 @@
+import type { ReactNode } from 'react';
+export interface EmptyStateProps { /** Hand-drawn emoji illustration. */ illustration?:string; /** Main empty-state message. */ title:string; /** Supporting explanation. */ description?:string; /** Optional next action. */ action?:ReactNode; }
+/** Friendly hand-drawn style empty state. */ export function EmptyState({illustration='🧺',title,description,action}:EmptyStateProps){return <div className="ui-empty"><div className="ui-empty__illustration" aria-hidden="true">{illustration}</div><strong>{title}</strong>{description?<p>{description}</p>:null}{action}</div>}
