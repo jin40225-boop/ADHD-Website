@@ -147,6 +147,26 @@ export async function submitRegistration(input: SubmitRegistrationInput): Promis
   }
 }
 
+export interface SubmitRecommendationInput {
+  /** DB check 白名單：doctor/assessment/therapy/doctor_update/feature/correction/other */
+  type: 'doctor' | 'assessment' | 'therapy' | 'doctor_update' | 'feature' | 'correction' | 'other';
+  answers: Record<string, unknown>;
+  nickname?: string;
+  email?: string;
+}
+
+/** 公開投稿推薦資源。RLS 僅允許 status=pending 的 insert，anon 不可回讀。 */
+export async function submitRecommendationSubmission(input: SubmitRecommendationInput): Promise<void> {
+  const { error } = await db().from('recommendation_submissions').insert({
+    type: input.type,
+    answers: input.answers,
+    nickname: input.nickname || null,
+    email: input.email || null,
+    status: 'pending',
+  });
+  if (error) throw new ApiError(error.message, 'INSERT');
+}
+
 /* ============================== 後台 ============================== */
 
 export async function adminListProjects(): Promise<Project[]> {

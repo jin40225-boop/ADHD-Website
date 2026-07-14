@@ -1,12 +1,53 @@
 import { useState } from 'react';
 import { Send, AlertCircle, Heart } from 'lucide-react';
+import { isSupabaseReady } from '../../lib/supabase';
+import { submitRecommendationSubmission } from '../../lib/api';
+
+/** 表單分類 → DB type 白名單（community 不在白名單，歸入 other 並保留原值於 answers）。 */
+const CATEGORY_TO_TYPE = {
+  doctor: 'doctor',
+  assessment: 'assessment',
+  therapy: 'therapy',
+  community: 'other',
+  other: 'other',
+} as const;
 
 export default function SubmitRecommendationPage() {
   const [submitted, setSubmitted] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setSubmitted(true);
+    const form = e.currentTarget;
+    const data = new FormData(form);
+    const category = String(data.get('category') ?? 'other') as keyof typeof CATEGORY_TO_TYPE;
+    setSending(true);
+    setErrorMsg('');
+    try {
+      if (!isSupabaseReady) {
+        throw new Error('目前無法連線至資料庫，請稍後再試，或透過官方 LINE 告訴我們。');
+      }
+      await submitRecommendationSubmission({
+        type: CATEGORY_TO_TYPE[category] ?? 'other',
+        answers: {
+          region: data.get('region'),
+          category,
+          hospital: data.get('hospital'),
+          doctorOrName: data.get('doctorOrName'),
+          audience: data.get('audience'),
+          experience: data.get('experience'),
+        },
+        nickname: String(data.get('nickname') ?? '').trim() || undefined,
+        email: String(data.get('email') ?? '').trim() || undefined,
+      });
+      form.reset();
+      setSubmitted(true);
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : '送出失敗，請稍後再試。');
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -47,7 +88,7 @@ export default function SubmitRecommendationPage() {
           <form onSubmit={handleSubmit} className="space-y-4 font-medium">
             <div>
               <label className="block text-sm font-bold mb-1">所在縣市地區 *</label>
-              <select required className="w-full px-4 py-2.5 bg-[#FFFDF5] border-2 border-[#5D4037] rounded-xl">
+              <select name="region" required className="w-full px-4 py-2.5 bg-[#FFFDF5] border-2 border-[#5D4037] rounded-xl">
                 <option value="">請選擇縣市</option>
                 {['台北市','新北市','基隆市','桃園市','新竹縣市','苗栗縣市','臺中市','彰化縣市','南投縣','雲林縣','嘉義縣市','臺南市','高雄市','屏東縣','宜蘭縣','花蓮縣','臺東縣','澎湖金馬','線上/其他'].map(region => (
                   <option key={region} value={region}>{region}</option>
@@ -57,7 +98,7 @@ export default function SubmitRecommendationPage() {
 
             <div>
               <label className="block text-sm font-bold mb-1">資源分類 *</label>
-              <select required className="w-full px-4 py-2.5 bg-[#FFFDF5] border-2 border-[#5D4037] rounded-xl">
+              <select name="category" required className="w-full px-4 py-2.5 bg-[#FFFDF5] border-2 border-[#5D4037] rounded-xl">
                 <option value="doctor">精神科/身心科診所與醫院</option>
                 <option value="assessment">心理與特教評估</option>
                 <option value="therapy">心理諮商與職能治療</option>
@@ -71,6 +112,7 @@ export default function SubmitRecommendationPage() {
                 <label className="block text-sm font-bold mb-1">醫療院所/機構名稱 *</label>
                 <input
                   type="text"
+                  name="hospital"
                   required
                   placeholder="例如：台大醫院 / 某身心科診所"
                   className="w-full px-4 py-2.5 bg-[#FFFDF5] border-2 border-[#5D4037] rounded-xl"
@@ -80,6 +122,7 @@ export default function SubmitRecommendationPage() {
                 <label className="block text-sm font-bold mb-1">醫師/治療師姓名 *</label>
                 <input
                   type="text"
+                  name="doctorOrName"
                   required
                   placeholder="例如：王醫師 / 醫療團隊"
                   className="w-full px-4 py-2.5 bg-[#FFFDF5] border-2 border-[#5D4037] rounded-xl"
@@ -89,7 +132,7 @@ export default function SubmitRecommendationPage() {
 
             <div>
               <label className="block text-sm font-bold mb-1">適合對象</label>
-              <select className="w-full px-4 py-2.5 bg-[#FFFDF5] border-2 border-[#5D4037] rounded-xl">
+              <select name="audience" className="w-full px-4 py-2.5 bg-[#FFFDF5] border-2 border-[#5D4037] rounded-xl">
                 <option value="all">不限 / 兒童與成人皆適合</option>
                 <option value="child">兒童與青少年</option>
                 <option value="adult">成人 ADHD</option>
@@ -99,6 +142,7 @@ export default function SubmitRecommendationPage() {
             <div>
               <label className="block text-sm font-bold mb-1">推薦原因與看診心得 *</label>
               <textarea
+                name="experience"
                 rows={5}
                 required
                 placeholder="請分享看診風格、同理心表現、用藥討論方式或心理支持心得..."
@@ -106,11 +150,39 @@ export default function SubmitRecommendationPage() {
               />
             </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-bold mb-1">匿名暱稱（選填）</label>
+                <input
+                  type="text"
+                  name="nickname"
+                  placeholder="顯示於資料庫的署名，可留空"
+                  className="w-full px-4 py-2.5 bg-[#FFFDF5] border-2 border-[#5D4037] rounded-xl"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold mb-1">Email（選填，永不公開）</label>
+                <input
+                  type="email"
+                  name="email"
+                  placeholder="僅供查核疑問時聯繫"
+                  className="w-full px-4 py-2.5 bg-[#FFFDF5] border-2 border-[#5D4037] rounded-xl"
+                />
+              </div>
+            </div>
+
+            {errorMsg && (
+              <div className="bg-[#FFF3F0] border-2 border-[#D84315] rounded-xl p-3 text-sm font-bold text-[#D84315] flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" /> {errorMsg}
+              </div>
+            )}
+
             <button
               type="submit"
-              className="w-full py-3.5 bg-[#FFEC8B] border-2 border-[#5D4037] rounded-2xl font-extrabold text-base shadow-[4px_4px_0px_0px_#5D4037] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#5D4037] transition-all flex items-center justify-center gap-2"
+              disabled={sending}
+              className="w-full py-3.5 bg-[#FFEC8B] border-2 border-[#5D4037] rounded-2xl font-extrabold text-base shadow-[4px_4px_0px_0px_#5D4037] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#5D4037] transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:hover:translate-x-0 disabled:hover:translate-y-0"
             >
-              <Send className="w-5 h-5" /> 送出推薦
+              <Send className="w-5 h-5" /> {sending ? '送出中…' : '送出推薦'}
             </button>
           </form>
         )}

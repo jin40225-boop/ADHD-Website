@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, Clock, Copy, Edit3, Info, Mail, MessageCircle, PlayCircle, Sparkles } from 'lucide-react';
 
+const BASE = import.meta.env.BASE_URL;
 const TODO_LINKS = {
-  LINK_1: 'https://mountain-sail-ee8.notion.site/1f6ffa2c66cc471899275a62db2e8d05?pvs=105',
-  LINK_2: 'https://mountain-sail-ee8.notion.site/2-2098b8084dad80928e66d53a6ba373e7?source=copy_link',
+  LINK_1: `${BASE}navigator/register`,
+  LINK_2: 'https://www.knews.com.tw/news/01CEE23784ECF429098274743517F227',
   LINK_3: 'https://mountain-sail-ee8.notion.site/ADHD-2098b8084dad807d8c50f4d5c4221ace',
   LINK_4: 'https://mountain-sail-ee8.notion.site/2098b8084dad8089b914ef5f29bd3fea',
 };
