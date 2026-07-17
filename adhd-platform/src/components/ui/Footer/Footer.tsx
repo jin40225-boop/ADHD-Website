@@ -1,4 +1,5 @@
+import type { ElementType } from 'react';
 export interface FooterLink { label: string; href: string; }
-export interface FooterProps { /** Optional external/site links. */ links?: FooterLink[]; /** Copyright year's display value. */ year?: number; /** Optional organisation name. */ brand?: string; }
-/** Footer preserving the legacy site's attribution copy. */
-export function Footer({ links=[], year=new Date().getFullYear(), brand='大A彥宇' }: FooterProps) { return <footer className="ui-footer"><div className="ui-footer__inner"><div><strong>{brand}</strong><div>服務均為無償進行；若認同理念，歡迎來信打氣！</div></div><div>{links.map(link => <a key={link.href} href={link.href}>{link.label}</a>)}<div>© {year} {brand}</div></div></div></footer>; }
+export interface FooterProps { /** Optional external/site links, rendered as nav-block chips. */ links?: FooterLink[]; /** Copyright year's display value. */ year?: number; /** Optional organisation name. */ brand?: string; /** Anchor component to render links with (e.g. a router-aware adapter). Defaults to 'a'. */ linkAs?: ElementType; }
+/** Footer preserving the legacy site's attribution copy.（2026-07-17 設計系統迭代：白底置中直排＋nav-block 連結列） */
+export function Footer({ links=[], year=new Date().getFullYear(), brand='大A彥宇', linkAs }: FooterProps) { const LinkComp: ElementType = linkAs ?? 'a'; return <footer className="ui-footer"><div className="ui-footer__inner"><span>服務均為無償進行；若認同理念，歡迎來信打氣！</span>{links.length > 0 && <span className="ui-footer__links">{links.map(link => <LinkComp key={link.href} className="nav-block" href={link.href}>{link.label}</LinkComp>)}</span>}<span className="ui-footer__meta">© {year} {brand}</span></div></footer>; }

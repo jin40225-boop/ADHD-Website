@@ -51,7 +51,14 @@ export default function PublicLayout() {
       <main className="flex-1">
         <Outlet />
       </main>
-      <Footer links={[{ label: '來信打氣', href: 'mailto:jin40225@gmail.com' }]} />
+      <Footer
+        links={[
+          { label: '來信打氣', href: 'mailto:jin40225@gmail.com' },
+          { label: '互助聚會', href: '/peer-group' },
+          { label: '就醫推薦', href: '/map' },
+        ]}
+        linkAs={RouterAnchor}
+      />
     </div>
   );
 }

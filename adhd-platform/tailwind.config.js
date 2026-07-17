@@ -25,6 +25,13 @@ export default {
         // 功能色
         'line-green': '#06C755',
         'alert-red': '#FF8A80',
+        // 場景底色與裝飾色（2026-07-17 設計系統迭代新增）
+        'mint-bg': '#F0FDF4',
+        'sky-bg': '#B2EBF2',
+        'sky-deep': '#006064',
+        peach: '#FF9E80',
+        'blob-peach': '#FFD6BA',
+        'error-bg': '#FFF3F0',
       },
       fontFamily: {
         // 標題：Zen Maru Gothic / Kiwi Maru（自托管）
@@ -47,6 +54,22 @@ export default {
       },
       backgroundSize: {
         dots: '30px 30px',
+      },
+      // 品牌動畫（2026-07-17 設計系統迭代同步；animate-pulse-slow / animate-blob 於首頁已在使用）
+      keyframes: {
+        'pulse-slow': {
+          '0%, 100%': { transform: 'scale(1)' },
+          '50%': { transform: 'scale(1.03)' },
+        },
+        'blob-float': {
+          '0%, 100%': { transform: 'translate(0, 0)' },
+          '50%': { transform: 'translate(0, -10px)' },
+        },
+      },
+      animation: {
+        'pulse-slow': 'pulse-slow 2.4s ease-in-out infinite',
+        'blob-float': 'blob-float 6s ease-in-out infinite',
+        blob: 'blob-float 6s ease-in-out infinite',
       },
     },
   },

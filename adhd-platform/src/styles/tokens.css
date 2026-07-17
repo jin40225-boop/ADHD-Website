@@ -46,6 +46,14 @@
   --line-green: #06C755;
   --alert-red: #FF8A80;
 
+  /* 場景底色與裝飾色（2026-07-17 設計系統迭代新增） */
+  --mint-bg: #F0FDF4;
+  --sky-bg: #B2EBF2;
+  --sky-deep: #006064;
+  --peach: #FF9E80;
+  --blob-peach: #FFD6BA;
+  --error-bg: #FFF3F0;
+
   /* 字體堆疊 */
   --font-heading: 'Zen Maru Gothic', 'Kiwi Maru', 'Noto Sans TC',
     'PingFang TC', 'Microsoft JhengHei', sans-serif;
@@ -89,14 +97,46 @@
   padding: 0.5rem 1.25rem;
   cursor: pointer;
   transition: transform 0.1s ease, box-shadow 0.1s ease;
+  text-decoration: none;
+  font-size: 1rem;
 }
 .btn-warm:hover {
   transform: translate(-1px, -1px);
   box-shadow: 3px 3px 0 0 var(--text-brown);
+  color: var(--text-brown);
 }
 .btn-warm:active {
   transform: translate(1px, 1px);
   box-shadow: 1px 1px 0 0 var(--text-brown);
+}
+.btn-warm[disabled] {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* nav-block：導覽方塊連結（2026-07-17 設計系統迭代新增）
+   描邊＋硬陰影小方塊；active 橘底。導覽列、快速前往列、頁尾連結共用。 */
+.nav-block {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border: 2px solid var(--text-brown);
+  border-radius: 10px;
+  background: var(--bg-cream);
+  color: var(--text-brown);
+  text-decoration: none;
+  font-weight: 700;
+  box-shadow: var(--warm-shadow-sm);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+.nav-block:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 0 var(--text-brown);
+  color: var(--text-brown);
+  text-decoration: none;
+}
+.nav-block--active {
+  background: var(--accent-orange);
 }
 
 /* 背景點陣 */

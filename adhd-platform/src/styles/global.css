@@ -31,6 +31,7 @@ a {
   text-decoration: none;
 }
 a:hover {
+  color: var(--text-brown);
   text-decoration: underline;
 }
 

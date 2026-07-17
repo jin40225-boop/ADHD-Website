@@ -24,6 +24,11 @@ function pad(n: number) {
   return String(n).padStart(2, '0');
 }
 
+/** 欄位目前可勾選的選項（字串選項一律可選；物件選項排除 disabled）。 */
+function enabledOptions(field: FormField) {
+  return (field.options ?? []).filter((o) => typeof o === 'string' || !o.disabled);
+}
+
 function formatSlot(s: SessionSlot) {
   const st = new Date(s.startsAt);
   const en = new Date(s.endsAt);
@@ -72,7 +77,13 @@ export default function RegisterPage({ slug }: { slug: string }) {
   // DB 有場次 → 以真場次欄位取代 schema 的 preferredSlots 靜態選項
   const effectiveSchema = useMemo<FormSchema | null>(() => {
     if (!schema) return null;
-    if (sessions.length === 0) return schema;
+    if (sessions.length === 0) {
+      // 無 DB 場次時仍用 schema 靜態選項，但過期/額滿而停用的時段不再顯示
+      const fields = schema.fields.map((f) =>
+        f.key === 'preferredSlots' ? { ...f, options: enabledOptions(f) } : f,
+      );
+      return { ...schema, fields };
+    }
     const sessionField: FormField = {
       key: SESSION_FIELD_KEY,
       label: '選擇場次',
@@ -94,6 +105,16 @@ export default function RegisterPage({ slug }: { slug: string }) {
     fields.splice(insertAt >= 0 ? insertAt : fields.length, 0, sessionField);
     return { ...schema, fields };
   }, [schema, sessions]);
+
+  // 必填時段欄無任何可選項＝報名不可能完成 → 改顯示防呆卡（後台建立新場次後自動恢復表單）
+  const noOpenSlots = useMemo(() => {
+    if (!effectiveSchema) return false;
+    const slotField = effectiveSchema.fields.find(
+      (f) => f.key === SESSION_FIELD_KEY || f.key === 'preferredSlots',
+    );
+    if (!slotField?.required) return false;
+    return enabledOptions(slotField).length === 0;
+  }, [effectiveSchema]);
 
   const handleSubmit = async (answers: FormAnswers) => {
     if (!project || !schema) return;
@@ -162,16 +183,33 @@ export default function RegisterPage({ slug }: { slug: string }) {
               </p>
             ) : null}
 
-            <div className="bg-white border-2 border-brown rounded-3xl p-6 md:p-8 shadow-warm-lg">
-              {effectiveSchema ? (
-                <SchemaForm
-                  key={reloadKey}
-                  schema={effectiveSchema}
-                  onSubmit={handleSubmit}
-                  submitLabel="送出報名"
-                />
-              ) : null}
-            </div>
+            {noOpenSlots ? (
+              <div className="warm-card p-10 text-center space-y-4">
+                <h2 className="text-2xl font-extrabold">
+                  {sessions.length > 0 ? '目前場次皆已額滿' : '目前無開放場次'}
+                </h2>
+                <p className="text-sm text-brown/80 leading-relaxed">
+                  新場次公布後會在此開放報名，歡迎過陣子再回來看看；
+                  <br />
+                  有任何問題也歡迎來信詢問。
+                </p>
+                <div className="flex flex-wrap gap-3 justify-center">
+                  <a href="mailto:jin40225@gmail.com" className="btn-warm">來信詢問</a>
+                  <Link to="/" className="nav-block">回首頁</Link>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white border-2 border-brown rounded-3xl p-6 md:p-8 shadow-warm-lg">
+                {effectiveSchema ? (
+                  <SchemaForm
+                    key={reloadKey}
+                    schema={effectiveSchema}
+                    onSubmit={handleSubmit}
+                    submitLabel="送出報名"
+                  />
+                ) : null}
+              </div>
+            )}
           </>
         )}
       </div>
