@@ -220,6 +220,20 @@ export async function adminSaveSession(session: SessionSlot): Promise<SessionSlo
   return mapSession(data);
 }
 
+/** 後台：儲存專案報名表定義（upsert；RLS 限 owner/admin_collab/系統擁有者）。 */
+export async function adminSaveFormSchema(
+  projectId: string,
+  fields: FormSchema['fields'],
+): Promise<FormSchema> {
+  const { data, error } = await db()
+    .from('form_schemas')
+    .upsert({ project_id: projectId, fields }, { onConflict: 'project_id' })
+    .select('project_id, fields')
+    .single();
+  if (error) throw new ApiError(error.message, 'INSERT');
+  return { projectId: data.project_id, fields: data.fields as FormSchema['fields'] };
+}
+
 /** 後台：投稿佇列（RLS 限系統擁有者），最新在前。 */
 export async function adminListSubmissions(): Promise<RecommendationSubmission[]> {
   const { data, error } = await db()

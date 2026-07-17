@@ -12,6 +12,7 @@ const ADMIN_NAV = [
   { to: '/admin/instructors', label: '講師邀約' },
   { to: '/admin/recommendations', label: '推薦審核' },
   { to: '/admin/templates', label: '信件範本' },
+  { to: '/admin/forms', label: '報名表編輯' },
   { to: '/admin/cases', label: '個案管理' },
 ];
 

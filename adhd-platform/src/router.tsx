@@ -34,6 +34,7 @@ const SessionsPage = lazy(() => import('@/admin/pages/SessionsPage'));
 const InstructorSchedulingPage = lazy(() => import('@/admin/pages/InstructorSchedulingPage'));
 const RecommendationsPage = lazy(() => import('@/admin/pages/RecommendationsPage'));
 const TemplatesPage = lazy(() => import('@/admin/pages/TemplatesPage'));
+const FormsPage = lazy(() => import('@/admin/pages/FormsPage'));
 const CasesPage = lazy(() => import('@/admin/pages/CasesPage'));
 const UiGallery = lazy(() =>
   import('@/components/ui/_gallery').then((module) => ({ default: module.UiGallery })),
@@ -90,6 +91,7 @@ const router = createBrowserRouter(
         { path: 'instructors', element: withSuspense(<InstructorSchedulingPage />) },
         { path: 'recommendations', element: withSuspense(<RecommendationsPage />) },
         { path: 'templates', element: withSuspense(<TemplatesPage />) },
+        { path: 'forms', element: withSuspense(<FormsPage />) },
         { path: 'cases', element: withSuspense(<CasesPage />) },
         // 開發者工具：CODEX 品牌元件庫展示頁
         { path: 'gallery', element: withSuspense(<UiGallery />) },
