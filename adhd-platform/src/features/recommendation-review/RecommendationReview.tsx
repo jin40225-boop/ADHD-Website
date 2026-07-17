@@ -1,4 +1,4 @@
-import { Check, CopyCheck } from 'lucide-react';
+import { Check, CopyCheck, Undo2 } from 'lucide-react';
 import { useState } from 'react';
 import type {
   Recommendation,
@@ -25,6 +25,8 @@ export interface RecommendationReviewProps {
   candidateMatches: Record<string, Recommendation[]>;
   onApplyMatch: (submission: RecommendationSubmission, recommendation: Recommendation) => void;
   onPublish: (submission: RecommendationSubmission, note: string) => void;
+  /** INTEGRATED-FIX（CLAUDE）：退回投稿（status=rejected）；未提供時不顯示退回鈕。 */
+  onReject?: (submission: RecommendationSubmission, note: string) => void;
 }
 
 /** Review queue for positive recommendation submissions; all publish actions are props. */
@@ -33,6 +35,7 @@ export function RecommendationReview({
   candidateMatches,
   onApplyMatch,
   onPublish,
+  onReject,
 }: RecommendationReviewProps) {
   const [tab, setTab] = useState<SubmissionType>('doctor');
   const [selectedId, setSelectedId] = useState<string>();
@@ -78,6 +81,7 @@ export function RecommendationReview({
               onNote={setNote}
               onApply={onApplyMatch}
               onPublish={onPublish}
+              onReject={onReject}
             />
           ) : <EmptyState title="請選擇投稿" />}
         </main>
@@ -93,6 +97,7 @@ function SubmissionDetail({
   onNote,
   onApply,
   onPublish,
+  onReject,
 }: {
   submission: RecommendationSubmission;
   matches: Recommendation[];
@@ -100,6 +105,7 @@ function SubmissionDetail({
   onNote: (note: string) => void;
   onApply: RecommendationReviewProps['onApplyMatch'];
   onPublish: RecommendationReviewProps['onPublish'];
+  onReject?: RecommendationReviewProps['onReject'];
 }) {
   const [verified, setVerified] = useState(false);
 
@@ -144,13 +150,24 @@ function SubmissionDetail({
           onChange={(event) => onNote(event.target.value)}
           helpText="請記錄核實來源或待追蹤事項。"
         />
-        <WarmButton
-          icon={Check}
-          disabled={!verified}
-          onClick={() => onPublish(submission, note)}
-        >
-          核實並上架
-        </WarmButton>
+        <div style={{ display: 'flex', gap: '.7rem', flexWrap: 'wrap' }}>
+          <WarmButton
+            icon={Check}
+            disabled={!verified}
+            onClick={() => onPublish(submission, note)}
+          >
+            核實並上架
+          </WarmButton>
+          {onReject ? (
+            <WarmButton
+              icon={Undo2}
+              variant="secondary"
+              onClick={() => onReject(submission, note)}
+            >
+              退回投稿
+            </WarmButton>
+          ) : null}
+        </div>
       </section>
     </div>
   );

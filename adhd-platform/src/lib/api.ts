@@ -10,6 +10,7 @@ import type {
   FormSchema,
   Project,
   Registration,
+  RecommendationSubmission,
   SessionSlot,
   StatusFlow,
 } from '@contracts/types';
@@ -85,6 +86,20 @@ function mapTemplate(r: Row): EmailTemplate {
     body: r.body as string,
     createdAt: r.created_at as string,
     updatedAt: (r.updated_at as string) ?? undefined,
+  };
+}
+
+function mapSubmission(r: Row): RecommendationSubmission {
+  return {
+    id: r.id as string,
+    type: r.type as RecommendationSubmission['type'],
+    answers: (r.answers as RecommendationSubmission['answers']) ?? {},
+    nickname: (r.nickname as string) ?? undefined,
+    email: (r.email as string) ?? undefined,
+    status: r.status as RecommendationSubmission['status'],
+    relatedRecommendationId: (r.related_recommendation_id as string) ?? undefined,
+    reviewNote: (r.review_note as string) ?? undefined,
+    createdAt: r.created_at as string,
   };
 }
 
@@ -203,6 +218,43 @@ export async function adminSaveSession(session: SessionSlot): Promise<SessionSlo
   const { data, error } = await query;
   if (error) throw new ApiError(error.message, 'INSERT');
   return mapSession(data);
+}
+
+/** 後台：投稿佇列（RLS 限系統擁有者），最新在前。 */
+export async function adminListSubmissions(): Promise<RecommendationSubmission[]> {
+  const { data, error } = await db()
+    .from('recommendation_submissions')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) throw new ApiError(error.message);
+  return (data ?? []).map(mapSubmission);
+}
+
+export interface ReviewSubmissionPatch {
+  status?: RecommendationSubmission['status'];
+  reviewNote?: string;
+  relatedRecommendationId?: string | null;
+}
+
+/** 後台：審核投稿——更新狀態／核實備註／對應舊資料。回傳更新後的列。 */
+export async function adminReviewSubmission(
+  id: string,
+  patch: ReviewSubmissionPatch,
+): Promise<RecommendationSubmission> {
+  const payload: Row = {};
+  if (patch.status !== undefined) payload.status = patch.status;
+  if (patch.reviewNote !== undefined) payload.review_note = patch.reviewNote || null;
+  if (patch.relatedRecommendationId !== undefined) {
+    payload.related_recommendation_id = patch.relatedRecommendationId;
+  }
+  const { data, error } = await db()
+    .from('recommendation_submissions')
+    .update(payload)
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw new ApiError(error.message, 'INSERT');
+  return mapSubmission(data);
 }
 
 /** Registration＋信件串（後台工作台用）。 */
