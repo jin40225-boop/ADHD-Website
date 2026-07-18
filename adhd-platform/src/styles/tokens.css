@@ -190,3 +190,44 @@
   margin-right: 8px;
   white-space: nowrap;
 }
+
+/* hero-section：頁首黃色漸層橫幅（舊一頁式平移；四個公開頁頁首共用） */
+.hero-section {
+  background: linear-gradient(180deg, #ffec8b 0%, #fff9c4 100%);
+  border-bottom: 3px solid var(--text-brown);
+  border-radius: 0 0 60px 60px;
+  position: relative;
+  padding-bottom: 4rem;
+}
+
+/* construction-card / construction-badge：籌備中區塊（舊一頁式平移） */
+.construction-card {
+  background: var(--bg-cream);
+  border: 2px dashed var(--text-brown);
+  border-radius: 16px;
+  padding: 24px;
+  position: relative;
+  margin-bottom: 24px;
+  opacity: 0.9;
+  transition: transform 0.3s ease;
+}
+.construction-card:hover {
+  opacity: 1;
+  transform: translateY(-2px);
+  background: #ffffff;
+}
+.construction-badge {
+  position: absolute;
+  top: -12px;
+  left: 20px;
+  background: #ffcc80;
+  color: var(--text-brown);
+  font-size: 0.75rem;
+  font-weight: bold;
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 2px solid var(--text-brown);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
