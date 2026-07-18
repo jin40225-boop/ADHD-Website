@@ -14,6 +14,7 @@ const ADMIN_NAV = [
   { to: '/admin/templates', label: '信件範本' },
   { to: '/admin/forms', label: '報名表編輯' },
   { to: '/admin/cases', label: '個案管理' },
+  { to: '/admin/feedback', label: '活動回饋' },
 ];
 
 export default function AdminLayout() {

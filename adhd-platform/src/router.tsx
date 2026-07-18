@@ -26,6 +26,7 @@ import NewbieGuidePage from '@/pages/public/NewbieGuidePage';
 import ArticlesPage from '@/pages/public/ArticlesPage';
 import ArticleDetailPage from '@/pages/public/ArticleDetailPage';
 import InstructorsPage from '@/pages/public/InstructorsPage';
+import FeedbackPage from '@/pages/public/FeedbackPage';
 
 // 行政後台（CODEX 模組 × CLAUDE 整合層，lazy 分包）
 const AdminOverview = lazy(() => import('@/admin/pages/AdminOverview'));
@@ -36,6 +37,7 @@ const RecommendationsPage = lazy(() => import('@/admin/pages/RecommendationsPage
 const TemplatesPage = lazy(() => import('@/admin/pages/TemplatesPage'));
 const FormsPage = lazy(() => import('@/admin/pages/FormsPage'));
 const CasesPage = lazy(() => import('@/admin/pages/CasesPage'));
+const FeedbackAdminPage = lazy(() => import('@/admin/pages/FeedbackPage'));
 const UiGallery = lazy(() =>
   import('@/components/ui/_gallery').then((module) => ({ default: module.UiGallery })),
 );
@@ -72,6 +74,7 @@ const router = createBrowserRouter(
         { path: 'articles', element: <ArticlesPage /> },
         { path: 'articles/:slug', element: <ArticleDetailRoute /> },
         { path: 'instructors', element: <InstructorsPage /> },
+        { path: 'feedback', element: <FeedbackPage /> },
       ],
     },
     // 後台登入（不套 RequireAuth）
@@ -93,6 +96,7 @@ const router = createBrowserRouter(
         { path: 'templates', element: withSuspense(<TemplatesPage />) },
         { path: 'forms', element: withSuspense(<FormsPage />) },
         { path: 'cases', element: withSuspense(<CasesPage />) },
+        { path: 'feedback', element: withSuspense(<FeedbackAdminPage />) },
         // 開發者工具：CODEX 品牌元件庫展示頁
         { path: 'gallery', element: withSuspense(<UiGallery />) },
       ],

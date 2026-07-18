@@ -7,6 +7,7 @@
 import { supabase } from './supabase';
 import type {
   EmailTemplate,
+  EventFeedback,
   FormSchema,
   Project,
   Registration,
@@ -103,6 +104,17 @@ function mapSubmission(r: Row): RecommendationSubmission {
   };
 }
 
+function mapFeedback(r: Row): EventFeedback {
+  return {
+    id: r.id as string,
+    eventName: (r.event_name as string) ?? undefined,
+    name: r.name as string,
+    email: (r.email as string) ?? undefined,
+    message: r.message as string,
+    createdAt: r.created_at as string,
+  };
+}
+
 /* ============================== 公開端 ============================== */
 
 export async function getProjectBySlug(slug: string): Promise<Project | null> {
@@ -178,6 +190,24 @@ export async function submitRecommendationSubmission(input: SubmitRecommendation
     nickname: input.nickname || null,
     email: input.email || null,
     status: 'pending',
+  });
+  if (error) throw new ApiError(error.message, 'INSERT');
+}
+
+export interface SubmitFeedbackInput {
+  name: string;
+  message: string;
+  email?: string;
+  eventName?: string;
+}
+
+/** 公開活動回饋。RLS 僅允許 insert（姓名／回饋非空），anon 不可回讀。 */
+export async function submitFeedback(input: SubmitFeedbackInput): Promise<void> {
+  const { error } = await db().from('event_feedback').insert({
+    name: input.name.trim(),
+    message: input.message.trim(),
+    email: input.email?.trim() || null,
+    event_name: input.eventName?.trim() || null,
   });
   if (error) throw new ApiError(error.message, 'INSERT');
 }
@@ -353,6 +383,22 @@ export async function adminListEmailTemplates(): Promise<EmailTemplate[]> {
   const { data, error } = await db().from('email_templates').select('*').order('created_at');
   if (error) throw new ApiError(error.message);
   return (data ?? []).map(mapTemplate);
+}
+
+/** 後台：活動回饋清單（RLS 限系統擁有者），最新在前。 */
+export async function adminListFeedback(): Promise<EventFeedback[]> {
+  const { data, error } = await db()
+    .from('event_feedback')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) throw new ApiError(error.message);
+  return (data ?? []).map(mapFeedback);
+}
+
+/** 後台：刪除一筆活動回饋（RLS 限系統擁有者）。 */
+export async function adminDeleteFeedback(id: string): Promise<void> {
+  const { error } = await db().from('event_feedback').delete().eq('id', id);
+  if (error) throw new ApiError(error.message, 'INSERT');
 }
 
 /* ============================== Edge Functions（K2） ============================== */

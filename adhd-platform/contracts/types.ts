@@ -376,6 +376,18 @@ export interface RecommendationSubmission {
   createdAt: string;
 }
 
+/** 活動回饋（對映 `event_feedback`）。姓名／回饋必填，信箱選填且永不公開。 */
+export interface EventFeedback {
+  id: string;
+  /** 選填：對應的活動／場次名稱。 */
+  eventName?: string;
+  name: string;
+  /** 選填、永不公開。 */
+  email?: string;
+  message: string;
+  createdAt: string;
+}
+
 /* ========================================================================== *
  *  內容與稽核
  * ========================================================================== */
