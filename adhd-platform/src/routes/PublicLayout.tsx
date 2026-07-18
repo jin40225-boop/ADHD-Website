@@ -56,6 +56,7 @@ export default function PublicLayout() {
           { label: '來信打氣', href: 'mailto:jin40225@gmail.com' },
           { label: '互助聚會', href: '/peer-group' },
           { label: '就醫推薦', href: '/map' },
+          { label: '活動回饋', href: '/feedback' },
           { label: '管理後台', href: '/admin' },
         ]}
         linkAs={RouterAnchor}

@@ -90,7 +90,9 @@ export default function FeedbackPage() {
     <div>
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <h1 className="font-heading text-2xl font-bold">活動回饋</h1>
+          <h1 className="font-heading text-2xl font-bold">
+            活動回饋{live && !loading && !error ? `（${rows.length} 筆）` : ''}
+          </h1>
           <p className="text-sm text-brown/70">民眾透過 /feedback 送出的活動回饋留言，最新在前。</p>
         </div>
         {live ? (
