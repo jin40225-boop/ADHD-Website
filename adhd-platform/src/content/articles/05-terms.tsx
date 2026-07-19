@@ -6,7 +6,7 @@ export default function TermsContent() {
     <blockquote className="border-l-4 border-highlight bg-cream p-4 rounded-r-xl my-4 text-brown italic shadow-sm">
     <p className="leading-relaxed my-2">Notion 備份 2026-07-11，頁面 id=ef480c9e-fedc-4232-b8e9-76d9409afa75</p>
     </blockquote>
-    <img src="/assets/terms-dalle.webp" alt="image" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" /> 本圖片由ChatGPT生成，若有版權問題還請告知，會立即撤除。
+    <img src={`${import.meta.env.BASE_URL}assets/terms-dalle.webp`} alt="ADHD 社群常見名詞主題插圖" loading="lazy" decoding="async" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" /> 本圖片由ChatGPT生成，若有版權問題還請告知，會立即撤除。
     <p className="text-brown leading-relaxed my-4">💬</p>
     <h2 className="text-2xl font-bold text-brown mt-8 mb-4">這篇文介紹的是社群裡面常出現的名詞，也就是ADHD常見的共病，瞭解這些以後看大家發言聊天就不會霧煞煞啦！而且也可以很快知道自己的狀態，在需要自我介紹的時候可以讓社群快速的瞭解狀況，適切給予幫助喔！</h2>
     <h2 className="text-2xl font-bold text-brown mt-8 mb-4">例如：</h2>

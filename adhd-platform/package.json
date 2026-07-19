@@ -9,7 +9,8 @@
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b",
     "preview": "vite preview",
-    "deploy": "node scripts/deploy-pages.mjs"
+    "deploy": "node scripts/deploy-pages.mjs",
+    "check:site": "node scripts/check-site.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",

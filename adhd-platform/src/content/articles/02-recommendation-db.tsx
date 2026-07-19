@@ -6,7 +6,7 @@ export default function RecommendationDbContent() {
     <blockquote className="border-l-4 border-highlight bg-cream p-4 rounded-r-xl my-4 text-brown italic shadow-sm">
     <p className="leading-relaxed my-2">Notion 備份 2026-07-11，頁面 id=d9d01c6a-326f-44d9-8446-f5870d3683fe</p>
     </blockquote>
-    <img src="/assets/map-preview.png" alt="image" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
+    <img src={`${import.meta.env.BASE_URL}assets/map-preview.png`} alt="ADHD 就醫家長推薦資料庫預覽" loading="lazy" decoding="async" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
     <p className="text-brown leading-relaxed my-4">💬</p>
     <ul className="list-disc pl-6 my-4 space-y-2 text-brown">
     <li className="leading-relaxed">ADHD 醫療資料庫  快捷鍵及使用聲明   ←請點我</li>
@@ -35,22 +35,22 @@ export default function RecommendationDbContent() {
     </ul>
     <h1 className="text-3xl font-extrabold text-brown mb-6 border-b-2 border-brown pb-2">使用教學資料庫部分</h1>
     <h2 className="text-2xl font-bold text-brown mt-8 mb-4">在醫師姓名處有個開啟按紐，點擊後即可進入完整頁面查看完整內容。(如圖)</h2>
-    <img src="/assets/map-guide-search.jpg" alt="image" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
-    <img src="/assets/map-guide-search.jpg" alt="image" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
+    <img src={`${import.meta.env.BASE_URL}assets/map-guide-search.jpg`} alt="推薦資料庫關鍵字搜尋操作示範" loading="lazy" decoding="async" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
+    <img src={`${import.meta.env.BASE_URL}assets/map-guide-search.jpg`} alt="推薦資料庫關鍵字搜尋操作示範" loading="lazy" decoding="async" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
     <hr className="border-t-2 border-brown my-8" />
     <hr className="border-t-2 border-brown my-8" />
     <ul className="list-disc pl-6 my-4 space-y-2 text-brown">
     <li className="leading-relaxed">地圖使用教學 ←請點我</li>
     </ul>
     <h2 className="text-2xl font-bold text-brown mt-8 mb-4">地圖部分則直接點擊按紐，點擊後即可進入完整頁面查看完整內容。(如圖)</h2>
-    <img src="/assets/map-guide-search.jpg" alt="image" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
+    <img src={`${import.meta.env.BASE_URL}assets/map-guide-search.jpg`} alt="推薦資料庫關鍵字搜尋操作示範" loading="lazy" decoding="async" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
     <p className="text-brown leading-relaxed my-4">💬 使用方式</p>
     <p className="text-brown leading-relaxed my-4">🔹 快速查看地區：點擊下方快捷連結，即可顯示各地區推薦的醫師與醫院資訊。(請點姓名處可展開資訊)</p>
     <p className="text-brown leading-relaxed my-4">🔹 快速查看地圖：再往下滑會看到地圖，點擊地圖即可看到資訊。</p>
     <p className="text-brown leading-relaxed my-4">🔹 瀏覽完整資料庫：向下滑動，點擊 資料庫總表，可檢視完整推薦名單。</p>
     <p className="text-brown leading-relaxed my-4">🔹 搜尋特定地區：在右上角的 搜尋欄 輸入 新北 或其他縣市名稱，即可篩選當地的推薦醫師。</p>
     <p className="text-brown leading-relaxed my-4">🔹 查閱詳細資訊：點擊 醫師名稱，可查看推薦者提供的評價、推薦理由等詳細內容。</p>
-    <img src="/assets/map-guide-search.jpg" alt="image" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
+    <img src={`${import.meta.env.BASE_URL}assets/map-guide-search.jpg`} alt="推薦資料庫關鍵字搜尋操作示範" loading="lazy" decoding="async" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
     <p className="text-brown leading-relaxed my-4">可以進入資料庫後，按搜尋，來搜尋需要的資訊。</p>
     <ul className="list-disc pl-6 my-4 space-y-2 text-brown">
     <li className="leading-relaxed">ADHD 醫療資料庫（地圖）謝誌與歷程說明</li>
@@ -90,9 +90,9 @@ export default function RecommendationDbContent() {
     <p className="text-brown leading-relaxed my-4">《子頁面》南投縣 (id=1aa8b808-4dad-80d8-ac66-fe49abc21595)</p>
     <p className="text-brown leading-relaxed my-4">《子頁面》花蓮縣 (id=1aa8b808-4dad-8068-95eb-f4f00b4a86cc)</p>
     <p className="text-brown leading-relaxed my-4">《子頁面》宜蘭市 (id=1aa8b808-4dad-8096-ad28-e532afefa402)</p>
-    <img src="/assets/map-guide-filter.jpg" alt="image" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
+    <img src={`${import.meta.env.BASE_URL}assets/map-guide-filter.jpg`} alt="推薦資料庫條件篩選操作示範" loading="lazy" decoding="async" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
     <p className="text-brown leading-relaxed my-4">[embed] https://www.google.com/maps/d/embed?mid=1evABqI3MGLvGXp3lUAPR2_5TBZdAaGY&ehbc=2E312F</p>
-    <img src="/assets/map-guide-filter.jpg" alt="image" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
+    <img src={`${import.meta.env.BASE_URL}assets/map-guide-filter.jpg`} alt="推薦資料庫條件篩選操作示範" loading="lazy" decoding="async" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
     <p className="text-brown leading-relaxed my-4">《子資料庫》Untitled (id=19b8b808-4dad-8003-ba75-e4f6939739f1)</p>
     <p className="text-brown leading-relaxed my-4">💬</p>
     <h2 className="text-2xl font-bold text-brown mt-8 mb-4">後續更新</h2>

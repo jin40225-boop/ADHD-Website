@@ -6,7 +6,7 @@ export default function KnowledgeMeetupContent() {
     <blockquote className="border-l-4 border-highlight bg-cream p-4 rounded-r-xl my-4 text-brown italic shadow-sm">
     <p className="leading-relaxed my-2">Notion 備份 2026-07-11，頁面 id=1ce8b808-4dad-808c-a906-f080f3e952fb</p>
     </blockquote>
-    <img src="/assets/meetup-schedule.jpg" alt="image" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
+    <img src={`${import.meta.env.BASE_URL}assets/meetup-schedule.jpg`} alt="ADHD 線上知識交流會時程" loading="lazy" decoding="async" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
     <p className="text-brown leading-relaxed my-4">💬 ADHD 線上知識交流會</p>
     <p className="text-brown leading-relaxed my-4">歡迎夥伴加入我們！</p>
     <p className="text-brown leading-relaxed my-4">（免讀書啦～免開鏡頭~放心XDD）</p>
@@ -19,7 +19,7 @@ export default function KnowledgeMeetupContent() {
     <p className="text-brown leading-relaxed my-4">輕鬆聊・自在學・一起探索ADHD的世界！</p>
     <p className="text-brown leading-relaxed my-4">💬 因為我發現我們的注意力模式，常常和主流社會的期待有落差，尤其是像ADHD這樣的特質，在日常生活、學習、工作上都會遇到很多「不夠好」的標籤與內耗。這些經驗讓我開始思考，讀書會是否可以是一個「輕鬆分享、互相理解」的空間，而不是一個必須精讀、答題、產出報告的壓力場。</p>
     <p className="text-brown leading-relaxed my-4">我最近讀了一本書叫《與注意力不足過動大腦和解：ADHD生活終極指南》。我其實只看了不到30頁，但裡面提到的「健全主義」這個概念，真的打中了我。書裡的作者是ADHD的當事人，她分享自己一路上如何努力讓自己的大腦成為隊友，而不是敵人。那瞬間我覺得：欸，我們真的很需要這樣的討論空間，來互相對話、減少自我懷疑。</p>
-    <img src="/assets/meetup-poster.jpg" alt="image" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
+    <img src={`${import.meta.env.BASE_URL}assets/meetup-poster.jpg`} alt="ADHD 線上知識交流會活動海報" loading="lazy" decoding="async" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
     <p className="text-brown leading-relaxed my-4">💬 「健全主義」的核心假設是：人應該是完整的、要把事情做好，才算是一個「正常的、有功能的人」。我們從小到大深受這種價值觀影響，什麼事情都要很有結構、很完美，才能被認可。只有達到某個標準，才叫有成就。</p>
     <p className="text-brown leading-relaxed my-4">但這種期待，常常帶來的是內耗和一種無形的壓力。我們明明已經很努力，還是覺得自己哪裡不夠好，好像永遠在補考。我們其實有很多優勢、懂很多東西，卻總覺得需要一個徽章、一張證書、一個頭銜，來證明「我真的會」。</p>
     <p className="text-brown leading-relaxed my-4">但其實，不需要。我們本來就會，我們的經驗和方式也很有價值。</p>
@@ -59,7 +59,7 @@ export default function KnowledgeMeetupContent() {
     <h3 className="text-xl font-semibold text-brown mt-6 mb-3">我想，這就是我們聚在一起、與大眾接觸的意義所在。這是我這兩次活動的心得，與大家分享。這樣的活動，我會不斷、持續地辦下去，期待各位的參與。</h3>
     <h3 className="text-xl font-semibold text-brown mt-6 mb-3">114413 林彥宇</h3>
     <h3 className="text-xl font-semibold text-brown mt-6 mb-3">對了，最後我們還一起看了成員養的水母，可愛又療癒。</h3>
-    <img src="/assets/meetup-schedule.jpg" alt="image" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
+    <img src={`${import.meta.env.BASE_URL}assets/meetup-schedule.jpg`} alt="ADHD 線上知識交流會時程" loading="lazy" decoding="async" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
     </article>
   );
 }

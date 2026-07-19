@@ -16,7 +16,7 @@ export default function NewbieGuideContent() {
     <p className="text-brown leading-relaxed my-4">📍 地點：Google Meet（線上視訊）</p>
     <p className="text-brown leading-relaxed my-4">👉 會議連結： https://meet.google.com/vjg-tpoq-ov</p>
     <hr className="border-t-2 border-brown my-8" />
-    <img src="/assets/newbie-guide-hero.png" alt="image" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
+    <img src={`${import.meta.env.BASE_URL}assets/newbie-guide-hero.png`} alt="ADHD 新手指南主視覺" loading="eager" decoding="async" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
     <hr className="border-t-2 border-brown my-8" />
     <h1 className="text-3xl font-extrabold text-brown mb-6 border-b-2 border-brown pb-2">Hi 👋 我是大A彥宇，很高興認識你/妳。</h1>
     <h3 className="text-xl font-semibold text-brown mt-6 mb-3">「大A」是注意力不足過動症（ADHD，俗稱過動症）成年族群的常用的稱呼，也有人稱A咖、成A等等，接下來我以大A進行介紹。</h3>
@@ -33,14 +33,14 @@ export default function NewbieGuideContent() {
     </ul>
     <h3 className="text-xl font-semibold text-brown mt-6 mb-3">你仍在探索，你也不確定自己和ADHD有沒有關聯。</h3>
     <hr className="border-t-2 border-brown my-8" />
-    <img src="/assets/newbie-guide-sessions.jpg" alt="image" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
-    <img src="/assets/newbie-guide-interpret.png" alt="image" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
+    <img src={`${import.meta.env.BASE_URL}assets/newbie-guide-sessions.jpg`} alt="ADHD 線上交流會活動畫面" loading="lazy" decoding="async" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
+    <img src={`${import.meta.env.BASE_URL}assets/newbie-guide-interpret.png`} alt="ADHD 特質解讀示意圖" loading="lazy" decoding="async" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
     <h2 className="text-2xl font-bold text-brown mt-8 mb-4">每個人確診後的反應都不一樣。(不論是知道孩子有還是自己有)</h2>
     <p className="text-brown leading-relaxed my-4">對於個人而言，知道有ADHD這件事情，是一個答案、一個解釋、一個釋懷以及前進的方向。</p>
     <h2 className="text-2xl font-bold text-brown mt-8 mb-4">它給我們過去人生一個新的詮釋，也將那些苦痛與我們有所區別。</h2>
     <h2 className="text-2xl font-bold text-brown mt-8 mb-4">這個新的標籤，將會取代那些更惡毒、更壓迫我們的評價，成為新的開端。</h2>
     <h2 className="text-2xl font-bold text-brown mt-8 mb-4">加入ADHD社群可以讓你認識更多ADHD相關者，大家各自走過不同艱辛的路，探索出一套協助自己的方法、規則，並且彼此給予支持。那些常人無法同理的，我們都懂。那些過往難以說出的困難，在這裡可以自在討論。</h2>
-    <img src="/assets/newbie-guide-empathy.png" alt="image" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
+    <img src={`${import.meta.env.BASE_URL}assets/newbie-guide-empathy.png`} alt="ADHD 同理與支持示意圖" loading="lazy" decoding="async" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
     <p className="text-brown leading-relaxed my-4">源自：「同理心的力量」影片截圖。</p>
     <h2 className="text-2xl font-bold text-brown mt-8 mb-4">再次，歡迎你加入。</h2>
     <h2 className="text-2xl font-bold text-brown mt-8 mb-4">以下是初識ADHD會需要知道的知識，以及深入探究時你會需要的途徑。</h2>
@@ -57,9 +57,9 @@ export default function NewbieGuideContent() {
     <h3 className="text-xl font-semibold text-brown mt-6 mb-3">時空無法重來，我們不可能回到過去幫助傷痕累累的自己，但我們碰撞的結果可以傳承給夥伴、後輩，治癒彼此。</h3>
     <p className="text-brown leading-relaxed my-4">(尚在更新中)</p>
     <p className="text-brown leading-relaxed my-4">《子資料庫》我的自立日誌 (id=1248b808-4dad-80d7-b6d2-fdd39b8c74b3)</p>
-    <img src="/assets/newbie-guide-telecommuting.jpg" alt="image" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
+    <img src={`${import.meta.env.BASE_URL}assets/newbie-guide-telecommuting.jpg`} alt="ADHD 遠距交流示意圖" loading="lazy" decoding="async" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
     <hr className="border-t-2 border-brown my-8" />
-    <img src="/assets/newbie-guide-contact.png" alt="image" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
+    <img src={`${import.meta.env.BASE_URL}assets/newbie-guide-contact.png`} alt="ADHD 支持資源聯絡資訊" loading="lazy" decoding="async" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
     <h1 className="text-3xl font-extrabold text-brown mb-6 border-b-2 border-brown pb-2">徵稿區！</h1>
     <h2 className="text-2xl font-bold text-brown mt-8 mb-4">ADHD人生如夜海行舟，令人徬徨。</h2>
     <h2 className="text-2xl font-bold text-brown mt-8 mb-4">我們如孤島累積著經驗，逐步讓自己與症狀共存，直到獲得平衡，但光靠個人的力量是無法處理所有事情的。</h2>
@@ -68,7 +68,7 @@ export default function NewbieGuideContent() {
     <h2 className="text-2xl font-bold text-brown mt-8 mb-4">✉️ Email  ID：jin40225@gmail.com</h2>
     <p className="text-brown leading-relaxed my-4">或在下面的意見回饋與聯繫表留言喔！</p>
     <hr className="border-t-2 border-brown my-8" />
-    <img src="/assets/newbie-guide-sessions.jpg" alt="image" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
+    <img src={`${import.meta.env.BASE_URL}assets/newbie-guide-sessions.jpg`} alt="ADHD 線上交流會活動畫面" loading="lazy" decoding="async" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
     <p className="text-brown leading-relaxed my-4">《子資料庫》Untitled (id=19c8b808-4dad-808a-b711-dc5ce2d8dc54)</p>
     <hr className="border-t-2 border-brown my-8" />
     <p className="text-brown leading-relaxed my-4">Back to Top 👆</p>

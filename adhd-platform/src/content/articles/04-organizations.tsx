@@ -7,12 +7,12 @@ export default function OrganizationsContent() {
     <p className="leading-relaxed my-2">Notion 備份 2026-07-11，頁面 id=c4657104-b22a-4b65-b67a-485d719bbc70</p>
     </blockquote>
     <p className="text-brown leading-relaxed my-4">💬</p>
-    <img src="/assets/organizations-girl.jpg" alt="image" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
+    <img src={`${import.meta.env.BASE_URL}assets/organizations-girl.jpg`} alt="ADHD 支持服務示意照片" loading="lazy" decoding="async" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
     <h2 className="text-2xl font-bold text-brown mt-8 mb-4">目前台灣有很多人與單位致力於讓ADHD族群過得更好，其中位於台北的社團法人台灣赤子心過動症協會總會！(北部)我接觸最多。</h2>
     <h2 className="text-2xl font-bold text-brown mt-8 mb-4">台灣赤子心過動症協會總會成立於2002年，是一個專門服務注意力不足過動症（ADHD）患者及其家庭的非營利組織。</h2>
     <p className="text-brown leading-relaxed my-4">當初是由一群家長和專業人士共同發起，因為他們發現社會對ADHD的認識不夠，並且缺乏相關的支持和資源。協會的使命是透過衛教宣導、家庭支持和政策倡導來提升ADHD患者的生活品質，並讓社會對這個族群有更好的理解和包容</p>
     <h2 className="text-2xl font-bold text-brown mt-8 mb-4">協會提供專業的諮詢服務！</h2>
-    <img src="/assets/organizations-list.jpg" alt="image" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
+    <img src={`${import.meta.env.BASE_URL}assets/organizations-list.jpg`} alt="ADHD 服務機構資訊列表" loading="lazy" decoding="async" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
     <h2 className="text-2xl font-bold text-brown mt-8 mb-4">還有家長親職效能課程及親子成長課程喔！我當時就是在實體課程裡面認識他們的，協會因為原先是由家長發起創立，所以非常理解家長需求，課程會有兒童團體來配套，讓家長可以專心上課，孩子交由團體講師來教學！</h2>
     <h2 className="text-2xl font-bold text-brown mt-8 mb-4">啊對了！他們還有https://open.firstory.me/user/clxmpd08d000g01zigy2cdr0y/episodes赤子心Podcast 「走進赤子心，陪伴過動兒」不要錯過喔！</h2>
     <h2 className="text-2xl font-bold text-brown mt-8 mb-4">此外，協會每年舉辦多種活動，像是「全國ADHD繪畫比賽」等，以增加公眾對ADHD的關注與支持。</h2>

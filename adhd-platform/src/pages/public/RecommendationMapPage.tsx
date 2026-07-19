@@ -1,22 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, MapPin, CheckCircle2, ExternalLink, PlusCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import type { Recommendation } from '@contracts/types';
+import { ApiError, getPublicRecommendations } from '../../lib/api';
 import recommendationsData from '../../data/recommendations.json';
 
-interface Recommendation {
-  id: string;
-  category: 'doctor' | 'assessment' | 'therapy' | 'community' | 'other';
-  audience: 'child' | 'adult' | 'all';
-  region: string;
-  hospital: string;
-  doctorOrName: string;
-  urls: string[];
-  experience: string;
-  recommender?: string;
-  verified: boolean;
-  verifiedNote?: string;
-  updatedAt?: string;
-}
 
 const CATEGORY_LABELS: Record<string, string> = {
   all: '全部類型',
@@ -34,12 +22,31 @@ const AUDIENCE_LABELS: Record<string, string> = {
 };
 
 export default function RecommendationMapPage() {
-  const recommendations = recommendationsData as Recommendation[];
+  const [recommendations, setRecommendations] = useState<Recommendation[]>(recommendationsData as Recommendation[]);
+  const [sourceLabel, setSourceLabel] = useState('內建備份（2026-07-11）');
   const [selectedRegion, setSelectedRegion] = useState<string>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedAudience, setSelectedAudience] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const rows = await getPublicRecommendations();
+        if (!cancelled && rows.length > 0) {
+          setRecommendations(rows);
+          setSourceLabel('線上資料庫');
+        }
+      } catch (err) {
+        if (!cancelled && !(err instanceof ApiError && err.code === 'NOT_READY')) {
+          setSourceLabel('內建備份（線上同步暫時失敗）');
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const regions = useMemo(() => {
     const set = new Set(recommendations.map(r => r.region));
@@ -152,7 +159,7 @@ export default function RecommendationMapPage() {
         {/* Results count */}
         <div className="flex justify-between items-center text-sm font-bold">
           <span>符合條件推薦紀錄：共 {filtered.length} 筆</span>
-          <span className="text-brown/70">最後資料同步日期：2026-07-11</span>
+          <span className="text-brown/70">資料來源：{sourceLabel}</span>
         </div>
 
         {/* Cards Grid */}

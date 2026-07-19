@@ -6,8 +6,11 @@
  */
 import { supabase } from './supabase';
 import type {
+  Case,
   EmailTemplate,
   EventFeedback,
+  Recommendation,
+  ServiceRecord,
   FormSchema,
   Project,
   Registration,
@@ -115,6 +118,50 @@ function mapFeedback(r: Row): EventFeedback {
   };
 }
 
+function mapRecommendation(r: Row): Recommendation {
+  return {
+    id: r.id as string,
+    category: r.category as Recommendation['category'],
+    audience: r.audience as Recommendation['audience'],
+    region: r.region as Recommendation['region'],
+    hospital: (r.hospital as string) ?? '',
+    doctorOrName: (r.doctor_or_name as string) ?? '',
+    urls: (r.urls as string[]) ?? [],
+    experience: (r.experience as string) ?? '',
+    recommender: (r.recommender as string) ?? undefined,
+    verified: (r.verified as boolean) ?? false,
+    verifiedNote: (r.verified_note as string) ?? undefined,
+    updatedAt: (r.updated_at as string) ?? undefined,
+  };
+}
+
+function mapCase(r: Row): Case {
+  return {
+    id: r.id as string,
+    projectId: r.project_id as string,
+    registrationId: (r.registration_id as string) ?? undefined,
+    displayName: r.display_name as string,
+    serviceType: r.service_type as Case['serviceType'],
+    status: r.status as Case['status'],
+    summary: (r.summary as string) ?? undefined,
+    createdAt: r.created_at as string,
+    updatedAt: (r.updated_at as string) ?? undefined,
+  };
+}
+
+function mapServiceRecord(r: Row): ServiceRecord {
+  return {
+    id: r.id as string,
+    caseId: r.case_id as string,
+    kind: r.kind as ServiceRecord['kind'],
+    occurredAt: r.occurred_at as string,
+    title: r.title as string,
+    content: (r.content as string) ?? '',
+    authorId: (r.author_id as string) ?? undefined,
+    createdAt: r.created_at as string,
+  };
+}
+
 /* ============================== 公開端 ============================== */
 
 export async function getProjectBySlug(slug: string): Promise<Project | null> {
@@ -150,8 +197,17 @@ export async function getUpcomingSessions(projectId: string): Promise<SessionSlo
   return (data ?? []).map(mapSession);
 }
 
-export interface SubmitRegistrationInput {
-  projectId: string;
+/** 公開就醫推薦。Supabase 未設定或讀取失敗時，由頁面保留版本化 JSON 後援。 */
+export async function getPublicRecommendations(): Promise<Recommendation[]> {
+  const { data, error } = await db()
+    .from('recommendations')
+    .select('*')
+    .order('id', { ascending: true });
+  if (error) throw new ApiError(error.message);
+  return (data ?? []).map(mapRecommendation);
+}
+
+export interface SubmitRegistrationInput {  projectId: string;
   sessionIds: string[];
   answers: Registration['answers'];
   email: string;
@@ -385,8 +441,92 @@ export async function adminListEmailTemplates(): Promise<EmailTemplate[]> {
   return (data ?? []).map(mapTemplate);
 }
 
-/** 後台：活動回饋清單（RLS 限系統擁有者），最新在前。 */
-export async function adminListFeedback(): Promise<EventFeedback[]> {
+/** 後台：新增或更新信件範本；全域範本仍由 RLS 限系統擁有者。 */
+export async function adminSaveEmailTemplate(template: EmailTemplate): Promise<EmailTemplate> {
+  const payload = {
+    project_id: template.projectId ?? null,
+    name: template.name.trim(),
+    subject: template.subject,
+    body: template.body,
+  };
+  const isNew = template.id.startsWith('draft-');
+  const query = isNew
+    ? db().from('email_templates').insert(payload).select().single()
+    : db().from('email_templates').update(payload).eq('id', template.id).select().single();
+  const { data, error } = await query;
+  if (error) throw new ApiError(error.message, 'INSERT');
+  return mapTemplate(data);
+}
+
+export async function adminDeleteEmailTemplate(id: string): Promise<void> {
+  const { error } = await db().from('email_templates').delete().eq('id', id);
+  if (error) throw new ApiError(error.message, 'INSERT');
+}
+
+/** 後台個案與服務紀錄。RLS 會依專案成員 cases 權限裁切。 */
+export async function adminListCasesWithRecords(): Promise<{
+  cases: Case[];
+  records: Record<string, ServiceRecord[]>;
+}> {
+  const { data, error } = await db()
+    .from('cases')
+    .select('*, service_records(*)')
+    .order('created_at', { ascending: false });
+  if (error) throw new ApiError(error.message);
+  const cases = (data ?? []).map(mapCase);
+  const records: Record<string, ServiceRecord[]> = {};
+  for (const row of data ?? []) {
+    records[row.id] = ((row.service_records ?? []) as Row[])
+      .map(mapServiceRecord)
+      .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt));
+  }
+  return { cases, records };
+}
+
+export async function adminAddServiceRecord(
+  record: Omit<ServiceRecord, 'id' | 'createdAt'>,
+): Promise<ServiceRecord> {
+  const { data, error } = await db()
+    .from('service_records')
+    .insert({
+      case_id: record.caseId,
+      kind: record.kind,
+      occurred_at: record.occurredAt,
+      title: record.title.trim(),
+      content: record.content.trim(),
+      author_id: record.authorId ?? null,
+    })
+    .select()
+    .single();
+  if (error) throw new ApiError(error.message, 'INSERT');
+  return mapServiceRecord(data);
+}
+
+/** 審核上架推薦；系統擁有者 RLS 限制寫入。 */
+export async function adminSaveRecommendation(recommendation: Recommendation): Promise<Recommendation> {
+  const { data, error } = await db()
+    .from('recommendations')
+    .upsert({
+      id: recommendation.id,
+      category: recommendation.category,
+      audience: recommendation.audience,
+      region: recommendation.region,
+      hospital: recommendation.hospital,
+      doctor_or_name: recommendation.doctorOrName,
+      urls: recommendation.urls,
+      experience: recommendation.experience,
+      recommender: recommendation.recommender ?? null,
+      verified: recommendation.verified,
+      verified_note: recommendation.verifiedNote ?? null,
+      updated_at: recommendation.updatedAt ?? null,
+    })
+    .select()
+    .single();
+  if (error) throw new ApiError(error.message, 'INSERT');
+  return mapRecommendation(data);
+}
+
+/** 後台：活動回饋清單（RLS 限系統擁有者），最新在前。 */export async function adminListFeedback(): Promise<EventFeedback[]> {
   const { data, error } = await db()
     .from('event_feedback')
     .select('*')

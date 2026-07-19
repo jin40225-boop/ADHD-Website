@@ -8,12 +8,14 @@ import { isSupabaseReady } from '@/lib/supabase';
 import DemoDataNotice from '../DemoDataNotice';
 
 const MODULES = [
-  { to: '/admin/registrations', title: '報名審核工作台', desc: '報名卡片、狀態流、信件串與範本寄送。' },
-  { to: '/admin/sessions', title: '場次管理', desc: '活動/諮詢場次編輯、名額與 Meet 行事曆。' },
-  { to: '/admin/instructors', title: '講師邀約', desc: '候選時段 × 講師回覆矩陣與場次確認。' },
-  { to: '/admin/recommendations', title: '推薦資料庫審核', desc: '投稿佇列、舊資料比對與核實上架。' },
-  { to: '/admin/templates', title: '信件範本管理', desc: '範本 CRUD 與變數即時預覽。' },
-  { to: '/admin/cases', title: '個案管理', desc: '個案清單、服務紀錄時間軸與新增紀錄。' },
+  { to: '/admin/registrations', title: '報名審核工作台', desc: '真實資料：報名、狀態流、信件串與範本寄送。' },
+  { to: '/admin/sessions', title: '場次管理', desc: '真實資料：場次、名額與 Meet 行事曆。' },
+  { to: '/admin/forms', title: '報名表編輯', desc: '真實資料：各專案欄位與選項設定。' },
+  { to: '/admin/recommendations', title: '推薦資料庫審核', desc: '真實資料：投稿比對、核實、上架與前台同步。' },
+  { to: '/admin/feedback', title: '活動回饋', desc: '真實資料：公開回饋單送出的留言。' },
+  { to: '/admin/instructors', title: '講師邀約', desc: '示意模式：候選時段與講師回覆矩陣。' },
+  { to: '/admin/templates', title: '信件範本管理', desc: '真實資料：範本 CRUD 與變數預覽。' },
+  { to: '/admin/cases', title: '個案管理', desc: '受保護資料：個案與服務紀錄。' },
 ];
 
 export default function AdminOverview() {
@@ -24,9 +26,8 @@ export default function AdminOverview() {
         {isSupabaseReady ? (
           <div className="mb-4 rounded-xl border-2 border-brown/40 bg-accent-teal/20 px-4 py-2.5 text-sm">
             <strong>系統狀態：</strong>
-            資料庫（K1）與 Google 登入（K3）已上線；「場次管理」「報名審核」為真實資料。
-            其餘模組（講師邀約／推薦審核／信件範本／個案）暫為示意資料；
-            寄信與 Meet 行事曆（K2）、歷史資料遷移（K4）尚未進行。
+            資料庫、Google 登入、歷史資料遷移、報名審核、場次、表單、推薦、信件範本、個案與活動回饋已上線。
+            Gmail／Meet 已完成程式接線；講師邀約目前仍為示意模式。
           </div>
         ) : (
           <DemoDataNotice note="Supabase 環境變數未設定，全部模組為示意資料。" />

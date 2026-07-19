@@ -33,10 +33,13 @@ jobs:
           cache: npm
           cache-dependency-path: adhd-platform/package-lock.json
       - run: npm ci
+      - run: npm audit --omit=dev --audit-level=high
+      - run: npm run typecheck
       - run: npm run deploy
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      - run: npm run check:site
       - uses: actions/upload-pages-artifact@v3
         with:
           path: adhd-platform/dist
