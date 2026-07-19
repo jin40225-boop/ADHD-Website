@@ -38,6 +38,8 @@ export default function RegistrationsPage() {
     live ? {} : { [mockConsultationSchema.projectId]: mockConsultationSchema },
   );
   const [statusFlow, setStatusFlow] = useState<StatusFlow>(mockStatusFlow);
+  const [statusFlows, setStatusFlows] = useState<Record<string, StatusFlow>>({});
+  const [projectNames, setProjectNames] = useState<Record<string, string>>();
   const [templates, setTemplates] = useState<EmailTemplate[]>(live ? [] : mockEmailTemplates);
   const [loading, setLoading] = useState(live);
   const [notice, setNotice] = useState<string>();
@@ -53,12 +55,18 @@ export default function RegistrationsPage() {
         adminListEmailTemplates(),
         adminListProjects(),
       ]);
-      const flow = projects[0] ? await adminGetStatusFlow(projects[0].id) : null;
+      // 各計畫各自的狀態流；報名筆數少、計畫僅個位數，逐一載入可接受
+      const flowEntries = await Promise.all(
+        projects.map(async (p) => [p.id, await adminGetStatusFlow(p.id)] as const),
+      );
+      const flows = Object.fromEntries(flowEntries.filter(([, f]) => f)) as Record<string, StatusFlow>;
       setRegistrations(regs);
       setSessions(ss);
       setSchemas(fs);
       setTemplates(tpls);
-      if (flow) setStatusFlow(flow);
+      setStatusFlows(flows);
+      setProjectNames(Object.fromEntries(projects.map((p) => [p.id, p.name])));
+      if (projects[0] && flows[projects[0].id]) setStatusFlow(flows[projects[0].id]);
       setError(undefined);
     } catch (err) {
       setError(err instanceof Error ? err.message : '載入報名資料失敗');
@@ -135,6 +143,8 @@ export default function RegistrationsPage() {
           sessions={sessions}
           schemas={schemas}
           statusFlow={statusFlow}
+          statusFlows={statusFlows}
+          projectNames={projectNames}
           emailTemplates={templates}
           onStatusChange={handleStatusChange}
           onSendEmail={handleSendEmail}
