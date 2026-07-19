@@ -24,8 +24,8 @@ const TODO_LINKS = {
   LINK_17: `${BASE}parent/register`,
   LINK_18: `${BASE}peer-group/register`,
   LINK_19: 'https://www.knews.com.tw/news/01CEE23784ECF429098274743517F227',
-  LINK_20: 'https://mountain-sail-ee8.notion.site/ADHD-2098b8084dad807d8c50f4d5c4221ace',
-  LINK_21: 'https://mountain-sail-ee8.notion.site/2098b8084dad8089b914ef5f29bd3fea',
+  LINK_20: 'https://www.youtube.com/watch?v=q1UL5Kn51gc',
+  LINK_21: 'https://www.youtube.com/watch?v=CsHqUIdz0W4',
 };
 
 export default function PeerGroupPage() {

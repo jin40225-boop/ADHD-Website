@@ -4,12 +4,12 @@ import { UpcomingSessions } from '@/components/UpcomingSessions';
 
 // Notion 停用（2026-07 中）連結替換：報名表單改站內報名頁、資料庫改站內地圖、
 // 新聞報導改原始媒體連結。BASE 讓連結在 GitHub Pages 子路徑與本機 dev 都正確。
-// LINK_2/LINK_3 影片頁為未備份的 Notion 嵌入頁，暫留原連結待 user 提供原始影片來源。
+// LINK_2/LINK_3 影片（2026-07-19 溯源）：Notion 頁僅為嵌入殼，原片在台中赤子心官方 YouTube。
 const BASE = import.meta.env.BASE_URL;
 const TODO_LINKS = {
   LINK_1: 'https://www.knews.com.tw/news/01CEE23784ECF429098274743517F227',
-  LINK_2: 'https://mountain-sail-ee8.notion.site/ADHD-2098b8084dad807d8c50f4d5c4221ace',
-  LINK_3: 'https://mountain-sail-ee8.notion.site/2098b8084dad8089b914ef5f29bd3fea',
+  LINK_2: 'https://www.youtube.com/watch?v=q1UL5Kn51gc',
+  LINK_3: 'https://www.youtube.com/watch?v=CsHqUIdz0W4',
   LINK_4: `${BASE}map`,
   LINK_5: `${BASE}peer-group/register`,
   LINK_6: `${BASE}navigator/register`,
