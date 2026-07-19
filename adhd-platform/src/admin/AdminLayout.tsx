@@ -2,8 +2,10 @@
  * 後台版型骨架（/admin）。【CLAUDE】
  * 側欄連到各功能模組占位；CODEX 的 features 交付後於 router.tsx 換入真元件。
  */
-import { NavLink, Outlet, Link } from 'react-router-dom';
+import { useEffect } from 'react';
+import { NavLink, Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
+import { applyPageMetadata } from '@/routes/page-metadata';
 
 const ADMIN_NAV = [
   { to: '/admin', label: '總覽', end: true },
@@ -19,6 +21,11 @@ const ADMIN_NAV = [
 
 export default function AdminLayout() {
   const { user, signOut } = useAuth();
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    applyPageMetadata(pathname);
+  }, [pathname]);
 
   return (
     <div className="flex min-h-screen bg-cream">

@@ -49,6 +49,8 @@ const integrationRequirements = [
   ['src/admin/pages/RecommendationsPage.tsx', ['adminSaveRecommendation', 'getPublicRecommendations']],
   ['src/admin/pages/TemplatesPage.tsx', ['adminSaveEmailTemplate', 'adminDeleteEmailTemplate']],
   ['src/admin/pages/CasesPage.tsx', ['adminListCasesWithRecords', 'adminAddServiceRecord']],
+  ['src/admin/AdminLayout.tsx', ['applyPageMetadata']],
+  ['src/admin/AdminLogin.tsx', ['applyPageMetadata']],
 ];
 for (const [relativePath, markers] of integrationRequirements) {
   const content = readFileSync(resolve(root, relativePath), 'utf8');

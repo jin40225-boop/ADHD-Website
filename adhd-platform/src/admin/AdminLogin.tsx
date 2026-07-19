@@ -6,12 +6,17 @@ import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { isSupabaseReady } from '@/lib/supabase';
+import { applyPageMetadata } from '@/routes/page-metadata';
 
 export default function AdminLogin() {
   const { user, loading, signIn } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [error, setError] = useState<string>();
+
+  useEffect(() => {
+    applyPageMetadata(location.pathname);
+  }, [location.pathname]);
 
   useEffect(() => {
     if (user) {
