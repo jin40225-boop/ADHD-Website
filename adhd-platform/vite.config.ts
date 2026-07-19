@@ -19,4 +19,16 @@ export default defineConfig({
   server: {
     port: 5173,
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // 主 bundle 拆包：框架與 Supabase SDK 少變動，獨立成 vendor chunk
+        // 讓內容更新時使用者只需重新下載頁面碼。
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-supabase': ['@supabase/supabase-js'],
+        },
+      },
+    },
+  },
 });

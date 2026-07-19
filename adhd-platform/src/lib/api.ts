@@ -184,17 +184,26 @@ export async function getFormSchema(projectId: string): Promise<FormSchema | nul
   return data ? { projectId: data.project_id, fields: data.fields as FormSchema['fields'] } : null;
 }
 
-/** 前台可見場次（開放＋額滿，未結束），依開始時間排序。 */
+/** 前台可見場次（開放＋額滿，未結束），依開始時間排序。
+ *  優先讀 sessions_public view（僅安全欄位，無 meet_url/calendar_event_id）；
+ *  view 尚未建立（migration 20260719000001 未跑）時退回 sessions 本表。 */
 export async function getUpcomingSessions(projectId: string): Promise<SessionSlot[]> {
-  const { data, error } = await db()
-    .from('sessions')
-    .select('*')
-    .eq('project_id', projectId)
-    .in('status', ['open', 'full'])
-    .gte('ends_at', new Date().toISOString())
-    .order('starts_at', { ascending: true });
+  const query = (table: string, columns: string) =>
+    db()
+      .from(table)
+      .select(columns)
+      .eq('project_id', projectId)
+      .in('status', ['open', 'full'])
+      .gte('ends_at', new Date().toISOString())
+      .order('starts_at', { ascending: true });
+
+  const SAFE_COLUMNS = 'id, project_id, title, starts_at, ends_at, capacity, booked_count, status';
+  let { data, error } = await query('sessions_public', SAFE_COLUMNS);
+  if (error) {
+    ({ data, error } = await query('sessions', SAFE_COLUMNS));
+  }
   if (error) throw new ApiError(error.message);
-  return (data ?? []).map(mapSession);
+  return ((data ?? []) as unknown as Row[]).map(mapSession);
 }
 
 /** 公開就醫推薦。Supabase 未設定或讀取失敗時，由頁面保留版本化 JSON 後援。 */

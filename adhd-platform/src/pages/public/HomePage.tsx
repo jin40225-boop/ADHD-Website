@@ -1,5 +1,6 @@
 import { ArrowRight, ArrowUpRight, BookOpen, Calendar, CalendarClock, ChevronDown, Clock, Copy, Database, Edit3, Flag, Info, Mail, MapPin, MessageCircle, PlayCircle, Sparkles, User, Users, Video } from 'lucide-react';
 import { useSessionCardToggle } from '@/hooks/useSessionCardToggle';
+import { UpcomingSessions } from '@/components/UpcomingSessions';
 
 // Notion 停用（2026-07 中）連結替換：報名表單改站內報名頁、資料庫改站內地圖、
 // 新聞報導改原始媒體連結。BASE 讓連結在 GitHub Pages 子路徑與本機 dev 都正確。
@@ -181,11 +182,7 @@ export default function HomePage() {
 </div>
 <div className="border-t-4 border-dashed border-brown/20 pt-8"><div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6"><div className="space-y-1"><h3 className="text-2xl font-bold text-brown flex items-center gap-2"><span className="bg-accent-teal text-white px-2 py-1 rounded text-lg border border-brown">辦理</span>
                             ADHD 成人同儕線上團體-場次說明
-                        </h3><p className="text-gray-600 font-medium">(點開有詳細介紹喔！)</p></div></div><div className="session-card"><div className="session-header" ><div className="flex items-center gap-3"><span className="session-tag bg-accent-orange text-brown">7月場</span><span className="font-bold text-brown text-lg">釋放你的創意靈魂：創作不僅是專業，更是樂趣</span></div><ChevronDown className="w-5 h-5 text-brown transition-transform duration-300"></ChevronDown></div><div className="session-content"><div className="p-6 space-y-4"><div className="flex flex-wrap gap-4 text-sm font-bold text-gray-600 bg-white/50 p-3 rounded-lg border border-brown/10"><span className="flex items-center gap-1"><Calendar className="w-4 h-4"></Calendar> 7月 18日 (六)</span><span className="flex items-center gap-1"><Clock className="w-4 h-4"></Clock> 14:00 - 16:00</span><span className="flex items-center gap-1"><User className="w-4 h-4"></User> 客座嘉賓：Vtuber 殷緋</span></div><div><h4 className="font-bold text-brown mb-2 border-l-4 border-orange-300 pl-2">我們聊什麼：</h4><p className="text-gray-700 leading-relaxed text-justify">
-                                    誰說創作一定要很專業？只要覺得好玩，就是最棒的創作！<br/>
-                                    大家對創作有熱情嗎？不論是畫畫、寫小說、寫詩，或是裝置藝術，歡迎來到這裡大聊特聊你的創作世界。這次邀請 Vtuber 殷緋，和大家一起輕鬆聊天，分享創作過程中的樂趣與點滴，一起感受創作帶來的單純快樂。
-                                </p></div><div className="flex gap-3 pt-2"><a className="btn-warm py-2 px-4 bg-white hover:bg-gray-100 text-sm" href="https://meet.google.com/fzy-kpwu-bcb" target="_blank"><Video className="w-4 h-4 mr-2"></Video> 視訊連結
-                                </a><a className="btn-warm py-2 px-4 bg-accent-orange text-brown hover:bg-[#FFB74D] text-sm" href={TODO_LINKS.LINK_8} target="_blank">報名表單</a></div></div></div></div>
+                        </h3><p className="text-gray-600 font-medium">(點開有詳細介紹喔！)</p></div></div><UpcomingSessions />
 
 <div className="border-t-4 border-dashed border-brown/20 pt-8 mt-12 mb-6">
 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
@@ -195,6 +192,32 @@ export default function HomePage() {
                                     已經完成辦理活動區
                                 </h3>
 <p className="text-gray-500 font-medium">這些是我們過去美好的回憶！</p>
+</div>
+</div>
+
+<div className="session-card bg-gray-100 opacity-80">
+<div className="session-header" >
+<div className="flex items-center gap-3">
+<span className="session-tag bg-gray-300 text-gray-500">線上團體</span>
+<span className="font-bold text-gray-500 text-lg">【ADHD 成人同儕線上團體】釋放你的創意靈魂：創作不僅是專業，更是樂趣</span>
+</div>
+<ChevronDown className="w-5 h-5 text-gray-500 transition-transform duration-300"></ChevronDown>
+</div>
+<div className="session-content">
+<div className="p-6 space-y-4">
+<div className="flex flex-wrap gap-4 text-sm font-bold text-gray-600 bg-white/50 p-3 rounded-lg border border-brown/10">
+<span className="flex items-center gap-1"><Calendar className="w-4 h-4"></Calendar> 7月 18日 (六)</span>
+<span className="flex items-center gap-1"><Clock className="w-4 h-4"></Clock> 14:00 - 16:00</span>
+<span className="flex items-center gap-1"><User className="w-4 h-4"></User> 客座嘉賓：Vtuber 殷緋</span>
+</div>
+<div>
+<h4 className="font-bold text-gray-500 mb-2 border-l-4 border-orange-300 pl-2">我們聊什麼：</h4>
+<p className="text-gray-700 leading-relaxed text-justify">
+                                            誰說創作一定要很專業？只要覺得好玩，就是最棒的創作！<br/>
+                                            大家對創作有熱情嗎？不論是畫畫、寫小說、寫詩，或是裝置藝術，歡迎來到這裡大聊特聊你的創作世界。這次邀請 Vtuber 殷緋，和大家一起輕鬆聊天，分享創作過程中的樂趣與點滴，一起感受創作帶來的單純快樂。
+                                        </p>
+</div>
+</div>
 </div>
 </div>
 

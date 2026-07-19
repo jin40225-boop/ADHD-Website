@@ -91,7 +91,13 @@ export default function RecommendationDbContent() {
     <p className="text-brown leading-relaxed my-4">《子頁面》花蓮縣 (id=1aa8b808-4dad-8068-95eb-f4f00b4a86cc)</p>
     <p className="text-brown leading-relaxed my-4">《子頁面》宜蘭市 (id=1aa8b808-4dad-8096-ad28-e532afefa402)</p>
     <img src={`${import.meta.env.BASE_URL}assets/map-guide-filter.jpg`} alt="推薦資料庫條件篩選操作示範" loading="lazy" decoding="async" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
-    <p className="text-brown leading-relaxed my-4">[embed] https://www.google.com/maps/d/embed?mid=1evABqI3MGLvGXp3lUAPR2_5TBZdAaGY&ehbc=2E312F</p>
+    <iframe
+      src="https://www.google.com/maps/d/embed?mid=1evABqI3MGLvGXp3lUAPR2_5TBZdAaGY&ehbc=2E312F"
+      title="ADHD 就醫推薦地圖"
+      className="w-full rounded-2xl border-2 border-brown shadow-warm my-6"
+      style={{ height: '480px' }}
+      loading="lazy"
+    ></iframe>
     <img src={`${import.meta.env.BASE_URL}assets/map-guide-filter.jpg`} alt="推薦資料庫條件篩選操作示範" loading="lazy" decoding="async" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
     <p className="text-brown leading-relaxed my-4">《子資料庫》Untitled (id=19b8b808-4dad-8003-ba75-e4f6939739f1)</p>
     <p className="text-brown leading-relaxed my-4">💬</p>
