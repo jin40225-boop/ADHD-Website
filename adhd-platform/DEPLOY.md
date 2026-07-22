@@ -54,6 +54,7 @@ npx supabase db push
 npx supabase functions deploy send-email
 npx supabase functions deploy calendar-upsert
 npx supabase functions deploy send-instructor-invite
+npx supabase functions deploy mcp --no-verify-jwt
 ~~~
 
 正式 Functions 需要下列 Supabase secrets：
@@ -88,6 +89,16 @@ Supabase Auth 的 Redirect URLs 至少包含：
 - `send-instructor-invite` 已部署；OPTIONS smoke test 為 200。
 - 正式站與本機的 `/admin/login` 已加入 Supabase Auth Redirect URLs。
 - 真實寄信、Calendar／Meet 建立及 GCP Client Secret 輪替須以管理者指定測試對象執行，避免自動化流程寄信給現有講師或建立測試行事曆事件。
+- `mcp` 為公開唯讀 GPT 工具端點；它只使用 anon key 與公開 RLS 資料，不得改成 service-role key。
+- 2026-07-22 已部署並連接 ChatGPT 開發者模式；四個工具已辨識，`list_services` 對話端到端測試通過。
+
+## GPT/MCP 驗證
+
+- MCP endpoint：`https://sssseazkhiswjhtmbluh.supabase.co/functions/v1/mcp`
+- Health endpoint：`https://sssseazkhiswjhtmbluh.supabase.co/functions/v1/mcp/health`
+- 正式站描述檔：`https://jin40225-boop.github.io/ADHD-Website/gpt-tools.json`
+
+部署後執行 `initialize`、`tools/list` 與四個唯讀工具的 smoke test，再到 ChatGPT 開發者模式新增 MCP app。完整遷移矩陣與安全邊界見 `docs/GPT_SITES_INTEGRATION.md`。
 
 ## 正式端到端驗證
 

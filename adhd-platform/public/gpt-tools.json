@@ -1,0 +1,22 @@
+{
+  "name": "ADHD 家長支持平台公開資料",
+  "version": "1.0.0",
+  "protocol": "MCP Streamable HTTP",
+  "mcpEndpoint": "https://sssseazkhiswjhtmbluh.supabase.co/functions/v1/mcp",
+  "healthEndpoint": "https://sssseazkhiswjhtmbluh.supabase.co/functions/v1/mcp/health",
+  "websiteUrl": "https://jin40225-boop.github.io/ADHD-Website/",
+  "tools": [
+    "list_services",
+    "list_upcoming_sessions",
+    "search_recommendations",
+    "list_public_resources"
+  ],
+  "privacy": {
+    "readOnly": true,
+    "publicDataOnly": true,
+    "containsRegistrationData": false,
+    "containsCaseData": false,
+    "containsEmailData": false,
+    "containsMeetingLinks": false
+  }
+}

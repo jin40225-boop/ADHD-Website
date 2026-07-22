@@ -1,7 +1,7 @@
 /**
  * 路由表。【CLAUDE】
- * 2026-07-12 整合：公開路由換入 ANTIGRAVITY 十頁；/admin/* 換入 CODEX 六模組
- * （經 src/admin/pages/ 整合層以本地假資料驅動；後端 K1–K4 完成後改接真資料）。
+ * 2026-07-22：公開前台與 /admin/* 均已接 Supabase 真實資料流；公開 GPT
+ * 查找則由獨立唯讀 MCP Function 提供，不在瀏覽器 bundle 中處理私密資料。
  * 後台採 lazy 分包，公開前台 bundle 不含後台程式碼。
  */
 import { Suspense, lazy } from 'react';

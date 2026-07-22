@@ -19,7 +19,7 @@ function collectFiles(dir) {
   });
 }
 
-for (const required of ['index.html', '404.html', '.nojekyll']) {
+for (const required of ['index.html', '404.html', '.nojekyll', 'gpt-tools.json']) {
   if (!existsSync(resolve(dist, required))) failures.push(`缺少 dist/${required}`);
 }
 
@@ -64,6 +64,7 @@ const integrationRequirements = [
   ['src/pages/InstructorAvailabilityPage.tsx', ['getAvailabilityPoll', 'saveAvailabilityReply']],
   ['src/admin/AdminLayout.tsx', ['applyPageMetadata']],
   ['src/admin/AdminLogin.tsx', ['applyPageMetadata']],
+  ['supabase/functions/mcp/index.ts', ['list_services', 'list_upcoming_sessions', 'search_recommendations', 'list_public_resources', 'sessions_public']],
 ];
 for (const [relativePath, markers] of integrationRequirements) {
   const content = readFileSync(resolve(root, relativePath), 'utf8');
@@ -80,6 +81,21 @@ const staleInstructorCopy = collectFiles(resolve(root, 'src'))
   .filter((file) => /\.(tsx|ts)$/.test(file))
   .filter((file) => /講師邀約目前仍為示意模式|示意模式：候選時段/.test(readFileSync(file, 'utf8')));
 if (staleInstructorCopy.length) failures.push('仍含講師邀約示意模式的過期說明');
+
+const gptDescriptor = JSON.parse(readFileSync(resolve(root, 'public/gpt-tools.json'), 'utf8'));
+if (gptDescriptor.mcpEndpoint !== 'https://sssseazkhiswjhtmbluh.supabase.co/functions/v1/mcp') {
+  failures.push('gpt-tools.json MCP endpoint 不符');
+}
+if (gptDescriptor.privacy?.readOnly !== true || gptDescriptor.privacy?.publicDataOnly !== true) {
+  failures.push('gpt-tools.json 缺少唯讀公開資料聲明');
+}
+
+const mcpSource = readFileSync(resolve(root, 'supabase/functions/mcp/index.ts'), 'utf8');
+for (const forbiddenTable of ['registrations', 'cases', 'service_records', 'email_messages', 'profiles']) {
+  if (mcpSource.includes(`'${forbiddenTable}'`)) {
+    failures.push(`公開 MCP 不得查詢 ${forbiddenTable}`);
+  }
+}
 
 if (failures.length) {  console.error(failures.map((failure) => `✗ ${failure}`).join('\n'));
   process.exit(1);
