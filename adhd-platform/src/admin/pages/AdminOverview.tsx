@@ -13,7 +13,7 @@ const MODULES = [
   { to: '/admin/forms', title: '報名表編輯', desc: '真實資料：各專案欄位與選項設定。' },
   { to: '/admin/recommendations', title: '推薦資料庫審核', desc: '真實資料：投稿比對、核實、上架與前台同步。' },
   { to: '/admin/feedback', title: '活動回饋', desc: '真實資料：公開回饋單送出的留言。' },
-  { to: '/admin/instructors', title: '講師邀約', desc: '示意模式：候選時段與講師回覆矩陣。' },
+  { to: '/admin/instructors', title: '講師邀約', desc: '真實資料：候選時段、講師回覆、邀請信與成立場次。' },
   { to: '/admin/templates', title: '信件範本管理', desc: '真實資料：範本 CRUD 與變數預覽。' },
   { to: '/admin/cases', title: '個案管理', desc: '受保護資料：個案與服務紀錄。' },
 ];
@@ -27,7 +27,7 @@ export default function AdminOverview() {
           <div className="mb-4 rounded-xl border-2 border-brown/40 bg-accent-teal/20 px-4 py-2.5 text-sm">
             <strong>系統狀態：</strong>
             資料庫、Google 登入、歷史資料遷移、報名審核、場次、表單、推薦、信件範本、個案與活動回饋已上線。
-            Gmail／Meet 已完成程式接線；講師邀約目前仍為示意模式。
+            Gmail／Meet 與講師邀約已完成正式資料流及線上後端部署。
           </div>
         ) : (
           <DemoDataNotice note="Supabase 環境變數未設定，全部模組為示意資料。" />

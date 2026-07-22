@@ -76,6 +76,10 @@ const staleIntegrationCopy = collectFiles(resolve(root, 'src'))
   .filter((file) => /\.(tsx|ts)$/.test(file))
   .filter((file) => readFileSync(file, 'utf8').includes('前台地圖仍讀 recommendations.json'));
 if (staleIntegrationCopy.length) failures.push('仍含推薦資料三處同步的過期說明');
+const staleInstructorCopy = collectFiles(resolve(root, 'src'))
+  .filter((file) => /\.(tsx|ts)$/.test(file))
+  .filter((file) => /講師邀約目前仍為示意模式|示意模式：候選時段/.test(readFileSync(file, 'utf8')));
+if (staleInstructorCopy.length) failures.push('仍含講師邀約示意模式的過期說明');
 
 if (failures.length) {  console.error(failures.map((failure) => `✗ ${failure}`).join('\n'));
   process.exit(1);
