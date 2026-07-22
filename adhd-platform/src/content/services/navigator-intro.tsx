@@ -3,10 +3,6 @@ export default function NavigatorIntroContent() {
   return (
     <article className="prose max-w-none">
       <h1 className="text-3xl font-extrabold text-brown mb-6 border-b-2 border-brown pb-2">【ADHD 導航計畫】免費公益線上諮詢：大A彥宇 × 諮商心理師鏡子 — 報名頁文案</h1>
-    <blockquote className="border-l-4 border-highlight bg-cream p-4 rounded-r-xl my-4 text-brown italic shadow-sm">
-    <p className="leading-relaxed my-2">來源：https://mountain-sail-ee8.notion.site/1f6ffa2c66cc471899275a62db2e8d05?pvs=105 （2026-07-11 網頁擷取）</p>
-    <p className="leading-relaxed my-2">性質：對外報名表單頁（Notion Form），對應資料庫「【ADHD 導航計畫】報名表」。新系統自建報名頁可直接沿用此文案。</p>
-    </blockquote>
     <hr className="border-t-2 border-brown my-8" />
     <p className="text-brown leading-relaxed my-4">今年，大A彥宇與諮商心理師宋致靜（鏡子）攜手合作，為 ADHD 族群推出專屬的免費公益諮詢服務。</p>
     <p className="text-brown leading-relaxed my-4">如果你覺得生活有些卡關，想釐清自己目前的心理狀態，或正在評估自己是否需要進一步的心理諮商，歡迎預約這項專屬服務，讓心理師陪你走一段內心的漫遊之旅。</p>

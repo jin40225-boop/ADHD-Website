@@ -1,64 +1,31 @@
-# 公開頁面 (Public Pages) - 外部連結與遷移對照表
+# 公開頁面
 
-本目錄存放自舊網站平移的四個主頁面元件及新設計的前台頁面殼。
-依照 `02_ANTIGRAVITY_指令檔.md` 規範，原頁面指向 `notion.site` 與 `forms.gle` 的連結均替換為頁面頂端的 `TODO_LINKS` 常數，待後續由 CLAUDE 接軌為內部路由。
+本目錄是 ADHD 家長支持平台的公開 React 頁面。正式部署使用 GitHub Pages base path `/ADHD-Website/`，所有站內連結必須透過 `import.meta.env.BASE_URL` 或 React Router 產生。
 
-## 替換連結清單與原目標
+## 主要路由
 
-- **HomePage** (`LINK_1`): `https://mountain-sail-ee8.notion.site/2-2098b8084dad80928e66d53a6ba373e7?source=copy_link` (新聞報導ADHD長大成助人者)
-- **HomePage** (`LINK_2`): `https://mountain-sail-ee8.notion.site/ADHD-2098b8084dad807d8c50f4d5c4221ace` (友善 ADHD 父母的環境)
-- **HomePage** (`LINK_3`): `https://mountain-sail-ee8.notion.site/2098b8084dad8089b914ef5f29bd3fea` (跟人相處這麼難嗎？)
-- **HomePage** (`LINK_4`): `https://mountain-sail-ee8.notion.site/` (前往資料庫查詢)
-- **HomePage** (`LINK_5`): `https://forms.gle/Up6LFmBe7qCiSe6Z6` (📝 立即填寫報名表預先報名讓我們更好準備喔！)
-- **HomePage** (`LINK_6`): `https://mountain-sail-ee8.notion.site/1f6ffa2c66cc471899275a62db2e8d05?pvs=105` (📝 前往填寫報名表
-重要報名連結)
-- **HomePage** (`LINK_7`): `https://mountain-sail-ee8.notion.site/97c41d5530d145b18d7d8739f572d64d?pvs=105` (📝 前往填寫報名表
-報名連結)
-- **HomePage** (`LINK_8`): `https://forms.gle/Up6LFmBe7qCiSe6Z6` (報名表單)
-- **HomePage** (`LINK_9`): `https://mountain-sail-ee8.notion.site/1f6ffa2c66cc471899275a62db2e8d05?pvs=105` (報名連結)
-- **HomePage** (`LINK_10`): `https://mountain-sail-ee8.notion.site/1f6ffa2c66cc471899275a62db2e8d05?pvs=105` (報名連結)
-- **HomePage** (`LINK_11`): `https://mountain-sail-ee8.notion.site/1f6ffa2c66cc471899275a62db2e8d05?pvs=105` (報名連結)
-- **HomePage** (`LINK_12`): `https://forms.gle/Up6LFmBe7qCiSe6Z6` (報名表單)
-- **HomePage** (`LINK_13`): `https://mountain-sail-ee8.notion.site/97c41d5530d145b18d7d8739f572d64d?pvs=105` (報名連結)
-- **HomePage** (`LINK_14`): `https://mountain-sail-ee8.notion.site/97c41d5530d145b18d7d8739f572d64d?pvs=105` (報名連結)
-- **HomePage** (`LINK_15`): `https://mountain-sail-ee8.notion.site/97c41d5530d145b18d7d8739f572d64d?pvs=105` (報名連結)
-- **HomePage** (`LINK_16`): `https://forms.gle/Up6LFmBe7qCiSe6Z6` (報名表單)
-- **HomePage** (`LINK_17`): `https://mountain-sail-ee8.notion.site/97c41d5530d145b18d7d8739f572d64d?pvs=105` (報名連結)
-- **HomePage** (`LINK_18`): `https://mountain-sail-ee8.notion.site/97c41d5530d145b18d7d8739f572d64d?pvs=105` (報名連結)
-- **HomePage** (`LINK_19`): `https://mountain-sail-ee8.notion.site/97c41d5530d145b18d7d8739f572d64d?pvs=105` (報名連結)
-- **HomePage** (`LINK_20`): `https://mountain-sail-ee8.notion.site/1f6ffa2c66cc471899275a62db2e8d05?pvs=105` (報名連結)
-- **HomePage** (`LINK_21`): `https://forms.gle/Up6LFmBe7qCiSe6Z6` (報名表單)
-- **HomePage** (`LINK_22`): `https://mountain-sail-ee8.notion.site/97c41d5530d145b18d7d8739f572d64d?pvs=105` (報名連結)
-- **HomePage** (`LINK_23`): `https://mountain-sail-ee8.notion.site/97c41d5530d145b18d7d8739f572d64d?pvs=105` (報名連結)
-- **HomePage** (`LINK_24`): `https://forms.gle/Up6LFmBe7qCiSe6Z6` (報名表單)
-- **PeerGroupPage** (`LINK_1`): `https://forms.gle/Up6LFmBe7qCiSe6Z6` (📝 立即填寫報名表預先報名讓我們更好準備喔！)
-- **PeerGroupPage** (`LINK_2`): `https://forms.gle/Up6LFmBe7qCiSe6Z6` (報名表單)
-- **PeerGroupPage** (`LINK_3`): `https://mountain-sail-ee8.notion.site/1f6ffa2c66cc471899275a62db2e8d05?pvs=105` (報名連結)
-- **PeerGroupPage** (`LINK_4`): `https://mountain-sail-ee8.notion.site/1f6ffa2c66cc471899275a62db2e8d05?pvs=105` (報名連結)
-- **PeerGroupPage** (`LINK_5`): `https://mountain-sail-ee8.notion.site/1f6ffa2c66cc471899275a62db2e8d05?pvs=105` (報名連結)
-- **PeerGroupPage** (`LINK_6`): `https://forms.gle/Up6LFmBe7qCiSe6Z6` (報名表單)
-- **PeerGroupPage** (`LINK_7`): `https://mountain-sail-ee8.notion.site/97c41d5530d145b18d7d8739f572d64d?pvs=105` (報名連結)
-- **PeerGroupPage** (`LINK_8`): `https://mountain-sail-ee8.notion.site/97c41d5530d145b18d7d8739f572d64d?pvs=105` (報名連結)
-- **PeerGroupPage** (`LINK_9`): `https://mountain-sail-ee8.notion.site/97c41d5530d145b18d7d8739f572d64d?pvs=105` (報名連結)
-- **PeerGroupPage** (`LINK_10`): `https://forms.gle/Up6LFmBe7qCiSe6Z6` (報名表單)
-- **PeerGroupPage** (`LINK_11`): `https://mountain-sail-ee8.notion.site/97c41d5530d145b18d7d8739f572d64d?pvs=105` (報名連結)
-- **PeerGroupPage** (`LINK_12`): `https://mountain-sail-ee8.notion.site/97c41d5530d145b18d7d8739f572d64d?pvs=105` (報名連結)
-- **PeerGroupPage** (`LINK_13`): `https://mountain-sail-ee8.notion.site/97c41d5530d145b18d7d8739f572d64d?pvs=105` (報名連結)
-- **PeerGroupPage** (`LINK_14`): `https://mountain-sail-ee8.notion.site/1f6ffa2c66cc471899275a62db2e8d05?pvs=105` (報名連結)
-- **PeerGroupPage** (`LINK_15`): `https://forms.gle/Up6LFmBe7qCiSe6Z6` (報名表單)
-- **PeerGroupPage** (`LINK_16`): `https://mountain-sail-ee8.notion.site/97c41d5530d145b18d7d8739f572d64d?pvs=105` (報名連結)
-- **PeerGroupPage** (`LINK_17`): `https://mountain-sail-ee8.notion.site/97c41d5530d145b18d7d8739f572d64d?pvs=105` (報名連結)
-- **PeerGroupPage** (`LINK_18`): `https://forms.gle/Up6LFmBe7qCiSe6Z6` (報名表單)
-- **PeerGroupPage** (`LINK_19`): `https://mountain-sail-ee8.notion.site/2-2098b8084dad80928e66d53a6ba373e7?source=copy_link` (新聞報導ADHD長大成助人者)
-- **PeerGroupPage** (`LINK_20`): `https://mountain-sail-ee8.notion.site/ADHD-2098b8084dad807d8c50f4d5c4221ace` (友善 ADHD 父母的環境)
-- **PeerGroupPage** (`LINK_21`): `https://mountain-sail-ee8.notion.site/2098b8084dad8089b914ef5f29bd3fea` (跟人相處這麼難嗎？)
-- **NavigatorConsultPage** (`LINK_1`): `https://mountain-sail-ee8.notion.site/1f6ffa2c66cc471899275a62db2e8d05?pvs=105` (📝 前往填寫報名表
-重要報名連結)
-- **NavigatorConsultPage** (`LINK_2`): `https://mountain-sail-ee8.notion.site/2-2098b8084dad80928e66d53a6ba373e7?source=copy_link` (新聞報導ADHD長大成助人者)
-- **NavigatorConsultPage** (`LINK_3`): `https://mountain-sail-ee8.notion.site/ADHD-2098b8084dad807d8c50f4d5c4221ace` (友善 ADHD 父母的環境)
-- **NavigatorConsultPage** (`LINK_4`): `https://mountain-sail-ee8.notion.site/2098b8084dad8089b914ef5f29bd3fea` (跟人相處這麼難嗎？)
-- **ParentConsultPage** (`LINK_1`): `https://mountain-sail-ee8.notion.site/97c41d5530d145b18d7d8739f572d64d?pvs=105` (📝 前往填寫報名表
-報名連結)
-- **ParentConsultPage** (`LINK_2`): `https://mountain-sail-ee8.notion.site/2-2098b8084dad80928e66d53a6ba373e7?source=copy_link` (新聞報導ADHD長大成助人者)
-- **ParentConsultPage** (`LINK_3`): `https://mountain-sail-ee8.notion.site/ADHD-2098b8084dad807d8c50f4d5c4221ace` (友善 ADHD 父母的環境)
-- **ParentConsultPage** (`LINK_4`): `https://mountain-sail-ee8.notion.site/2098b8084dad8089b914ef5f29bd3fea` (跟人相處這麼難嗎？)
+| 路由 | 用途 | 正式資料來源 |
+|---|---|---|
+| `/` | 首頁與服務入口 | 版本化內容元件 |
+| `/peer-group` | 成人 ADHD 線上互助聚會 | 版本化內容＋Supabase 公開場次 view |
+| `/navigator` | 心理師導航與諮詢 | 版本化內容＋Supabase 公開場次 view |
+| `/parent` | 家長諮詢 | 版本化內容＋Supabase 公開場次 view |
+| `/*/register` | 三類站內報名 | `projects`、`form_schemas`、`sessions_public`、`registrations` |
+| `/map` | 就醫與支持推薦 | Supabase `recommendations`；JSON 為故障後援 |
+| `/map/submit` | 推薦投稿 | Supabase `recommendation_submissions` |
+| `/guide` | 新手指南 | 版本化內容與本機圖片 |
+| `/articles` | 入門文章 | `articles-index.json` 與內容元件 |
+| `/instructors` | 講師概況 | 版本化公開資料 |
+| `/feedback` | 活動回饋 | Supabase `event_feedback` |
+| `/instructor/availability` | 受邀講師時段回覆 | Supabase Auth、`availability_polls`、`availability_replies` |
+
+## 外部連結
+
+公開頁只保留可追溯的原始新聞與 YouTube 影片連結。報名、推薦查詢、推薦投稿與活動回饋均使用站內路由，不依賴外部 CMS 或第三方表單。
+
+## 維護底線
+
+- 公開資料不得包含報名者、個案、講師信箱或 OAuth 憑證。
+- 公開場次只能讀 `sessions_public`，不可恢復 `sessions` 匿名 SELECT。
+- 推薦地圖以 Supabase 為正式來源，`recommendations.json` 僅作離線後援。
+- 新增公開路由時同步更新 `src/data/site-meta.json`，並執行 `npm run deploy` 與 `npm run check:site`。

@@ -28,6 +28,7 @@ import ArticleDetailPage from '@/pages/public/ArticleDetailPage';
 import InstructorsPage from '@/pages/public/InstructorsPage';
 import FeedbackPage from '@/pages/public/FeedbackPage';
 
+const InstructorAvailabilityPage = lazy(() => import('@/pages/InstructorAvailabilityPage'));
 // 行政後台（CODEX 模組 × CLAUDE 整合層，lazy 分包）
 const AdminOverview = lazy(() => import('@/admin/pages/AdminOverview'));
 const RegistrationsPage = lazy(() => import('@/admin/pages/RegistrationsPage'));
@@ -74,6 +75,12 @@ const router = createBrowserRouter(
         { path: 'articles', element: <ArticlesPage /> },
         { path: 'articles/:slug', element: <ArticleDetailRoute /> },
         { path: 'instructors', element: <InstructorsPage /> },
+        {
+          path: 'instructor/availability',
+          element: (
+            <RequireAuth>{withSuspense(<InstructorAvailabilityPage />)}</RequireAuth>
+          ),
+        },
         { path: 'feedback', element: <FeedbackPage /> },
       ],
     },

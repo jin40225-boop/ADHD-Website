@@ -4,9 +4,15 @@
  * 未設定時退回本地示意資料。onCreateCalendarEvent 待 K2（Google Edge Functions）。
  */
 import { useCallback, useEffect, useState } from 'react';
-import type { Project, SessionSlot } from '@contracts/types';
+import type { Instructor, Project, SessionSlot } from '@contracts/types';
 import { SessionManager, mockInstructors, mockSessions } from '@/features/session-manager';
-import { adminListProjects, adminListSessions, adminSaveSession, invokeCalendarUpsert } from '@/lib/api';
+import {
+  adminListInstructors,
+  adminListProjects,
+  adminListSessions,
+  adminSaveSession,
+  invokeCalendarUpsert,
+} from '@/lib/api';
 import { isSupabaseReady } from '@/lib/supabase';
 import DemoDataNotice from '../DemoDataNotice';
 
@@ -26,6 +32,7 @@ export default function SessionsPage() {
   const live = isSupabaseReady;
   const [sessions, setSessions] = useState<SessionSlot[]>(live ? [] : mockSessions);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [instructors, setInstructors] = useState<Instructor[]>(live ? [] : mockInstructors);
   const [projectId, setProjectId] = useState<string>('');
   const [loading, setLoading] = useState(live);
   const [notice, setNotice] = useState<string>();
@@ -34,8 +41,9 @@ export default function SessionsPage() {
   const reload = useCallback(async () => {
     if (!live) return;
     try {
-      const [ss, ps] = await Promise.all([adminListSessions(), adminListProjects()]);
+      const [ss, ps, nextInstructors] = await Promise.all([adminListSessions(), adminListProjects(), adminListInstructors()]);
       setSessions(ss.map((s) => ({ ...s, startsAt: toLocalInput(s.startsAt), endsAt: toLocalInput(s.endsAt) })));
+      setInstructors(nextInstructors);
       setProjects(ps);
       setProjectId((current) => current || ps[0]?.id || '');
       setError(undefined);
@@ -134,7 +142,7 @@ export default function SessionsPage() {
       ) : (
         <SessionManager
           sessions={sessions}
-          instructors={mockInstructors}
+          instructors={instructors}
           onSave={handleSave}
           onCreateCalendarEvent={handleCreateCalendarEvent}
         />

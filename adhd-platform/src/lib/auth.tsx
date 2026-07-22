@@ -15,11 +15,13 @@ import {
 import type { Profile } from '@contracts/types';
 import { supabase } from './supabase';
 
+export const AUTH_RETURN_PATH_KEY = 'adhd-auth-return-path';
+
 export interface AuthState {
   user: Profile | null;
   loading: boolean;
-  /** Google OAuth 登入（整頁導向，回跳 /admin）。 */
-  signIn: () => Promise<void>;
+  /** Google OAuth 登入（整頁導向，回跳 /admin/login 後恢復原路徑）。 */
+  signIn: (returnPath?: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -78,13 +80,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const signIn = useCallback(async () => {
+  const signIn = useCallback(async (returnPath?: string) => {
     if (!supabase) {
       console.warn('[auth] Supabase 未設定，無法登入');
       return;
     }
+    if (returnPath?.startsWith('/') && !returnPath.startsWith('//')) {
+      sessionStorage.setItem(AUTH_RETURN_PATH_KEY, returnPath);
+    }
     // 回跳網址須列於 Supabase Auth → URL Configuration 的 Redirect URLs
-    const redirectTo = `${window.location.origin}${import.meta.env.BASE_URL}admin`;
+    const redirectTo = `${window.location.origin}${import.meta.env.BASE_URL}admin/login`;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo },

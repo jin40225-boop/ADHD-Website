@@ -21,7 +21,13 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
   }
 
   if (!user && !devBypass) {
-    return <Navigate to="/admin/login" replace state={{ from: location }} />;
+    return (
+      <Navigate
+        to="/admin/login"
+        replace
+        state={{ from: { pathname: location.pathname, search: location.search } }}
+      />
+    );
   }
 
   return <>{children}</>;

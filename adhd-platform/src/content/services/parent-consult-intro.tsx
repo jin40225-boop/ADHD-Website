@@ -3,10 +3,6 @@ export default function ParentConsultIntroContent() {
   return (
     <article className="prose max-w-none">
       <h1 className="text-3xl font-extrabold text-brown mb-6 border-b-2 border-brown pb-2">【ADHD 家長諮詢服務】免費公益線上諮詢：前兒少社工陪你找出教養新解方 — 報名頁文案</h1>
-    <blockquote className="border-l-4 border-highlight bg-cream p-4 rounded-r-xl my-4 text-brown italic shadow-sm">
-    <p className="leading-relaxed my-2">來源：https://mountain-sail-ee8.notion.site/97c41d5530d145b18d7d8739f572d64d?pvs=105 （2026-07-11 網頁擷取）</p>
-    <p className="leading-relaxed my-2">性質：對外報名表單頁（Notion Form），對應資料庫「🌿 ADHD 家長諮詢服務報名」。新系統自建報名頁可直接沿用此文案。</p>
-    </blockquote>
     <hr className="border-t-2 border-brown my-8" />
     <p className="text-brown leading-relaxed my-4">在陪伴 ADHD 孩子的路上，您是否時常感到心力交瘁，覺得沒有人懂您的無力感？</p>
     <p className="text-brown leading-relaxed my-4">或您想問問「服藥是什麼感覺？」、「為什麼要這樣做？」</p>

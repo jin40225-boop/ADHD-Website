@@ -6,12 +6,16 @@
  */
 import { supabase } from './supabase';
 import type {
+  AvailabilityAnswer,
+  AvailabilityPoll,
   Case,
+  CandidateSlot,
   EmailTemplate,
   EventFeedback,
   Recommendation,
   ServiceRecord,
   FormSchema,
+  Instructor,
   Project,
   Registration,
   RecommendationSubmission,
@@ -162,6 +166,29 @@ function mapServiceRecord(r: Row): ServiceRecord {
   };
 }
 
+function mapAvailabilityPoll(r: Row): AvailabilityPoll {
+  const replies = ((r.availability_replies as Row[] | undefined) ?? []).map((reply) => ({
+    id: reply.id as string,
+    pollId: reply.poll_id as string,
+    slotId: reply.slot_id as string,
+    instructorId: reply.instructor_id as string,
+    answer: reply.answer as AvailabilityAnswer,
+    repliedAt: (reply.replied_at as string) ?? undefined,
+  }));
+  return {
+    id: r.id as string,
+    projectId: r.project_id as string,
+    candidateSlots: ((r.candidate_slots as CandidateSlot[]) ?? []).map((slot) => ({
+      ...slot,
+      capacity: Number(slot.capacity) || 1,
+    })),
+    instructorIds: (r.instructor_ids as string[]) ?? [],
+    status: r.status as AvailabilityPoll['status'],
+    replies,
+    createdAt: r.created_at as string,
+  };
+}
+
 /* ============================== 公開端 ============================== */
 
 export async function getProjectBySlug(slug: string): Promise<Project | null> {
@@ -283,6 +310,105 @@ export async function adminListProjects(): Promise<Project[]> {
   const { data, error } = await db().from('projects').select('*').order('created_at');
   if (error) throw new ApiError(error.message);
   return (data ?? []).map(mapProject);
+}
+
+/** 後台：依專案成員資料取得講師名單，不把 Email 暴露給畫面元件。 */
+export async function adminListInstructors(projectId?: string): Promise<Instructor[]> {
+  let membersQuery = db()
+    .from('project_members')
+    .select('user_id, role, project_id')
+    .in('role', ['instructor_full', 'instructor_slot']);
+  if (projectId) membersQuery = membersQuery.eq('project_id', projectId);
+  const { data: members, error: memberError } = await membersQuery;
+  if (memberError) throw new ApiError(memberError.message);
+
+  const userIds = [...new Set((members ?? []).map((member) => member.user_id as string))];
+  if (!userIds.length) return [];
+  const { data: profiles, error: profileError } = await db()
+    .from('profiles')
+    .select('id, display_name, avatar_url')
+    .in('id', userIds)
+    .order('display_name');
+  if (profileError) throw new ApiError(profileError.message);
+
+  const roleByUser = new Map(
+    (members ?? []).map((member) => [member.user_id as string, member.role as string]),
+  );
+  return (profiles ?? []).map((profile) => ({
+    id: profile.id,
+    name: profile.display_name,
+    title: roleByUser.get(profile.id) === 'instructor_full' ? '講師' : '時段協作者',
+    bio: '',
+    avatarUrl: profile.avatar_url ?? undefined,
+  }));
+}
+
+export async function adminListAvailabilityPolls(projectId: string): Promise<AvailabilityPoll[]> {
+  const { data, error } = await db()
+    .from('availability_polls')
+    .select('*, availability_replies(*)')
+    .eq('project_id', projectId)
+    .order('created_at', { ascending: false });
+  if (error) throw new ApiError(error.message);
+  return (data ?? []).map(mapAvailabilityPoll);
+}
+
+export async function getAvailabilityPoll(pollId: string): Promise<AvailabilityPoll | null> {
+  const { data, error } = await db()
+    .from('availability_polls')
+    .select('*, availability_replies(*)')
+    .eq('id', pollId)
+    .maybeSingle();
+  if (error) throw new ApiError(error.message);
+  return data ? mapAvailabilityPoll(data) : null;
+}
+
+export async function adminSaveAvailabilityPoll(input: {
+  id?: string;
+  projectId: string;
+  candidateSlots: CandidateSlot[];
+  instructorIds: string[];
+}): Promise<AvailabilityPoll> {
+  const payload = {
+    project_id: input.projectId,
+    candidate_slots: input.candidateSlots,
+    instructor_ids: input.instructorIds,
+    status: 'open' as const,
+  };
+  const query = input.id && !input.id.startsWith('draft-')
+    ? db().from('availability_polls').update(payload).eq('id', input.id).select().single()
+    : db().from('availability_polls').insert(payload).select().single();
+  const { data, error } = await query;
+  if (error) throw new ApiError(error.message, 'INSERT');
+  return mapAvailabilityPoll(data);
+}
+
+export async function saveAvailabilityReply(input: {
+  pollId: string;
+  slotId: string;
+  instructorId: string;
+  answer: Exclude<AvailabilityAnswer, 'pending'>;
+}): Promise<void> {
+  const { error } = await db().from('availability_replies').upsert({
+    poll_id: input.pollId,
+    slot_id: input.slotId,
+    instructor_id: input.instructorId,
+    answer: input.answer,
+    replied_at: new Date().toISOString(),
+  }, { onConflict: 'poll_id,slot_id,instructor_id' });
+  if (error) throw new ApiError(error.message, 'INSERT');
+}
+
+/** 確認候選時段並由 DB transaction 原子建立正式場次。 */
+export async function adminConfirmAvailabilityPoll(
+  pollId: string,
+  slotId: string,
+): Promise<SessionSlot> {
+  const { data, error } = await db()
+    .rpc('confirm_availability_poll', { p_poll_id: pollId, p_slot_id: slotId })
+    .single();
+  if (error) throw new ApiError(error.message, 'INSERT');
+  return mapSession(data as Row);
 }
 
 export async function adminListSessions(): Promise<SessionSlot[]> {
@@ -582,4 +708,9 @@ export async function invokeSendEmail(input: {
 /** 為場次建立/更新 Google Calendar 事件與 Meet 連結。 */
 export async function invokeCalendarUpsert(sessionId: string): Promise<{ ok: boolean; meetUrl?: string }> {
   return invokeFunction('calendar-upsert', { sessionId });
+}
+
+/** 寄送講師時段邀請（Gmail Edge Function）。 */
+export async function invokeSendInstructorInvite(pollId: string): Promise<{ ok: boolean; sent: number }> {
+  return invokeFunction('send-instructor-invite', { pollId });
 }

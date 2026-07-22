@@ -267,6 +267,7 @@ export interface CandidateSlot {
   title: string;
   startsAt: string;
   endsAt: string;
+  capacity: number;
 }
 
 /** 講師時段邀約（候選時段 × 講師回覆）（對映 `availability_polls`）。 */

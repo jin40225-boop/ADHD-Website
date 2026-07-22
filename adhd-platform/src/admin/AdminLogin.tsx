@@ -4,7 +4,7 @@
  */
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/lib/auth';
+import { AUTH_RETURN_PATH_KEY, useAuth } from '@/lib/auth';
 import { isSupabaseReady } from '@/lib/supabase';
 import { applyPageMetadata } from '@/routes/page-metadata';
 
@@ -20,15 +20,24 @@ export default function AdminLogin() {
 
   useEffect(() => {
     if (user) {
-      const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname;
-      navigate(from ?? '/admin', { replace: true });
+      const fromState = (location.state as {
+        from?: { pathname?: string; search?: string };
+      } | null)?.from;
+      const statePath = fromState?.pathname
+        ? `${fromState.pathname}${fromState.search ?? ''}`
+        : undefined;
+      const storedPath = sessionStorage.getItem(AUTH_RETURN_PATH_KEY) ?? undefined;
+      sessionStorage.removeItem(AUTH_RETURN_PATH_KEY);
+      const destination = statePath ?? storedPath;
+      navigate(destination?.startsWith('/') && !destination.startsWith('//') ? destination : '/admin', { replace: true });
     }
   }, [user, navigate, location.state]);
 
   const handleSignIn = async () => {
     setError(undefined);
     try {
-      await signIn();
+      const from = (location.state as { from?: { pathname?: string; search?: string } } | null)?.from;
+      await signIn(from?.pathname ? `${from.pathname}${from.search ?? ''}` : undefined);
     } catch (err) {
       setError(err instanceof Error ? err.message : '登入失敗，請稍後再試。');
     }

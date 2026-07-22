@@ -44,11 +44,24 @@ for (const file of sourceFiles) {
   if (/<img(?![^>]*\balt=)[^>]*>/s.test(content)) failures.push(`${file} 含缺少 alt 的圖片`);
 }
 
+const publicSourceFiles = [
+  ...collectFiles(resolve(root, 'src/content')),
+  ...collectFiles(resolve(root, 'src/pages/public')),
+].filter((file) => /\.(tsx|ts|md)$/.test(file));
+for (const file of publicSourceFiles) {
+  const content = readFileSync(file, 'utf8');
+  if (/notion\.site|forms\.gle/i.test(content)) {
+    failures.push(`${file} 仍含舊外部站台或表單依賴`);
+  }
+}
+
 const integrationRequirements = [
   ['src/pages/public/RecommendationMapPage.tsx', ['getPublicRecommendations', '內建備份（2026-07-11）']],
   ['src/admin/pages/RecommendationsPage.tsx', ['adminSaveRecommendation', 'getPublicRecommendations']],
   ['src/admin/pages/TemplatesPage.tsx', ['adminSaveEmailTemplate', 'adminDeleteEmailTemplate']],
   ['src/admin/pages/CasesPage.tsx', ['adminListCasesWithRecords', 'adminAddServiceRecord']],
+  ['src/admin/pages/InstructorSchedulingPage.tsx', ['adminListAvailabilityPolls', 'invokeSendInstructorInvite', 'adminConfirmAvailabilityPoll']],
+  ['src/pages/InstructorAvailabilityPage.tsx', ['getAvailabilityPoll', 'saveAvailabilityReply']],
   ['src/admin/AdminLayout.tsx', ['applyPageMetadata']],
   ['src/admin/AdminLogin.tsx', ['applyPageMetadata']],
 ];

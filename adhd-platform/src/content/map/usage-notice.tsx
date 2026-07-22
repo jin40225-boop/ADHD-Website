@@ -3,11 +3,6 @@ export default function UsageNoticeContent() {
   return (
     <article className="prose max-w-none">
       <h1 className="text-3xl font-extrabold text-brown mb-6 border-b-2 border-brown pb-2">ADHD就醫家長推薦資料庫(醫療地圖) — 公開站首頁文案</h1>
-    <blockquote className="border-l-4 border-highlight bg-cream p-4 rounded-r-xl my-4 text-brown italic shadow-sm">
-    <p className="leading-relaxed my-2">來源：https://mountain-sail-ee8.notion.site/ （2026-07-11 網頁擷取，摺疊區塊已展開）</p>
-    <p className="leading-relaxed my-2">注意：醫師資料表格部分與 <code className="bg-accent-orange/20 px-1.5 py-0.5 rounded text-sm font-mono text-highlight">資料庫_ADHD就醫家長推薦_主資料庫119筆.csv</code> 重複，以 CSV 為準；本檔重點是<strong className="font-bold text-highlight">版面文案</strong>。</p>
-    <p className="leading-relaxed my-2">頁面內嵌「台灣ADHD醫療地圖的副本 - Google My Maps」，該地圖存放於 Google 帳號，不受 Notion 停用影響。</p>
-    </blockquote>
     <hr className="border-t-2 border-brown my-8" />
     <h2 className="text-2xl font-bold text-brown mt-8 mb-4">使用聲明（toggle：ADHD 醫療資料庫 快捷鍵及使用聲明）</h2>
     <p className="text-brown leading-relaxed my-4">「ADHD 醫療地圖」內的資訊來自 ADHD 患者與家長的個人經驗分享進行推薦，僅供參考。本網站不對資料的完整性、準確性或時效性做出保證，亦不為任何一位醫生背書。</p>
