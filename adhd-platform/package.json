@@ -10,7 +10,8 @@
     "typecheck": "tsc -b",
     "preview": "vite preview",
     "deploy": "node scripts/deploy-pages.mjs",
-    "check:site": "node scripts/check-site.mjs"
+    "check:site": "node scripts/check-site.mjs",
+    "check:operations": "node scripts/check-admin-operations.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",

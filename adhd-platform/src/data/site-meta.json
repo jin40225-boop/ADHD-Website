@@ -23,5 +23,12 @@
   {"route":"/admin/forms","title":"表單管理｜ADHD 專案","description":"管理 Google 表單與回覆同步。"},
   {"route":"/admin/cases","title":"個案管理｜ADHD 專案","description":"管理服務個案與紀錄。"},
   {"route":"/admin/feedback","title":"回饋管理｜ADHD 專案","description":"管理活動回饋資料。"},
+  {"route":"/admin/tasks","title":"追蹤任務｜ADHD 專案","description":"管理行政追蹤、期限與負責人。"},
+  {"route":"/admin/inbox","title":"整合收件匣｜ADHD 專案","description":"管理 Gmail 收件、寄件、草稿與完整往來。"},
+  {"route":"/admin/people","title":"人員主檔｜ADHD 專案","description":"管理報名者、講師與跨活動服務歷程。"},
+  {"route":"/admin/activities","title":"活動中心｜ADHD 專案","description":"管理活動、場次、報名表與生命週期。"},
+  {"route":"/admin/team","title":"成員與權限｜ADHD 專案","description":"邀請行政與講師並管理計畫角色。"},
+  {"route":"/admin/integrations","title":"整合狀態｜ADHD 專案","description":"檢查 Gmail、Calendar 與 Meet 整合。"},
+  {"route":"/admin/audit","title":"稽核紀錄｜ADHD 專案","description":"查閱行政操作與整合結果。"},
   {"route":"/admin/gallery","title":"介面元件庫｜ADHD 專案","description":"ADHD 專案內部介面元件預覽。"}
 ]

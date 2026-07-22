@@ -58,6 +58,7 @@ function mapSession(r: Row): SessionSlot {
   return {
     id: r.id as string,
     projectId: r.project_id as string,
+    activityId: (r.activity_id as string) ?? undefined,
     title: r.title as string,
     startsAt: r.starts_at as string,
     endsAt: r.ends_at as string,
@@ -249,21 +250,19 @@ export interface SubmitRegistrationInput {  projectId: string;
   email: string;
 }
 
-/** 公開報名。額滿由 DB 觸發器 enforce_session_capacity 保證（滿員擲 SESSION_FULL）。 */
+/** 公開報名由 Edge Function 執行速率限制／可選 CAPTCHA，再由 DB 原子檢查名額。 */
 export async function submitRegistration(input: SubmitRegistrationInput): Promise<void> {
-  const { error } = await db().from('registrations').insert({
-    project_id: input.projectId,
-    session_ids: input.sessionIds,
-    answers: input.answers,
-    email: input.email,
-    status: 'pending',
-  });
-  if (error) {
-    if (error.message.includes('SESSION_FULL_OR_CLOSED')) {
-      throw new ApiError('您選擇的場次剛剛額滿或已關閉，請重新選擇其他場次。', 'SESSION_FULL');
-    }
-    throw new ApiError(error.message, 'INSERT');
+  const { error } = await db().functions.invoke('submit-registration', { body: input });
+  if (!error) return;
+  let detail = error.message;
+  const context = (error as { context?: Response }).context;
+  if (context) {
+    try { const payload = await context.json() as { error?: string }; detail = payload.error || detail; } catch { /* 保留原錯誤 */ }
   }
+  if (detail.includes('SESSION_FULL_OR_CLOSED')) throw new ApiError('您選擇的場次剛剛額滿或已關閉，請重新選擇其他場次。', 'SESSION_FULL');
+  if (detail.includes('RATE_LIMITED')) throw new ApiError('送出次數過多，請稍後再試或聯絡管理員。', 'INSERT');
+  if (detail.includes('CAPTCHA')) throw new ApiError('安全驗證未完成，請重新整理後再試。', 'INSERT');
+  throw new ApiError(detail, 'INSERT');
 }
 
 export interface SubmitRecommendationInput {
@@ -424,6 +423,7 @@ export async function adminListSessions(): Promise<SessionSlot[]> {
 export async function adminSaveSession(session: SessionSlot): Promise<SessionSlot> {
   const payload = {
     project_id: session.projectId,
+    activity_id: session.activityId ?? null,
     title: session.title,
     starts_at: session.startsAt,
     ends_at: session.endsAt,
@@ -701,8 +701,11 @@ export async function invokeSendEmail(input: {
   registrationId: string;
   subject: string;
   body: string;
+  cc?: string[];
+  bcc?: string[];
+  threadId?: string;
 }): Promise<{ ok: boolean; threadId?: string }> {
-  return invokeFunction('send-email', input);
+  return invokeFunction('send-email-v2', input);
 }
 
 /** 為場次建立/更新 Google Calendar 事件與 Meet 連結。 */

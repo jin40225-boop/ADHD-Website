@@ -2,7 +2,7 @@
  * 站內報名頁（通用，依專案 slug 驅動）。【CLAUDE 整合層】
  * 表單定義與場次來自 Supabase（form_schemas / sessions）；
  * 送出寫入 registrations，額滿由 DB 觸發器保證並回報友善訊息。
- * 若 DB 有場次資料，會以「場次選擇」欄位取代 schema 內的 preferredSlots 靜態選項。
+ * 報名只接受資料庫正式場次，不再以靜態時段建立無法追蹤的報名。
  */
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -77,13 +77,6 @@ export default function RegisterPage({ slug }: { slug: string }) {
   // DB 有場次 → 以真場次欄位取代 schema 的 preferredSlots 靜態選項
   const effectiveSchema = useMemo<FormSchema | null>(() => {
     if (!schema) return null;
-    if (sessions.length === 0) {
-      // 無 DB 場次時仍用 schema 靜態選項，但過期/額滿而停用的時段不再顯示
-      const fields = schema.fields.map((f) =>
-        f.key === 'preferredSlots' ? { ...f, options: enabledOptions(f) } : f,
-      );
-      return { ...schema, fields };
-    }
     const sessionField: FormField = {
       key: SESSION_FIELD_KEY,
       label: '選擇場次',

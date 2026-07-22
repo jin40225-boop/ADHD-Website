@@ -15,6 +15,8 @@ import {
 } from '@/lib/api';
 import { isSupabaseReady } from '@/lib/supabase';
 import DemoDataNotice from '../DemoDataNotice';
+import { listActivities } from '../operations/api';
+import type { ActivityRecord } from '../operations/types';
 
 /** ISO timestamptz ↔ datetime-local 值互轉（SessionManager 的時間欄位用 datetime-local）。 */
 function toLocalInput(iso: string): string {
@@ -34,6 +36,8 @@ export default function SessionsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [instructors, setInstructors] = useState<Instructor[]>(live ? [] : mockInstructors);
   const [projectId, setProjectId] = useState<string>('');
+  const [activities, setActivities] = useState<ActivityRecord[]>([]);
+  const [activityId, setActivityId] = useState<string>('');
   const [loading, setLoading] = useState(live);
   const [notice, setNotice] = useState<string>();
   const [error, setError] = useState<string>();
@@ -41,9 +45,10 @@ export default function SessionsPage() {
   const reload = useCallback(async () => {
     if (!live) return;
     try {
-      const [ss, ps, nextInstructors] = await Promise.all([adminListSessions(), adminListProjects(), adminListInstructors()]);
+      const [ss, ps, nextInstructors, nextActivities] = await Promise.all([adminListSessions(), adminListProjects(), adminListInstructors(), listActivities()]);
       setSessions(ss.map((s) => ({ ...s, startsAt: toLocalInput(s.startsAt), endsAt: toLocalInput(s.endsAt) })));
       setInstructors(nextInstructors);
+      setActivities(nextActivities);
       setProjects(ps);
       setProjectId((current) => current || ps[0]?.id || '');
       setError(undefined);
@@ -72,6 +77,7 @@ export default function SessionsPage() {
       await adminSaveSession({
         ...session,
         projectId: session.projectId || projectId,
+        activityId: session.activityId || activityId || undefined,
         startsAt: toIso(session.startsAt),
         endsAt: toIso(session.endsAt),
       });
@@ -122,6 +128,11 @@ export default function SessionsPage() {
             {projects.map((p) => (
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
+          </select>
+          <span>活動：</span>
+          <select className="rounded-lg border-2 border-brown bg-white px-2 py-1" value={activityId} onChange={(event) => setActivityId(event.target.value)}>
+            <option value="">未指定活動</option>
+            {activities.filter((activity) => activity.projectId === projectId).map((activity) => <option key={activity.id} value={activity.id}>{activity.name}</option>)}
           </select>
         </div>
       ) : (

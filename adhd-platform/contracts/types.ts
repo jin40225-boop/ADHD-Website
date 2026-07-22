@@ -164,6 +164,7 @@ export type SessionStatus = 'open' | 'full' | 'closed' | 'done' | 'cancelled';
 export interface SessionSlot {
   id: string;
   projectId: string;
+  activityId?: string;
   title: string;
   /** ISO 8601, Asia/Taipei。 */
   startsAt: string;
