@@ -217,3 +217,14 @@ npx -y supabase migration list --linked
 | 日期 | 程式基準 | 狀態 | 證據 |
 |---|---|---|---|
 | 2026-07-24 | `60230a2` | 整合行政營運中心正式上線；資料庫 migration 與 4 個新 Functions 已發布 | Actions `30099005645`、正式路由抽查、登入後台桌面／行動版驗證 |
+
+## 10. 2026-07-29 Gmail 授權與同步修復
+
+- Google Cloud 專案 `idyllic-vehicle-502602-h0` 已啟用 Gmail API。
+- OAuth refresh token 已重新取得並驗證包含 `gmail.readonly`、`gmail.send`、`calendar.events`；Supabase 專案 `sssseazkhiswjhtmbluh` 的三項 Google secrets 已完成輪替，憑證值未寫入版本庫。
+- `gmail-sync` Edge Function 已部署：缺少 scope 時會回傳可操作的中文訊息，資料庫錯誤會保留 message/details/hint/code，不記錄郵件內容或憑證。
+- Production 的 `email_messages_gmail_uidx` 已由部分唯一索引改為完整唯一索引；對應 migration：`supabase/migrations/20260729000001_fix_email_messages_gmail_unique.sql`。
+- 首次同步改為最新 25 封建立基準並跳過已匯入 Gmail ID，避免大型信箱超過 Edge Function 時限；後續使用 Gmail history 增量同步。
+- E2E 證據：首次同步 `success / full:0`，增量同步 `success / incremental:0`；落庫 104 封郵件、99 個對話、1 筆 sync state，history ID 已建立。
+- 遠端 migration history 仍有既有落差：遠端有 `20260713000001`、本機沒有；本機 `20260717000001`～`20260722000001` 未列於遠端 history。禁止直接執行全量 `db push`，應先獨立對帳；本次只以 `supabase db query --linked --file` 套用指定索引修復。
+- 尚未建置 Gmail `users.watch` / Pub/Sub 推播；目前由管理員按鈕觸發增量同步。

@@ -67,6 +67,8 @@ npx supabase functions deploy mcp --no-verify-jwt
 
 - `PUBLIC_SITE_URL=https://jin40225-boop.github.io/ADHD-Website/`
 
+首次 Gmail 同步僅建立最新 25 封郵件的基準，並記錄 Gmail history ID；後續按「同步 Gmail」皆使用 history 增量同步。這可避免大型信箱在 Edge Function 時限內無法完成初始化。
+
 Google refresh token 至少需要：
 
 - `https://www.googleapis.com/auth/gmail.readonly`
