@@ -26,4 +26,6 @@ if (read('src/routes/RegisterPage.tsx').includes('if (sessions.length === 0)')) 
 for (const slug of ['submit-registration', 'send-email-v2', 'gmail-sync', 'team-invite']) {
   requireText(`supabase/functions/${slug}/index.ts`, ['Deno.serve', 'SUPABASE_SERVICE_ROLE_KEY']);
 }
+requireText('supabase/functions/gmail-sync/index.ts', ['GMAIL_SCOPE_MISSING', 'gmail.readonly']);
+requireText('DEPLOY.md', ['https://www.googleapis.com/auth/gmail.readonly']);
 console.log('Admin operations structural checks passed.');

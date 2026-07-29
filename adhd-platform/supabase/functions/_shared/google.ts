@@ -1,7 +1,7 @@
 /**
  * Google API 存取（refresh token → access token）。【CLAUDE / K2】
  * Secrets（supabase secrets set）：GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GOOGLE_REFRESH_TOKEN
- * refresh token 需含 scopes：gmail.send、calendar.events。
+ * refresh token 需含 scopes：gmail.readonly、gmail.send、calendar.events。
  */
 export async function getGoogleAccessToken(): Promise<string> {
   const clientId = Deno.env.get('GOOGLE_CLIENT_ID');

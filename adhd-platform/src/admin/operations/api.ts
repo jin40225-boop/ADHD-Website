@@ -25,6 +25,23 @@ function assert(error: { message: string } | null, fallback: string) {
   if (error) throw new Error(error.message || fallback);
 }
 
+async function assertFunction(
+  error: ({ message: string; context?: Response } & Record<string, unknown>) | null,
+  fallback: string,
+) {
+  if (!error) return;
+  let message = error.message || fallback;
+  if (error.context instanceof Response) {
+    try {
+      const body = await error.context.clone().json() as { error?: string; message?: string };
+      message = body.error || body.message || message;
+    } catch {
+      // Keep the SDK error when the response body is not JSON.
+    }
+  }
+  throw new Error(message);
+}
+
 function mapMessage(row: Row): OperationalMessage {
   return {
     id: row.id,
@@ -393,7 +410,7 @@ export async function createEmailAttachmentUrl(storagePath: string) {
 
 export async function triggerGmailSync(full = false) {
   const { data, error } = await db().functions.invoke('gmail-sync', { body: { full } });
-  assert(error, '啟動 Gmail 同步失敗');
+  await assertFunction(error, '啟動 Gmail 同步失敗');
   return data as { ok: boolean; synced: number; mailboxEmail?: string };
 }
 

@@ -69,8 +69,11 @@ npx supabase functions deploy mcp --no-verify-jwt
 
 Google refresh token 至少需要：
 
+- `https://www.googleapis.com/auth/gmail.readonly`
 - `https://www.googleapis.com/auth/gmail.send`
 - `https://www.googleapis.com/auth/calendar.events`
+
+`gmail.readonly` 是整合收件匣同步郵件、thread 與附件所必需；只有 `gmail.send` 無法讀取 Gmail profile 或郵件。scope 異動後必須以 `access_type=offline`、`prompt=consent` 重新授權並更新 `GOOGLE_REFRESH_TOKEN`，既有 refresh token 不會自動取得新增權限。Google Auth Platform 若仍在「測試」狀態，執行授權的帳號也必須列在測試使用者。
 
 輪替 Google Client Secret 時，先建立新 secret、更新 Supabase secret 並完成寄信與 Calendar smoke test，確認成功後才撤銷舊 secret。不得把 secret 值貼進 issue、commit、Actions log 或本文件。
 
