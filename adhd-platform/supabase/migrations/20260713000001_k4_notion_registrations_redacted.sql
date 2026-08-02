@@ -1,0 +1,7 @@
+-- Production migration version reserved for the historical Notion registration import.
+--
+-- The original production-only migration contains personal service data and remains
+-- explicitly ignored by .gitignore. Never commit, copy, or replay that sensitive SQL.
+-- This intentionally empty, redacted placeholder aligns the migration version only.
+-- Restore historical registrations from an authorized private backup through a separately
+-- reviewed, access-controlled data migration.

@@ -1,6 +1,6 @@
 # ADHD 家長支持平台：正式基準、目前狀態與重啟指南
 
-基準建立日期：2026-07-24（Asia/Taipei）
+基準更新日期：2026-08-02（Asia/Taipei）
 狀態：正式上線，後續維運
 本文件定位：專案技術狀態的單一事實來源。每次正式發布、資料庫結構變更或外部整合狀態改變後，更新本文件並在最下方新增一筆紀錄。
 
@@ -10,17 +10,17 @@
 |---|---|
 | GitHub repository | `jin40225-boop/ADHD-Website` |
 | 正式 branch | `main` |
-| 正式程式 commit | `60230a2eb745d2173d930de19ea881f99aa47538` |
-| Commit 主旨 | `feat: build integrated admin operations hub` |
+| 正式程式 commit | `a03c5f6263e8da49af703a352cef41b9951b5181` |
+| Commit 主旨 | `fix: make Gmail sync production-safe` |
 | 正式網站 | <https://jin40225-boop.github.io/ADHD-Website/> |
-| GitHub Pages workflow | <https://github.com/jin40225-boop/ADHD-Website/actions/runs/30099005645> |
+| GitHub Pages workflow | <https://github.com/jin40225-boop/ADHD-Website/actions/runs/30752822703> |
 | Workflow 結果 | `completed / success` |
-| Workflow 完成時間 | `2026-07-24T13:58:39Z` |
-| 正式前端資源識別 | `assets/index-Emap0En6.js` |
+| Workflow 完成時間 | `2026-08-02T14:46:36Z` |
+| 正式前端資源識別 | `assets/index-C21dG24e.js` |
 | Supabase project ref | `sssseazkhiswjhtmbluh` |
 | Production base | `/ADHD-Website/` |
 
-正式程式 commit 與「文件更新 commit」是兩個不同概念。此頁所稱正式程式基準固定指 `60230a2`；若後續只有文件異動，不得誤記為已部署新版功能。
+正式程式 commit 與「文件更新 commit」是兩個不同概念。此頁所稱正式程式基準指目前 GitHub Pages 實際部署的 `a03c5f6`；若後續只有文件異動，不得誤記為已部署新版功能。
 
 ## 2. 權威 checkout 與副本邊界
 
@@ -147,7 +147,6 @@ npm audit --omit=dev       0 high vulnerabilities
 
 | 項目 | 現況 | 完成判準 |
 |---|---|---|
-| Gmail 首次同步 | 功能已部署，正式帳號尚未執行首次同步 | 管理者手動同步後，確認收件、寄件、未讀、thread、附件與 audit |
 | Gmail 自動推播 | 尚未實作 `users.watch` 自動續訂 | 建立 watch／Pub/Sub、續訂排程、失敗告警與重放驗證 |
 | 真實寄信 | 僅完成安全驗證，未自動寄給真實對象 | 指定測試收件者，確認 Gmail thread、DB message 與 audit 一致 |
 | Calendar／Meet | 程式與接點存在，尚未做本輪真實 E2E | 指定測試場次，確認事件、Meet URL、DB 回寫與重試 |
@@ -206,7 +205,7 @@ npx -y supabase migration list --linked
 
 ## 8. 下一步優先序
 
-1. 以指定測試帳號完成 Gmail 首次同步與一封測試往返信。
+1. 以指定測試帳號完成一封測試往返信。
 2. 完成 Calendar／Meet 真實場次 E2E。
 3. 實作 Gmail `users.watch`、續訂與錯誤監控。
 4. 補上前端 Turnstile widget 並驗證無障礙與誤擋處理。
@@ -216,6 +215,7 @@ npx -y supabase migration list --linked
 
 | 日期 | 程式基準 | 狀態 | 證據 |
 |---|---|---|---|
+| 2026-08-02 | `a03c5f6` | Gmail 安全同步修復、錯誤處理與正式基準文件部署；正式站已切換新版資源 | Actions `30752822703`、首頁／後台／收件匣 HTTP 200、資源 `index-C21dG24e.js` |
 | 2026-07-24 | `60230a2` | 整合行政營運中心正式上線；資料庫 migration 與 4 個新 Functions 已發布 | Actions `30099005645`、正式路由抽查、登入後台桌面／行動版驗證 |
 
 ## 10. 2026-07-29 Gmail 授權與同步修復
@@ -226,5 +226,12 @@ npx -y supabase migration list --linked
 - Production 的 `email_messages_gmail_uidx` 已由部分唯一索引改為完整唯一索引；對應 migration：`supabase/migrations/20260729000001_fix_email_messages_gmail_unique.sql`。
 - 首次同步改為最新 25 封建立基準並跳過已匯入 Gmail ID，避免大型信箱超過 Edge Function 時限；後續使用 Gmail history 增量同步。
 - E2E 證據：首次同步 `success / full:0`，增量同步 `success / incremental:0`；落庫 104 封郵件、99 個對話、1 筆 sync state，history ID 已建立。
-- 遠端 migration history 仍有既有落差：遠端有 `20260713000001`、本機沒有；本機 `20260717000001`～`20260722000001` 未列於遠端 history。禁止直接執行全量 `db push`，應先獨立對帳；本次只以 `supabase db query --linked --file` 套用指定索引修復。
+- 遠端 migration history 的既有落差已於 2026-08-02 完成唯讀 schema 驗證與 metadata repair；詳見下一節。後續執行 `db push` 前仍須先跑 `migration list --linked`，不可只依文件假設一致。
 - 尚未建置 Gmail `users.watch` / Pub/Sub 推播；目前由管理員按鈕觸發增量同步。
+
+## 11. 2026-08-02 migration history 對帳
+
+- `20260713000001` 是 production-only 的歷史 Notion 報名匯入，原始 SQL 含個資並持續由 `.gitignore__ 精確排除；Git 僅保留不含資料、不同檔名的 `20260713000001_k4_notion_registrations_redacted.sql` 版本佔位檔。
+- 修復前逐項確認正式 schema：5 筆互助聚會場次、`event_feedback` 的 RLS／索引／policies、`sessions_public` 的 grant 與 anon 隔離、`confirm_availability_poll` 的 security invoker／權限，以及 `email_messages_gmail_uidx` 的完整唯一索引均符合本地 migration。
+- 經使用者明確授權後，只對 `20260717000001`、`20260718000001`、`20260719000001`、`20260722000001`、`20260729000001` 執行 `migration repair --status applied`；沒有重跑 SQL、沒有變更 schema 或正式服務資料。
+- 修復後 `supabase migration list --linked` 顯示 12 個 local／remote 版本全部對齊。

@@ -28,4 +28,5 @@ for (const slug of ['submit-registration', 'send-email-v2', 'gmail-sync', 'team-
 }
 requireText('supabase/functions/gmail-sync/index.ts', ['GMAIL_SCOPE_MISSING', 'gmail.readonly']);
 requireText('DEPLOY.md', ['https://www.googleapis.com/auth/gmail.readonly']);
+requireText('src/admin/pages/IntegrationsPage.tsx', ['尚未建置 users.watch／Pub/Sub；目前由管理員手動同步']);
 console.log('Admin operations structural checks passed.');
