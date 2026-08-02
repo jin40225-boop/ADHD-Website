@@ -10,17 +10,17 @@
 |---|---|
 | GitHub repository | `jin40225-boop/ADHD-Website` |
 | 正式 branch | `main` |
-| 正式程式 commit | `a03c5f6263e8da49af703a352cef41b9951b5181` |
-| Commit 主旨 | `fix: make Gmail sync production-safe` |
+| 正式程式 commit | `766b71a9967a533f006a360b9d6e18a522525417` |
+| Commit 主旨 | `chore: reconcile production baseline and migrations` |
 | 正式網站 | <https://jin40225-boop.github.io/ADHD-Website/> |
-| GitHub Pages workflow | <https://github.com/jin40225-boop/ADHD-Website/actions/runs/30752822703> |
+| GitHub Pages workflow | <https://github.com/jin40225-boop/ADHD-Website/actions/runs/30753845211> |
 | Workflow 結果 | `completed / success` |
-| Workflow 完成時間 | `2026-08-02T14:46:36Z` |
-| 正式前端資源識別 | `assets/index-C21dG24e.js` |
+| Workflow 完成時間 | `2026-08-02T15:13:49Z` |
+| 正式前端資源識別 | `assets/index-BGzeX90A.js` |
 | Supabase project ref | `sssseazkhiswjhtmbluh` |
 | Production base | `/ADHD-Website/` |
 
-正式程式 commit 與「文件更新 commit」是兩個不同概念。此頁所稱正式程式基準指目前 GitHub Pages 實際部署的 `a03c5f6`；若後續只有文件異動，不得誤記為已部署新版功能。
+正式程式 commit 與「文件更新 commit」是兩個不同概念。此頁所稱正式程式基準指目前 GitHub Pages 實際部署的 `766b71a`；若後續只有文件異動，不得誤記為已部署新版功能。
 
 ## 2. 權威 checkout 與副本邊界
 
@@ -215,7 +215,7 @@ npx -y supabase migration list --linked
 
 | 日期 | 程式基準 | 狀態 | 證據 |
 |---|---|---|---|
-| 2026-08-02 | `a03c5f6` | Gmail 安全同步修復、錯誤處理與正式基準文件部署；正式站已切換新版資源 | Actions `30752822703`、首頁／後台／收件匣 HTTP 200、資源 `index-C21dG24e.js` |
+| 2026-08-02 | `766b71a` | Gmail 安全同步修復、migration 對帳、介面狀態文字校正與正式基準部署；正式站已切換新版資源 | Actions `30753845211`、首頁／後台／收件匣 HTTP 200、資源 `index-BGzeX90A.js` |
 | 2026-07-24 | `60230a2` | 整合行政營運中心正式上線；資料庫 migration 與 4 個新 Functions 已發布 | Actions `30099005645`、正式路由抽查、登入後台桌面／行動版驗證 |
 
 ## 10. 2026-07-29 Gmail 授權與同步修復
