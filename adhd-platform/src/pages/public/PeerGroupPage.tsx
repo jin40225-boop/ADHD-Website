@@ -128,7 +128,7 @@ export default function PeerGroupPage() {
 <div className="session-content">
 <div className="p-6 space-y-4">
 <div className="flex flex-wrap gap-4 text-sm font-bold text-gray-600 bg-white/50 p-3 rounded-lg border border-brown/10">
-<span className="flex items-center gap-1"><Calendar className="w-4 h-4"></Calendar> 2026年7月11日 (一)</span>
+<span className="flex items-center gap-1"><Calendar className="w-4 h-4"></Calendar> 2026年7月11日 (六)</span>
 <span className="flex items-center gap-1"><Clock className="w-4 h-4"></Clock> 20:00 - 21:00</span>
 <span className="flex items-center gap-1"><User className="w-4 h-4"></User> 大A彥宇 × 諮商心理師宋致靜 (鏡子)</span>
 </div>

@@ -42,6 +42,33 @@ async function assertFunction(
   throw new Error(message);
 }
 
+function htmlToPlainText(html: string) {
+  return html
+    .replace(/<(style|script|head)[^>]*>[\s\S]*?<\/\1>/gi, ' ')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p\s*>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;|&#160;/gi, ' ')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&amp;/gi, '&')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/[ \t]{2,}/g, ' ')
+    .trim();
+}
+
+function cleanEmailBody(body: string, bodyHtml?: string) {
+  const plain = body.trim();
+  const looksLikeCss = /@media\b|!important|(?:font-size|line-height|padding|margin|display|width|height)\s*:[^;\n{}]+[;}]|\{[^{}]{0,180}:[^{}]{0,180}\}/i.test(plain);
+  if ((!plain || looksLikeCss) && bodyHtml) {
+    return htmlToPlainText(bodyHtml) || plain;
+  }
+  return plain;
+}
+
 function mapMessage(row: Row): OperationalMessage {
   return {
     id: row.id,
@@ -52,7 +79,7 @@ function mapMessage(row: Row): OperationalMessage {
     cc: row.cc_email ?? [],
     bcc: row.bcc_email ?? [],
     subject: row.subject ?? '',
-    body: row.body ?? '',
+    body: cleanEmailBody(row.body ?? '', row.body_html ?? undefined),
     bodyHtml: row.body_html ?? undefined,
     snippet: row.snippet ?? undefined,
     isRead: row.is_read,

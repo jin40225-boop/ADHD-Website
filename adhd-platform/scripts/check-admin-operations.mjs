@@ -26,7 +26,17 @@ if (read('src/routes/RegisterPage.tsx').includes('if (sessions.length === 0)')) 
 for (const slug of ['submit-registration', 'send-email-v2', 'gmail-sync', 'team-invite']) {
   requireText(`supabase/functions/${slug}/index.ts`, ['Deno.serve', 'SUPABASE_SERVICE_ROLE_KEY']);
 }
-requireText('supabase/functions/gmail-sync/index.ts', ['GMAIL_SCOPE_MISSING', 'gmail.readonly']);
+requireText('supabase/functions/gmail-sync/index.ts', [
+  'GMAIL_SCOPE_MISSING',
+  'gmail.readonly',
+  'function htmlToText',
+  'body: parsed.text || htmlToText(parsed.html)',
+]);
 requireText('DEPLOY.md', ['https://www.googleapis.com/auth/gmail.readonly']);
 requireText('src/admin/pages/IntegrationsPage.tsx', ['尚未建置 users.watch／Pub/Sub；目前由管理員手動同步']);
+requireText('src/admin/operations/api.ts', ['function cleanEmailBody', 'htmlToPlainText(bodyHtml)']);
+requireText('src/admin/AdminShell.tsx', ['applyPageMetadata(location.pathname)']);
+requireText('src/routes/PublicLayout.tsx', ['overflow-x-hidden']);
+requireText('src/pages/public/HomePage.tsx', ['2026年7月11日 (六)']);
+requireText('src/pages/public/PeerGroupPage.tsx', ['2026年7月11日 (六)']);
 console.log('Admin operations structural checks passed.');

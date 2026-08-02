@@ -52,7 +52,7 @@ export default function PublicLayout() {
   }, [pathname]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-cream bg-dots">
+    <div className="flex min-h-screen flex-col overflow-x-hidden bg-cream bg-dots">
       <NavBar brand="大A彥宇" homeHref="/" items={items} linkAs={RouterAnchor} />
       <main className="flex-1">
         <Outlet />

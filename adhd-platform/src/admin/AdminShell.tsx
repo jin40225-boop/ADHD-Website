@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
   CalendarDays, CalendarRange, ClipboardCheck, FilePenLine, GraduationCap,
@@ -7,6 +7,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
+import { applyPageMetadata } from '@/routes/page-metadata';
 import './operations/operations.css';
 
 interface NavItem { to: string; label: string; icon: LucideIcon; end?: boolean }
@@ -60,6 +61,10 @@ export default function AdminShell() {
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const current = NAV_GROUPS.flatMap((group) => group.items).find((item) => item.end ? location.pathname === item.to : location.pathname.startsWith(item.to));
+  useEffect(() => {
+    applyPageMetadata(location.pathname);
+  }, [location.pathname]);
+
   return (
     <div className="ops-shell">
       <aside className="ops-sidebar">
