@@ -7,9 +7,11 @@ import type {
   FollowUpTask,
   GmailSyncState,
   InternalNote,
+  MailState,
   OperationalMessage,
   OperationalRegistration,
   OperationalThread,
+  RegistrationMailStatus,
   TeamMemberRecord,
   WorkPriority,
 } from './types';
@@ -95,8 +97,41 @@ function mapMessage(row: Row): OperationalMessage {
   };
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * 一筆報名的信件連動狀態（計畫第七節）。
+ *
+ * 一筆報名理論上只有一條 thread；真的有多條時取最近有往來的那條，避免舊 thread
+ * 蓋掉現況。尚未寄過信的報名沒有 thread，回傳 undefined 讓呼叫端顯示「未寄信」。
+ */
+function mapMailStatus(threads: Row[]): RegistrationMailStatus | undefined {
+  if (!threads.length) return undefined;
+  const latest = [...threads].sort((a, b) =>
+    String(b.last_outbound_at ?? b.last_inbound_at ?? '').localeCompare(
+      String(a.last_outbound_at ?? a.last_inbound_at ?? ''),
+    ),
+  )[0];
+  const auto = (latest.mail_state ?? 'not_sent') as MailState;
+  const override = (latest.mail_state_override ?? undefined) as MailState | undefined;
+  const followUpDueAt = latest.follow_up_due_at ?? undefined;
+  const dueMs = followUpDueAt ? Date.parse(followUpDueAt) : NaN;
+  return {
+    threadId: latest.id,
+    auto,
+    override,
+    overrideReason: latest.mail_state_override_reason ?? undefined,
+    effective: override ?? auto,
+    lastOutboundAt: latest.last_outbound_at ?? undefined,
+    lastInboundAt: latest.last_inbound_at ?? undefined,
+    followUpDueAt,
+    overdueDays: Number.isNaN(dueMs) ? 0 : Math.max(0, Math.floor((Date.now() - dueMs) / DAY_MS)),
+  };
+}
+
 function mapRegistration(row: Row, projectName?: string): OperationalRegistration {
   return {
+    mailStatus: mapMailStatus(row.email_threads ?? []),
     id: row.id,
     projectId: row.project_id,
     contactId: row.contact_id ?? undefined,
@@ -126,7 +161,11 @@ export async function listContacts(): Promise<ContactRecord[]> {
       *,
       registrations(
         *,
-        email_threads(id, email_messages(*, email_attachments(*)))
+        email_threads(
+          id, mail_state, mail_state_override, mail_state_override_reason,
+          last_outbound_at, last_inbound_at, follow_up_due_at,
+          email_messages(*, email_attachments(*))
+        )
       )
     `).is('archived_at', null).order('created_at', { ascending: false }),
     db().from('projects').select('id,name'),

@@ -3,6 +3,28 @@ import type { Registration } from '@contracts/types';
 export type ContactStatus = 'active' | 'inactive' | 'do_not_contact' | 'archived';
 export type WorkPriority = 'low' | 'normal' | 'high' | 'urgent';
 
+/** 信件連動狀態（計畫第七節）。`mail_state` 由 gmail-sync 自動判定，可被手動覆寫。 */
+export type MailState =
+  | 'not_sent' | 'waiting_reply' | 'overdue' | 'reminded'
+  | 'replied_pending' | 'handled' | 'attend_confirmed' | 'reschedule_requested';
+
+export interface RegistrationMailStatus {
+  threadId: string;
+  /** 自動判定值。 */
+  auto: MailState;
+  /** 人工覆寫；有值時前台顯示以它為準。 */
+  override?: MailState;
+  overrideReason?: string;
+  /** 覆寫優先的實際顯示值。 */
+  effective: MailState;
+  lastOutboundAt?: string;
+  lastInboundAt?: string;
+  /** 催覆期限；超過即視為逾期。 */
+  followUpDueAt?: string;
+  /** 距催覆期限已逾期幾天；未逾期或無期限為 0。 */
+  overdueDays: number;
+}
+
 export interface OperationalRegistration extends Registration {
   contactId?: string;
   assignedTo?: string;
@@ -11,6 +33,8 @@ export interface OperationalRegistration extends Registration {
   archivedAt?: string;
   projectName?: string;
   messages?: OperationalMessage[];
+  /** 尚未寄過任何信的報名沒有 thread，因此可能為 undefined。 */
+  mailStatus?: RegistrationMailStatus;
 }
 
 export interface ContactRecord {
