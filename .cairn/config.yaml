@@ -1,0 +1,28 @@
+version: 0.1
+# Project Cairn 專案層級設定（已凍結完整解析結果，可攜）
+# 機器讀本檔；AGENTS.md 只是給人看的同一份摘要。
+
+project:
+  name: "ADHD 專管系統"
+  summary: "大A彥宇的 ADHD 家長支持平台：React／Supabase 公益服務網站，含三項公開報名服務與行政營運後台。"
+
+knowledge_dir: cairn
+
+# cairn/ 不進 git：本 repo（jin40225-boop/ADHD-Website）是公開的，
+# 知識筆記含專案內部決策與服務脈絡，不適合公開。只存本機。
+git_policy: ignore
+
+migration_mode: start_fresh
+language: zh
+
+graduation:
+  provider: software-library
+  target: "C:/Users/User/OneDrive/Desktop/工作與知識庫總集/03_獨立軟體與網頁專案/軟體資料庫"
+  index: "C:/Users/User/OneDrive/Desktop/工作與知識庫總集/03_獨立軟體與網頁專案/軟體資料庫/INDEX.md"
+  reference: "references/graduation/software-library.md"
+  # 畢業寫入不由 cairn 腳本執行，交棒給 Claude Code 的 software-library 技能
+  # （候選 → 人工核准 → 個資檢查 → 收錄 → 重產看板）。
+  write_via: "software-library-skill"
+  link_format: path
+
+skill_spec_date: "2026-07-16"

@@ -1,0 +1,5 @@
+# Project Cairn 專案知識層。
+# git_policy: ignore —— 本 repo（jin40225-boop/ADHD-Website）是公開的，
+# cairn/ 內含專案內部決策與服務脈絡，不適合公開，只存本機。
+# 設定見 .cairn/config.yaml；規則入口見 AGENTS.md。
+/cairn/
