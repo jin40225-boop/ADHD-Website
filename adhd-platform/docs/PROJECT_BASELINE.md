@@ -157,8 +157,8 @@ npm audit --omit=dev       0 high vulnerabilities
 | CAPTCHA | 後端可讀 `TURNSTILE_SECRET_KEY`，前端 widget 未啟用 | 前後端 token 流程、錯誤 UX 與無障礙驗證完成 |
 | 速率限制 | 已啟用 | 持續監測誤擋、繞過與管理者查核方式 |
 | `gmail-sync` HTML 轉純文字修正 | 2026-08-04 已部署（version 5 → **6**，ACTIVE）；使用者回報後台手動增量同步成功（未取得筆數） | 下次有新進信件時，確認收件匣內文為純文字（無 CSS 片段） |
-| 親職報名「孩子可增減多筆」 | 現行 `FormFieldType` 只有 text/textarea/email/phone/select/multiselect/checkbox，無可重複群組型別；2026-08-04 插隊項僅補單一孩子的服藥與疾病史欄位 | Phase 2 新版報名頁實作 repeatable renderer，並整併欄位 key |
-| 報名確認頁顯示場次 UUID | 現行 `/parent/register` 確認步驟的「選擇場次」顯示原始 session UUID 而非可讀標籤 | Phase 2 改為顯示場次標題與時段 |
+| ~~親職報名「孩子可增減多筆」~~ | ✅ 2026-08-04 已實作：表單引擎新增 `group` 型別（見第 15 節） | — |
+| ~~報名確認頁顯示場次 UUID~~ | ✅ 2026-08-04 已修：確認頁的 `flatten()` 會把有 options 的欄位值對映回標籤 | — |
 | react-router 漏洞 | `npm audit` 有 2 個 moderate（未達 CI 的 high 門檻） | 評估升級 react-router / react-router-dom 後重跑完整驗收 |
 
 「檔案存在」、「Function 已部署」或「測試回傳 400／401」不等於外部服務端到端完成；上述缺口必須用指定測試帳號與測試資料驗收後才能關閉。
@@ -298,6 +298,39 @@ UI 唯一基準為 `重構審閱稿_2026-08-04/` 內的 `01_v3`、`02_v2`、`03_
   - 前端：重載表單後該時段顯示「（剩 0 名）（額滿）」且 `disabled=true`，其餘 14 場維持可選。
   - 後端：直接對 `submit-registration` 以該場次送出第 2 筆 → **HTTP 409 `SESSION_FULL_OR_CLOSED`**，且 `booked_count` 維持 1，未產生多餘預約。
 - 測試殘留已清除（2026-08-04）：使用者於後台將 `phase1-test@example.com` 退回，狀態變為 `rejected`；後台場次清單顯示 12/20 11:00 為 `0/1`，公開報名頁該時段回復「剩 1 名」可選。**「退回 → `booked_count` 釋出 → 場次由 `full` 重開為 `open` → 前台即時反映」整條自動連動實測正常。**
+
+## 15. 2026-08-04 全面重構 Phase 2（進行中）
+
+### 已完成：表單引擎升級 ＋ 親職報名頁（六節第 1 項）
+
+架構決定：**不為親職頁寫一次性元件，而是升級 schema 驅動的表單引擎**——因為 Phase 3 後台要能編輯表單，`form_schemas` 必須維持唯一事實來源。
+
+引擎新增能力（`contracts/types.ts`、`features/form-engine/`）：
+
+| 能力 | 說明 |
+|---|---|
+| `stage` ＋ `FormSchema.stages` | 多階段表單。步驟指示器、逐階段驗證、確認頁按階段分組並提供「修改」跳回 |
+| `group` ＋ `subFields` | 可增減的重複群組（孩子多筆）。答案為物件陣列，錯誤鍵為 `群組key.索引.內層key` |
+| `visibleWhen` | 條件顯示。不成立時不顯示、不驗證，送出前由 `pruneHiddenAnswers()` 移除 |
+| `radio` | chip 樣式單選 |
+
+型別擴充：`Registration.answers` 與後台 `updateRegistrationAdministration` 的 answers 型別加入 `Record<string, string｜string[]>[]`；`form_schemas` 新增 `stages jsonb` 欄位（migration `20260804000005`）。
+
+親職表單改為 01_v3 定稿結構：階段一（服務說明・選時段）＋階段二（家長與孩子狀況）＋引擎提供的確認頁。⚠ 平面孩子欄位（`childName`／`childGender`…）由 `children` 群組取代；既有 97 筆報名的舊 key 仍會在後台「其他欄位」區塊顯示，資料未遺失。
+
+順帶修掉確認頁顯示 session UUID 的問題：`flatten()` 會把有 `options` 的欄位值對映回標籤。
+
+### 驗收證據
+
+- 本機 dev server 390px 實測：階段一（15 個場次、未選時段擋下並顯示「請填寫「選擇場次」」）→ 階段二（條件欄位三項皆正確依答案出現：身份選「其他」→ 說明欄、出席方式選「與他人一同出席」→ 同行對象、聯繫時間勾「其他（自填）」→ 自填欄）→ 孩子多筆（新增至 2 位、超過最小筆數後出現「✕ 移除」）→ 確認頁（分階段顯示、逐階段「修改」、兩位孩子完整展開、場次顯示可讀標籤而非 UUID）。全程 `scrollWidth == clientWidth == 390`，無 console error。
+- 正式站部署後複驗：資源 `index-ahGg-BG4.js`，步驟指示器與 15 個場次正常，390px 溢位 0。
+
+### Phase 2 剩餘項目
+
+1. `/peer-group` ＋ `/peer-group/register`（照 02_v2：原版場次卡、神秘驚喜、LINE QR 內嵌 SVG、報名彈窗、活動軌跡年度摺疊）
+2. `/navigator/register`（照 04_v4：改讀 `slot_options` 逐一顯示確切時段、已完成月份收合）
+3. 首頁與 `/parent`、`/navigator` 服務頁（改讀 `sessions_public`、上半年文案移入活動軌跡、CTA 指向新報名頁、Meet 連結下架、頁尾信箱明示＋複製）
+4. `/guide`、`/articles` 內容清理（Notion 備份 id、114 年活動廣告、重複段落、Untitled 區塊）
 
 ## 14. 2026-08-04 全面重構 Phase 1 主體
 
