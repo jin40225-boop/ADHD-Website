@@ -1,0 +1,10 @@
+-- Production migration version reserved for the favourite-contact seed.
+--
+-- The original migration writes real names and email addresses for the working team
+-- into public.contacts, so it is personal data and is explicitly ignored by .gitignore.
+-- It lives only in the local, access-controlled copy under supabase/private/.
+-- Never commit, copy, or paste that sensitive SQL.
+--
+-- This intentionally empty, redacted placeholder aligns the migration version only,
+-- so that `supabase migration list --linked` stays aligned in a fresh checkout.
+-- To reapply on another machine, restore the private file from an authorized backup.
