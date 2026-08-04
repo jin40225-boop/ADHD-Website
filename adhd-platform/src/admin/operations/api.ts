@@ -129,8 +129,9 @@ function mapMailStatus(threads: Row[]): RegistrationMailStatus | undefined {
   };
 }
 
-function mapRegistration(row: Row, projectName?: string): OperationalRegistration {
+function mapRegistration(row: Row, projectName?: string, projectSlug?: string): OperationalRegistration {
   return {
+    projectSlug,
     mailStatus: mapMailStatus(row.email_threads ?? []),
     id: row.id,
     projectId: row.project_id,
@@ -171,11 +172,12 @@ export async function listContacts(): Promise<ContactRecord[]> {
         )
       )
     `).is('archived_at', null).order('created_at', { ascending: false }),
-    db().from('projects').select('id,name'),
+    db().from('projects').select('id,name,slug'),
   ]);
   assert(contactResult.error, '讀取人員主檔失敗');
   assert(projectResult.error, '讀取專案失敗');
   const projectNames = new Map((projectResult.data ?? []).map((row: Row) => [row.id, row.name]));
+  const projectSlugs = new Map((projectResult.data ?? []).map((row: Row) => [row.id, row.slug]));
   return (contactResult.data ?? []).map((row: Row) => ({
     id: row.id,
     displayName: row.display_name,
@@ -185,7 +187,7 @@ export async function listContacts(): Promise<ContactRecord[]> {
     tags: row.tags ?? [],
     createdAt: row.created_at,
     updatedAt: row.updated_at ?? undefined,
-    registrations: (row.registrations ?? []).map((reg: Row) => mapRegistration(reg, projectNames.get(reg.project_id))),
+    registrations: (row.registrations ?? []).map((reg: Row) => mapRegistration(reg, projectNames.get(reg.project_id), projectSlugs.get(reg.project_id))),
   }));
 }
 

@@ -32,6 +32,8 @@ export interface OperationalRegistration extends Registration {
   nextActionAt?: string;
   archivedAt?: string;
   projectName?: string;
+  /** 專案代號（navigator／parent／peer-group）；後台分頁靠它切。 */
+  projectSlug?: string;
   messages?: OperationalMessage[];
   /** 尚未寄過任何信的報名沒有 thread，因此可能為 undefined。 */
   mailStatus?: RegistrationMailStatus;

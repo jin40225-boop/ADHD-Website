@@ -21,6 +21,27 @@ requireText('supabase/migrations/20260723000001_admin_operations_hub.sql', [
   'admin_move_registration_sessions', 'admin_transition_registration', 'consume_registration_rate_limit',
   'alter table public.registration_rate_limits enable row level security',
 ]);
+// 後台報名工作台（03_v4）：表格內要真的能改，而不是只把欄位畫出來。三個行政欄位
+// 各自的寫入呼叫、以及狀態下拉，都直接列為斷言——少掉任何一個就代表那一格變成裝飾品。
+requireText('src/admin/operations/RegistrationTable.tsx', [
+  'reminderSentAt:', 'counselorConfirmed:', 'finalSlotAt:', 'row.setStatus(',
+]);
+requireText('src/admin/pages/RegistrationsOperationsPage.tsx', ['<RegistrationTable', 'ops-drawer']);
+// 狀態標籤是使用者拍板的對應表，改字等於改語意，因此連舊用語一起列為禁用。
+requireText('src/admin/operations/RegistrationTable.tsx', [
+  "reviewing: '回信確認中'", "confirmed: '報名成功'", "rejected: '退回'", "reschedule: '待改訂時間'",
+]);
+for (const stale of ["reviewing: '審核中'", "confirmed: '已確認'", "rejected: '不符合'"]) {
+  if (read('src/admin/operations/RegistrationTable.tsx').includes(stale)) {
+    throw new Error(`RegistrationTable.tsx still uses the pre-03_v4 status label: ${stale}`);
+  }
+}
+requireText('supabase/migrations/20260804000012_registration_admin_fields.sql', [
+  'add column reminder_sent_at', 'add column counselor_confirmed', 'add column final_slot_at',
+]);
+requireText('supabase/migrations/20260804000013_registration_admin_audit.sql', [
+  'trg_registrations_admin_audit', 'log_registration_admin_edit',
+]);
 requireText('src/routes/RegisterPage.tsx', ['報名只接受資料庫正式場次']);
 if (read('src/routes/RegisterPage.tsx').includes('if (sessions.length === 0)')) throw new Error('Static registration slot fallback still exists.');
 for (const slug of ['submit-registration', 'send-email-v2', 'gmail-sync', 'team-invite']) {
