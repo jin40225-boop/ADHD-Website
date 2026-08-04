@@ -82,14 +82,15 @@ Deno.serve(async (req) => {
     const registrationId = String(input.registrationId ?? '');
     if (!registrationId && !contactIds.length) return jsonResponse({ error: '需要 registrationId 或 contactIds' }, 400);
 
-    const accessToken = await getGoogleAccessToken();
-
     /* ---------------------------- 群發 ---------------------------- */
     if (!registrationId) {
+      // 先授權再跟 Google 換 token：未授權的呼叫不該觸發任何對外請求，
+      // 而且 Google 暫時異常時應該回 403 而不是被蓋成 500。
       const caller = await requireAnyAdmin(req, admin); if (!caller) return jsonResponse({ error: 'FORBIDDEN' }, 403); actorId = caller.userId;
       const { data: contacts } = await admin.from('contacts').select('id, display_name, primary_email').in('id', contactIds);
       const targets = (contacts ?? []).filter((contact) => contact.primary_email);
       if (!targets.length) return jsonResponse({ error: '選取的對象都沒有信箱，沒有寄出任何一封。' }, 400);
+      const accessToken = await getGoogleAccessToken();
 
       const sent: string[] = []; const failed: { contactId: string; reason: string }[] = [];
       for (const contact of targets) {
@@ -114,6 +115,7 @@ Deno.serve(async (req) => {
     const { data: registration } = await admin.from('registrations').select('id,project_id,email,contact_id,thread_id,session_ids').eq('id', registrationId).maybeSingle();
     if (!registration) return jsonResponse({ error: '找不到報名紀錄' }, 404);
     const caller = await requireProjectAdmin(req, admin, registration.project_id); if (!caller) return jsonResponse({ error: 'FORBIDDEN' }, 403); actorId = caller.userId;
+    const accessToken = await getGoogleAccessToken();
 
     // 信末的確認按鈕（裁決 12）。預設附上；婉拒信一類不需要時由後台取消勾選。
     const attachConfirmButtons = input.attachConfirmButtons !== false;
