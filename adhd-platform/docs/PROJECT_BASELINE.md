@@ -458,6 +458,22 @@ migration `20260804000009`：移除標題補述、刪掉三個已被取代的表
 
 驗證：五種情況以真實舊格式渲染實測——舊平面（帶／不帶單位）、新群組（多筆）、兩者皆無（顯示「—」）、新欄位已有值（歷史標記自動消失）。
 
+### 3-4 場次管理（03_v4）
+
+原本是 `SessionManager`（彈窗編輯器）＋示意資料 fallback，改為 03_v4 的表格：
+
+- **列表八欄**：服務線／日期／時段／名額（可改）／已報名／截止（可改）／狀態／上架 toggle。
+- **上下架 toggle**：on→`open`（已滿則 `full`）、off→`closed`。**已完成／已取消的場次鎖住不給 toggle**，避免把歷史場次重新掛回前台。
+- **名額格**受控＋離開欄位才送出，並在格子端就擋掉低於已報名數的值——DB 沒有這條約束，改小了會讓 `booked_count` 永遠大於 `capacity`。名額改動後自動重算額滿狀態（僅限 `open`／`full`，不影響未上架與歷史場次）。
+- **場次詳情抽屜**：標題／起訖／名額／截止／狀態可編輯；**主題與客座**（＝「公布神秘驚喜」的操作入口，留空時前台顯示「神秘驚喜！」）；導航候選時段逐一調整；報名概況（誰佔著這個名額）；建 Meet＋行事曆（沿用 `invokeCalendarUpsert`）。
+- **行政文件區**：依計畫第九節，Phase 6 前以停用控制項＋明確說明佔位，不做假的產出。
+
+⚠ `adminSaveSession` 原本的 payload **不含 `topic`／`guest`／`registration_deadline`／`slot_options`**，等於「公布神秘驚喜」沒有寫入路徑。本次補上；空字串存成 `null`（前台是以「有沒有值」決定顯不顯示神秘驚喜）。
+
+⚠ 改寫後 `features/session-manager` 的 `SessionManager` 元件與 `mockSessions` 無人引用（`mockInstructors` 仍被講師排班頁使用）。依「刪除類動作先確認」未刪除，待使用者裁決。
+
+驗證：表格抽成純元件 `SessionTable.tsx` 後以假資料實測——四種狀態的顯示與 toggle（開放中/額滿/未上架/已完成，已完成列顯示「—」不給 toggle）、名額四種輸入（低於已報名→拒絕還原、等於已報名→送出、清空→還原、與原值相同→不送出，全程只送出一次）、截止改值送出、點服務線開詳情。
+
 ### CI 守門新增
 
 `check:operations` 現在斷言每一格的寫入呼叫（`reminderSentAt:`／`counselorConfirmed:`／`finalSlotAt:`／`row.setStatus(`／`row.setSessions(`／`row.patch({ email:`）、三組欄位常數都在、狀態標籤符合定稿且**禁用**舊用語（`reviewing: '審核中'` 等），以及兩支稽核 migration 的關鍵字。理由與 Phase 2 相同：「元件在不在」抓不到「這一格變成裝飾品」。已用「注入 → CI 紅 → 還原 → CI 綠」實證。

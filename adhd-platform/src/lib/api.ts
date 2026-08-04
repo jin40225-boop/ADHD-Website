@@ -457,6 +457,11 @@ export async function adminSaveSession(session: SessionSlot): Promise<SessionSlo
     ends_at: session.endsAt,
     capacity: session.capacity,
     status: session.status,
+    // 未公布時前台顯示「神秘驚喜！」，所以空字串要存成 null 而不是 ''。
+    topic: session.topic?.trim() || null,
+    guest: session.guest?.trim() || null,
+    registration_deadline: session.registrationDeadline ?? null,
+    slot_options: session.slotOptions ?? null,
     meet_url: session.meetUrl ?? null,
     instructor_ids: session.instructorIds,
   };

@@ -43,6 +43,16 @@
 .ops-cell-text:hover{background:#fffdf6;border-color:#d7ccc8}.ops-cell-text:focus{background:#fff;border-color:#c4643c;outline:none}.ops-cell-text:disabled{cursor:progress;opacity:.6}
 .ops-chip-row{display:inline-flex;flex-wrap:wrap;gap:.25rem}
 .ops-cell-legacy{background:#f1ece4;border-radius:6px;color:#7d675e;font-size:.72rem;padding:.1rem .4rem;white-space:nowrap}
+.ops-cell-number{background:#fff;border:1.5px solid #e0d4c9;border-radius:7px;color:inherit;font:inherit;font-size:.82rem;padding:.16rem .35rem;width:72px}
+.ops-cell-number:hover{border-color:#b9a294}.ops-cell-number:disabled{cursor:progress;opacity:.6}
+.ops-switch{display:inline-block;height:20px;position:relative;vertical-align:middle;width:38px}
+.ops-switch input{height:0;opacity:0;width:0}
+.ops-switch-slider{background:#ccc;border-radius:20px;cursor:pointer;inset:0;position:absolute;transition:.2s}
+.ops-switch-slider:before{background:#fff;border-radius:50%;bottom:3px;content:'';height:14px;left:3px;position:absolute;transition:.2s;width:14px}
+.ops-switch input:checked + .ops-switch-slider{background:#2e7d32}
+.ops-switch input:checked + .ops-switch-slider:before{transform:translateX(18px)}
+.ops-switch input:disabled + .ops-switch-slider{cursor:progress;opacity:.5}
+.ops-slot-edit{background:#fffaf1;border:1px solid #e7dccd;border-radius:12px;margin-top:.5rem;padding:.7rem}
 .ops-dot{animation:ops-blink 1.4s infinite;background:#e53935;border-radius:50%;display:inline-block;height:8px;margin-left:.3rem;width:8px}
 @keyframes ops-blink{50%{opacity:.3}}
 .ops-row--busy{opacity:.55}

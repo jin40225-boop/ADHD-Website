@@ -50,6 +50,11 @@ requireText('supabase/migrations/20260804000013_registration_admin_audit.sql', [
 ]);
 // 信箱是名冊比對鍵，格內可改就必須留歷程。
 requireText('supabase/migrations/20260804000014_audit_registration_email.sql', ["jsonb_build_object('email'"]);
+// 場次管理（03_v4）：名額／截止格內可改、上下架 toggle、主題與客座可編輯。
+// topic/guest 是「公布神秘驚喜」的唯一入口，adminSaveSession 少存一個欄位就等於公布不了。
+requireText('src/admin/operations/SessionTable.tsx', ['onCapacity(', 'onDeadline(', 'onPublish(', 'ops-switch']);
+requireText('src/admin/pages/SessionsPage.tsx', ['<SessionTable', 'topic:', 'guest:', '神秘驚喜']);
+requireText('src/lib/api.ts', ['topic: session.topic', 'guest: session.guest', 'registration_deadline: session.registrationDeadline', 'slot_options: session.slotOptions']);
 requireText('src/routes/RegisterPage.tsx', ['報名只接受資料庫正式場次']);
 if (read('src/routes/RegisterPage.tsx').includes('if (sessions.length === 0)')) throw new Error('Static registration slot fallback still exists.');
 for (const slug of ['submit-registration', 'send-email-v2', 'gmail-sync', 'team-invite']) {
