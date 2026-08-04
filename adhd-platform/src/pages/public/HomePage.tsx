@@ -2,13 +2,15 @@ import { ArrowRight, ArrowUpRight, BookOpen, CalendarClock, Clock, Database, Edi
 import { UpcomingSessions } from '@/components/UpcomingSessions';
 import { SessionHistory } from '@/components/SessionHistory';
 import { CopyButton } from '@/components/CopyButton';
+import { NavigatorSlotSummary } from '@/components/NavigatorSlotSummary';
 import { LineContact } from '@/components/LineContact';
 
 // Notion 停用（2026-07 中）連結替換：報名表單改站內報名頁、資料庫改站內地圖、
-// 新聞報導改原始媒體連結。BASE 讓連結在 GitHub Pages 子路徑與本機 dev 都正確。
-// LINK_2/LINK_3 影片（2026-07-19 溯源）：Notion 頁僅為嵌入殼，原片在台中赤子心官方 YouTube。
+// 外部連結與站內路徑。BASE 讓連結在 GitHub Pages 子路徑與本機 dev 都正確。
+// 全部已溯源（2026-07-19）：新聞為原始媒體連結；LINK_2/LINK_3 影片的 Notion 頁僅是嵌入殼，
+// 這裡指向台中赤子心官方 YouTube 原片。名稱原為 TODO_LINKS，會讓人誤以為還有待辦。
 const BASE = import.meta.env.BASE_URL;
-const TODO_LINKS = {
+const LINKS = {
   LINK_1: 'https://www.knews.com.tw/news/01CEE23784ECF429098274743517F227',
   LINK_2: 'https://www.youtube.com/watch?v=q1UL5Kn51gc',
   LINK_3: 'https://www.youtube.com/watch?v=CsHqUIdz0W4',
@@ -27,12 +29,12 @@ export default function HomePage() {
                     </div><h1 className="font-heading text-4xl md:text-5xl font-black leading-tight text-brown">
                         嗨，我是彥宇<br/><span className="text-xl md:text-2xl font-bold mt-2 block text-brown/80">可以叫我大A彥宇 <span className="text-sm font-medium">(羞)</span></span></h1></div><div className="bg-white/70 p-6 md:p-8 rounded-2xl border-2 border-brown/10 backdrop-blur-sm shadow-sm"><div className="font-body text-brown leading-relaxed font-medium text-justify text-lg space-y-4"><p>我從小學三年級就診斷ADHD，一路跌跌撞撞成長到大。</p><p>現在是社會工作者-身心障礙者服務中心 社工督導，同時也是受到社團法人台灣赤子心過動症協會總會鼓勵、栽培的倡議工作者。</p><p className="text-xl font-bold text-accent-teal py-1">我希望可以幫助更多像我一樣的人！</p><p>除了本職工作外，我利用下班時間及假日，正在創建各項服務。我相信 <span className="marker-highlight font-bold">從無到有本身就有價值</span>。希望能讓更多的 ADHD 家長、孩童、大A夥伴因此受益。</p><div className="bg-[#FFF9C4]/60 p-4 rounded-xl border border-brown/10 mt-4 text-brown">
                             以下是我的實踐，希望可以一路前行，替ADHD族群建構更多資源，獲得更好的環境與生活品質。<br/><span className="font-bold text-highlight mt-2 block">也衷心希望像我一樣的孩子，可以過得比我更好，這是我的初衷與祈願。</span></div></div></div><div className="bg-white/50 p-6 md:p-8 rounded-2xl border-2 border-brown/10 backdrop-blur-sm"><h3 className="font-heading text-xl font-bold text-brown mb-4 flex items-center gap-2"><Sparkles className="w-5 h-5 text-accent-orange"></Sparkles> 更進一步認識我
-                    </h3><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><a className="bg-white p-4 rounded-xl border-2 border-brown/20 hover:border-accent-teal hover:shadow-md transition-all group flex flex-col" href={TODO_LINKS.LINK_1} target="_blank"><div className="flex justify-between items-start mb-2"><span className="bg-[#B2EBF2] text-[#006064] text-xs font-bold px-2 py-1 rounded">新聞報導</span><ArrowUpRight className="w-4 h-4 text-brown group-hover:text-accent-teal"></ArrowUpRight></div><div className="font-bold text-brown group-hover:text-accent-teal">ADHD長大成助人者</div></a><div className="space-y-3"><a className="flex items-center justify-between bg-white p-3 rounded-xl border-2 border-brown/20 hover:border-accent-pink hover:shadow-md transition-all group" href={TODO_LINKS.LINK_2} target="_blank"><span className="text-sm font-bold text-brown">友善 ADHD 父母的環境</span><PlayCircle className="w-5 h-5 text-brown group-hover:text-accent-pink"></PlayCircle></a><a className="flex items-center justify-between bg-white p-3 rounded-xl border-2 border-brown/20 hover:border-accent-pink hover:shadow-md transition-all group" href={TODO_LINKS.LINK_3} target="_blank"><span className="text-sm font-bold text-brown">跟人相處這麼難嗎？</span><PlayCircle className="w-5 h-5 text-brown group-hover:text-accent-pink"></PlayCircle></a></div></div></div></div></div></header><div className="max-w-6xl mx-auto px-4 space-y-20"><section id="actions"><div className="flex items-center gap-3 mb-8 justify-center md:justify-start"><div className="w-12 h-12 bg-accent-teal rounded-full border-2 border-brown flex items-center justify-center text-brown shadow-warm"><Flag className="w-6 h-6"></Flag></div><h2 className="font-heading text-3xl font-black text-brown">我在114年開始實踐至今</h2></div><div className="grid grid-cols-1 md:grid-cols-2 gap-8"><div className="warm-card p-8 flex flex-col gap-6 bg-white hover:bg-[#F0FDF4] transition-colors"><div className="flex items-center gap-3 border-b-2 border-brown/10 pb-4"><Users className="w-8 h-8 text-accent-teal"></Users><h3 className="text-2xl font-bold text-brown">個人行動服務</h3></div><div className="space-y-4 flex-grow"><div className="bg-accent-teal/10 p-4 rounded-xl border border-accent-teal/20 relative"><div className="absolute -left-2 top-4 w-4 h-4 bg-accent-teal rounded-full border-2 border-brown"></div><strong className="block text-brown text-lg mb-1 pl-4">辦理 ADHD 成人同儕線上團體</strong><span className="text-sm text-gray-600 pl-4 block">定期聚會，建立支持網絡。</span></div><div className="bg-accent-teal/10 p-4 rounded-xl border border-accent-teal/20 relative"><div className="absolute -left-2 top-4 w-4 h-4 bg-accent-teal rounded-full border-2 border-brown"></div><strong className="block text-brown text-lg mb-1 pl-4">免費家長諮詢服務</strong><span className="text-sm text-gray-600 pl-4 block">一對一線上諮詢，提供專業建議。</span></div></div></div><div className="warm-card p-0 flex flex-col bg-white overflow-hidden" id="database"><div className="bg-gradient-to-r from-[#FFDFD3] to-white p-8 border-b-2 border-brown/10 flex-grow"><div className="flex items-center gap-3 mb-4"><Database className="w-8 h-8 text-[#FF9E80]"></Database><h3 className="text-2xl font-bold text-brown">ADHD 就醫家長推薦資料庫</h3></div><div className="inline-block bg-[#FF9E80] text-white text-xs font-bold px-3 py-1 rounded-full mb-4 border border-brown">
+                    </h3><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><a className="bg-white p-4 rounded-xl border-2 border-brown/20 hover:border-accent-teal hover:shadow-md transition-all group flex flex-col" href={LINKS.LINK_1} target="_blank"><div className="flex justify-between items-start mb-2"><span className="bg-[#B2EBF2] text-[#006064] text-xs font-bold px-2 py-1 rounded">新聞報導</span><ArrowUpRight className="w-4 h-4 text-brown group-hover:text-accent-teal"></ArrowUpRight></div><div className="font-bold text-brown group-hover:text-accent-teal">ADHD長大成助人者</div></a><div className="space-y-3"><a className="flex items-center justify-between bg-white p-3 rounded-xl border-2 border-brown/20 hover:border-accent-pink hover:shadow-md transition-all group" href={LINKS.LINK_2} target="_blank"><span className="text-sm font-bold text-brown">友善 ADHD 父母的環境</span><PlayCircle className="w-5 h-5 text-brown group-hover:text-accent-pink"></PlayCircle></a><a className="flex items-center justify-between bg-white p-3 rounded-xl border-2 border-brown/20 hover:border-accent-pink hover:shadow-md transition-all group" href={LINKS.LINK_3} target="_blank"><span className="text-sm font-bold text-brown">跟人相處這麼難嗎？</span><PlayCircle className="w-5 h-5 text-brown group-hover:text-accent-pink"></PlayCircle></a></div></div></div></div></div></header><div className="max-w-6xl mx-auto px-4 space-y-20"><section id="actions"><div className="flex items-center gap-3 mb-8 justify-center md:justify-start"><div className="w-12 h-12 bg-accent-teal rounded-full border-2 border-brown flex items-center justify-center text-brown shadow-warm"><Flag className="w-6 h-6"></Flag></div><h2 className="font-heading text-3xl font-black text-brown">我在114年開始實踐至今</h2></div><div className="grid grid-cols-1 md:grid-cols-2 gap-8"><div className="warm-card p-8 flex flex-col gap-6 bg-white hover:bg-[#F0FDF4] transition-colors"><div className="flex items-center gap-3 border-b-2 border-brown/10 pb-4"><Users className="w-8 h-8 text-accent-teal"></Users><h3 className="text-2xl font-bold text-brown">個人行動服務</h3></div><div className="space-y-4 flex-grow"><div className="bg-accent-teal/10 p-4 rounded-xl border border-accent-teal/20 relative"><div className="absolute -left-2 top-4 w-4 h-4 bg-accent-teal rounded-full border-2 border-brown"></div><strong className="block text-brown text-lg mb-1 pl-4">辦理 ADHD 成人同儕線上團體</strong><span className="text-sm text-gray-600 pl-4 block">定期聚會，建立支持網絡。</span></div><div className="bg-accent-teal/10 p-4 rounded-xl border border-accent-teal/20 relative"><div className="absolute -left-2 top-4 w-4 h-4 bg-accent-teal rounded-full border-2 border-brown"></div><strong className="block text-brown text-lg mb-1 pl-4">免費家長諮詢服務</strong><span className="text-sm text-gray-600 pl-4 block">一對一線上諮詢，提供專業建議。</span></div></div></div><div className="warm-card p-0 flex flex-col bg-white overflow-hidden" id="database"><div className="bg-gradient-to-r from-[#FFDFD3] to-white p-8 border-b-2 border-brown/10 flex-grow"><div className="flex items-center gap-3 mb-4"><Database className="w-8 h-8 text-[#FF9E80]"></Database><h3 className="text-2xl font-bold text-brown">ADHD 就醫家長推薦資料庫</h3></div><div className="inline-block bg-[#FF9E80] text-white text-xs font-bold px-3 py-1 rounded-full mb-4 border border-brown">
                             114年版．家長共同建構
                         </div><p className="text-brown leading-relaxed mb-6 font-medium text-lg">
                             承蒙 <span className="text-[#FF9E80]">台灣ADHD交流園地</span> 與 <span className="text-[#FF9E80]">赤子心社群</span> 信任。
                             延續舊有資料庫，這是一份由家長們親身經驗匯聚而成的珍貴地圖。
-                        </p></div><div className="p-6 bg-[#FFF3E0]"><a className="btn-warm w-full py-4 bg-[#FF9E80] text-white hover:scale-[1.02] shadow-warm border-brown" href={TODO_LINKS.LINK_4} target="_blank">
+                        </p></div><div className="p-6 bg-[#FFF3E0]"><a className="btn-warm w-full py-4 bg-[#FF9E80] text-white hover:scale-[1.02] shadow-warm border-brown" href={LINKS.LINK_4} target="_blank">
                             前往資料庫查詢 <ArrowRight className="w-5 h-5 ml-2"></ArrowRight></a></div></div></div></section><section id="groups"><div className="text-center mb-12"><span className="inline-block bg-base-yellow border-2 border-brown px-8 py-4 rounded-full font-black text-brown text-4xl md:text-5xl shadow-warm transform -rotate-1 mb-4">
                     🚀 現在啟動 115 年計畫！
                 </span></div><div className="bg-white border-2 border-brown rounded-3xl p-6 md:p-10 mb-10 relative shadow-[8px_8px_0_rgba(93,64,55,0.15)] flex flex-col gap-8"><div className="space-y-4 text-brown"><h3 className="text-2xl font-black mb-4">【大A彥宇】115年度成人ADHD線上互助聚會</h3><p className="leading-relaxed text-lg font-medium text-justify">
@@ -41,7 +43,7 @@ export default function HomePage() {
                         來賓們都是對我們ADHD生活很有幫助的專業人員，但這絕對不是嚴肅的講座，而是開心快樂的ADHD分享聚會~<br/><br/>
                         給我個機會，來參加一次吧！讓我能認識更多的大A夥伴！<br/>
                         新的一年（115年）到來，很開心又能與大家繼續前行。今年邀請了幾位專業的講師好朋友，準備了一系列貼近我們生活的主題。<br/></p><div className="text-center mt-6 py-4"><span className="inline-block bg-[#FFF9C4] px-6 py-3 rounded-full font-black text-xl border-2 border-brown shadow-sm transform -rotate-1 text-highlight">✨ 無需準備、不必讀書、帶著好奇心就能參加！ ✨</span></div></div><div className="bg-[#E0F7FA] border-l-8 border-accent-teal p-6 rounded-r-2xl"><h4 className="font-bold text-[#006064] text-xl mb-3 flex items-center gap-2"><Video className="w-6 h-6"></Video> 參加須知
-                    </h4><ul className="text-[#006064] space-y-2 font-bold list-disc list-inside text-lg"><li>一律採用 <strong className="text-[#004D40] bg-[#B2EBF2] px-1 rounded">GOOGLE MEET 視訊</strong></li><li>可<strong className="text-[#004D40] bg-[#B2EBF2] px-1 rounded">不開鏡頭</strong>，害羞的朋友也不用擔心喔！</li><li>表單是預先統計人數用的！沒報名也可以當天直接參加！</li></ul></div><div className="mt-2 w-full"><a className="btn-warm py-5 px-6 bg-accent-orange text-brown w-full text-2xl md:text-3xl shadow-warm animate-pulse-slow flex flex-col items-center justify-center border-4 border-brown" href={TODO_LINKS.LINK_5} target="_blank"><span>📝 立即填寫報名表</span><span className="text-base font-bold mt-2 opacity-80 bg-white/40 px-3 py-1 rounded-full border border-brown/20">預先報名讓我們更好準備喔！</span></a></div></div>
+                    </h4><ul className="text-[#006064] space-y-2 font-bold list-disc list-inside text-lg"><li>一律採用 <strong className="text-[#004D40] bg-[#B2EBF2] px-1 rounded">GOOGLE MEET 視訊</strong></li><li>可<strong className="text-[#004D40] bg-[#B2EBF2] px-1 rounded">不開鏡頭</strong>，害羞的朋友也不用擔心喔！</li><li>表單是預先統計人數用的！沒報名也可以當天直接參加！</li></ul></div><div className="mt-2 w-full"><a className="btn-warm py-5 px-6 bg-accent-orange text-brown w-full text-2xl md:text-3xl shadow-warm animate-pulse-slow flex flex-col items-center justify-center border-4 border-brown" href={LINKS.LINK_5} target="_blank"><span>📝 立即填寫報名表</span><span className="text-base font-bold mt-2 opacity-80 bg-white/40 px-3 py-1 rounded-full border border-brown/20">預先報名讓我們更好準備喔！</span></a></div></div>
 
 <div className="bg-white border-2 border-brown rounded-3xl p-6 md:p-10 mb-10 relative shadow-[8px_8px_0_rgba(93,64,55,0.15)] flex flex-col gap-8">
 <div className="space-y-4 text-brown">
@@ -62,18 +64,7 @@ export default function HomePage() {
 <li><strong>適合對象：</strong> 想釐清自身狀態與連結相關心理健康資源的 ADHD 族群</li>
 </ul>
 </div>
-<div className="bg-[#FFF9C4] border-l-8 border-accent-orange p-6 rounded-r-2xl">
-<h4 className="font-bold text-brown text-xl mb-3 flex items-center gap-2">
-<Clock className="w-6 h-6"></Clock> 開放預約時段
-                        </h4>
-<p className="text-sm font-bold text-brown mb-2">每月僅開放 1 位專屬名額，請彈性勾選（可複選）：</p>
-<ul className="text-brown space-y-1 font-bold list-disc list-inside text-sm">
-<li>平日晚間：第二週 週一 20:00 - 21:00</li>
-<li>週末晚間：第二、三週 週六 20:00 - 21:00</li>
-<li>週末早晨：第二、三週 週日 09:00 - 10:00</li>
-</ul>
-<p className="text-xs text-brown mt-2">(註：實際確切日期將於報名表單中列出)</p>
-</div>
+<NavigatorSlotSummary />
 </div>
 <div className="bg-[#E0F7FA] border-2 border-brown p-6 rounded-2xl">
 <h4 className="font-bold text-[#006064] text-xl mb-3 flex items-center gap-2">
@@ -89,7 +80,7 @@ export default function HomePage() {
                     </div>
 </div>
 <div className="mt-2 w-full">
-<a className="btn-warm py-5 px-6 bg-accent-pink text-brown w-full text-2xl md:text-3xl shadow-warm animate-pulse-slow flex flex-col items-center justify-center border-4 border-brown" href={TODO_LINKS.LINK_6} target="_blank">
+<a className="btn-warm py-5 px-6 bg-accent-pink text-brown w-full text-2xl md:text-3xl shadow-warm animate-pulse-slow flex flex-col items-center justify-center border-4 border-brown" href={LINKS.LINK_6} target="_blank">
 <span>📝 前往填寫報名表</span>
 <span className="text-base font-bold mt-2 opacity-80 bg-white/40 px-3 py-1 rounded-full border border-brown/20">重要報名連結</span>
 </a>
@@ -145,7 +136,7 @@ export default function HomePage() {
                     </div>
 </div>
 <div className="mt-2 w-full">
-<a className="btn-warm py-5 px-6 bg-accent-blue text-brown w-full text-2xl md:text-3xl shadow-warm animate-pulse-slow flex flex-col items-center justify-center border-4 border-brown" href={TODO_LINKS.LINK_7} target="_blank">
+<a className="btn-warm py-5 px-6 bg-accent-blue text-brown w-full text-2xl md:text-3xl shadow-warm animate-pulse-slow flex flex-col items-center justify-center border-4 border-brown" href={LINKS.LINK_7} target="_blank">
 <span>📝 前往填寫報名表</span>
 <span className="text-base font-bold mt-2 opacity-80 bg-white/40 px-3 py-1 rounded-full border border-brown/20">報名連結</span>
 </a>

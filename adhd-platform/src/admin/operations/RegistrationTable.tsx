@@ -267,17 +267,25 @@ const childrenColumn: RegistrationColumn = {
 const sessionSelectColumn: RegistrationColumn = {
   key: 'sessionPick',
   header: '🕐 確定場次（可改）',
-  cell: (row) => <select
-    className={`ops-cell-select ops-cell-select--${row.session ? 'green' : 'gray'}`}
-    value={row.session?.id ?? ''}
-    disabled={row.busy}
-    onChange={(e) => row.setSessions(e.target.value ? [e.target.value] : [])}
-  >
-    <option value="">未指定</option>
-    {row.projectSessions.map((session) => <option key={session.id} value={session.id}>
-      {new Date(session.startsAt).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}｜{session.title}
-    </option>)}
-  </select>,
+  cell: (row) => {
+    // 已完成／已取消的場次不列入可選項——這份清單是用來「改成哪一場」的，
+    // 把歷年場次全列出來只會讓清單長到難用。目前掛著的那一場一定保留，否則它會從自己的格子裡消失。
+    const options = row.projectSessions.filter(
+      (session) => session.id === row.session?.id || (session.status !== 'done' && session.status !== 'cancelled'),
+    );
+    return <select
+      className={`ops-cell-select ops-cell-select--${row.session ? 'green' : 'gray'}`}
+      value={row.session?.id ?? ''}
+      disabled={row.busy}
+      onChange={(e) => row.setSessions(e.target.value ? [e.target.value] : [])}
+    >
+      <option value="">未指定</option>
+      {options.map((session) => <option key={session.id} value={session.id}>
+        {new Date(session.startsAt).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}｜{session.title}
+        {session.status === 'done' ? '（已完成）' : session.status === 'cancelled' ? '（已取消）' : ''}
+      </option>)}
+    </select>;
+  },
 };
 
 /** 格內編輯信箱：離開欄位才送出，免得每打一個字就打一次資料庫。 */

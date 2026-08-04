@@ -61,3 +61,12 @@ export function StatusPill({ children, tone = 'gray' }: {
 }) {
   return <span className={`ops-status ops-status--${tone}`}>{children}</span>;
 }
+
+/**
+ * 「儲存中…」浮出提示。格內編輯是非同步寫入，畫面重整往往比寫入快一步——
+ * 沒有這個提示，人會以為沒存到而重按（監督視窗與 AI 都各自誤判過好幾次）。
+ */
+export function SavingIndicator({ active, label = '儲存中…' }: { active: boolean; label?: string }) {
+  if (!active) return null;
+  return <div className="ops-saving" role="status" aria-live="polite"><span aria-hidden="true" />{label}</div>;
+}

@@ -13,7 +13,7 @@ import {
 } from '../operations/api';
 import type { AppSettings, ContactGroupRecord, ContactRecord } from '../operations/types';
 import { ContactTable, GroupEditor } from '../operations/SettingsTables';
-import { EmptyPanel, InlineSpinner, OpsNotice, PageHeader } from '../operations/components';
+import { EmptyPanel, InlineSpinner, OpsNotice, PageHeader, SavingIndicator } from '../operations/components';
 
 export default function SettingsPage() {
   const [contacts, setContacts] = useState<ContactRecord[]>([]); const [groups, setGroups] = useState<ContactGroupRecord[]>([]);
@@ -69,6 +69,7 @@ export default function SettingsPage() {
 
   if (loading) return <InlineSpinner />;
   return <section className="ops-section">
+    <SavingIndicator active={Boolean(busyId)} />
     <PageHeader eyebrow="設定" title="設定・聯絡人" description="常用聯絡人、類群、信件狀態門檻與範本庫。" />
     {notice ? <OpsNotice tone="success">{notice}</OpsNotice> : null}{error ? <OpsNotice tone="danger">{error}</OpsNotice> : null}
 

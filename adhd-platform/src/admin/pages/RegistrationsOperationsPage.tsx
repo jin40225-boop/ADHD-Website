@@ -7,7 +7,7 @@ import { TextInput, Textarea, Select } from '@/components/ui/FormField/FormField
 import { WarmButton } from '@/components/ui/WarmButton/WarmButton';
 import { createCaseFromRegistration, listContacts, listNotes, moveRegistrationSessions, saveNote, saveTask, transitionRegistration, updateRegistrationAdministration } from '../operations/api';
 import type { ContactRecord, InternalNote, OperationalRegistration, WorkPriority } from '../operations/types';
-import { EmptyPanel, InlineSpinner, OpsNotice, PageHeader } from '../operations/components';
+import { EmptyPanel, InlineSpinner, OpsNotice, PageHeader, SavingIndicator } from '../operations/components';
 import {
   DEFAULT_COLUMNS, MailStatusTag, NAVIGATOR_COLUMNS, PARENT_COLUMNS, PEER_COLUMNS, RegistrationTable, STATUS_LABEL, STATUS_OPTIONS,
   toLocalInput, type RegistrationColumn, type RegistrationPatch, type RowContext,
@@ -152,6 +152,7 @@ export default function RegistrationsOperationsPage() {
   const answerEntries = Object.entries(answers);
 
   return <section className="ops-section">
+    <SavingIndicator active={Boolean(busyId) || sending} />
     <PageHeader eyebrow="受理與審核" title="報名工作台" description="依專案分頁；表格內的狀態、勾選、時段可直接改，點姓名開詳情。" />
     {notice ? <OpsNotice tone="success">{notice}</OpsNotice> : null}{error ? <OpsNotice tone="danger">{error}</OpsNotice> : null}
     <div className="ops-tabs">{TABS.map((item) => <button type="button" key={item.slug} className={`ops-tab ${item.slug === activeTab.slug ? 'ops-tab--active' : ''}`} onClick={() => setTab(item.slug)}>
@@ -233,7 +234,7 @@ export default function RegistrationsOperationsPage() {
             </div>
           </article>
           <article className="ops-panel"><div className="ops-panel-header"><div><h2>完整表單內容</h2><p>可補正缺漏資訊；所有欄位完整保留。</p></div></div>{answerEntries.length ? <div className="ops-form-grid">{answerEntries.map(([key, value]) => <Textarea key={key} label={ANSWER_LABEL[key] ?? key} value={Array.isArray(value) ? value.map((v) => typeof v === 'string' ? v : JSON.stringify(v)).join('\n') : typeof value === 'string' ? value : JSON.stringify(value)} onChange={(e) => setAnswers({ ...answers, [key]: Array.isArray(value) ? e.target.value.split('\n').filter(Boolean) : e.target.value })} />)}</div> : <EmptyPanel title="這筆報名沒有表單內容" />}</article>
-          <article className="ops-panel"><div className="ops-panel-header"><h2>場次移轉</h2></div><div className="ops-list">{sessions.filter((s) => s.projectId === current.registration.projectId).map((session) => <label className="ops-list-row" key={session.id}><span><input type="checkbox" checked={(draft.sessionIds ?? []).includes(session.id)} onChange={() => toggleSession(session.id)} /> <strong>{session.title}</strong></span><small>{new Date(session.startsAt).toLocaleString('zh-TW')} · {session.bookedCount}/{session.capacity}</small></label>)}</div><WarmButton onClick={() => void saveSessions()}>確認移轉場次</WarmButton></article>
+          <article className="ops-panel"><div className="ops-panel-header"><h2>場次移轉</h2></div><div className="ops-list">{sessions.filter((s) => s.projectId === current.registration.projectId && ((draft.sessionIds ?? []).includes(s.id) || (s.status !== 'done' && s.status !== 'cancelled'))).map((session) => <label className="ops-list-row" key={session.id}><span><input type="checkbox" checked={(draft.sessionIds ?? []).includes(session.id)} onChange={() => toggleSession(session.id)} /> <strong>{session.title}</strong></span><small>{new Date(session.startsAt).toLocaleString('zh-TW')} · {session.bookedCount}/{session.capacity}</small></label>)}</div><WarmButton onClick={() => void saveSessions()}>確認移轉場次</WarmButton></article>
           <article className="ops-panel"><div className="ops-panel-header"><h2>內部註記</h2></div><div className="ops-form-grid"><Select label="類型" value={noteType} onChange={(e) => setNoteType(e.target.value as typeof noteType)}><option value="general">一般</option><option value="eligibility">資格審核</option><option value="handoff">交接</option><option value="risk">風險</option></Select><div className="ops-full"><Textarea label="註記內容" rows={4} value={note} onChange={(e) => setNote(e.target.value)} /></div></div><WarmButton onClick={() => void addNote()}>新增註記</WarmButton>{notes.map((item) => <div className="ops-note" key={item.id}><p>{item.content}</p><small>{item.noteType} · 第 {item.revision} 版 · {new Date(item.createdAt).toLocaleString('zh-TW')}</small></div>)}</article>
           <article className="ops-panel"><div className="ops-panel-header"><div><h2>轉為持續服務個案</h2><p>保留原報名、人物、活動和信件關聯。</p></div></div><Textarea label="轉案摘要" value={caseSummary} onChange={(e) => setCaseSummary(e.target.value)} /><WarmButton onClick={() => void createCase()}>建立個案</WarmButton></article>
         </div>

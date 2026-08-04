@@ -11,7 +11,7 @@ import { isSupabaseReady } from '@/lib/supabase';
 import DemoDataNotice from '../DemoDataNotice';
 import { listContacts } from '../operations/api';
 import type { ContactRecord } from '../operations/types';
-import { EmptyPanel, InlineSpinner, OpsNotice, PageHeader } from '../operations/components';
+import { EmptyPanel, InlineSpinner, OpsNotice, PageHeader, SavingIndicator } from '../operations/components';
 import { STATUS_LABEL, toLocalInput } from '../operations/RegistrationTable';
 import { SESSION_STATUS_TEXT as STATUS_TEXT, SessionTable, sessionDateText as dateText, sessionTimeText as timeText } from '../operations/SessionTable';
 
@@ -79,6 +79,7 @@ export default function SessionsPage() {
   };
 
   return <section className="ops-section">
+    <SavingIndicator active={Boolean(busyId)} />
     <PageHeader eyebrow="場次" title="場次管理" description="名額與截止可直接改；上下架用 toggle；點服務線開詳情，主題與客座在那裡公布。" actions={<WarmButton onClick={() => void createSession()}>＋ 新增場次</WarmButton>} />
     {live ? null : <DemoDataNotice />}
     {notice ? <OpsNotice tone="success">{notice}</OpsNotice> : null}{error ? <OpsNotice tone="danger">{error}</OpsNotice> : null}
