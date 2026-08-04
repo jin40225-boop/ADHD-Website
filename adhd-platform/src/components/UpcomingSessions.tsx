@@ -27,11 +27,17 @@ export interface UpcomingSessionsProps {
   projectSlug?: string;
   /** 報名頁站內路徑（交給 react-router，勿含 BASE 前綴） */
   registerPath?: string;
+  /** 一併列出尚未上架的場次，標示「即將開放」且不可報名。 */
+  includeUnpublished?: boolean;
+  /** 顯示「主題／客座嘉賓」列；未公布時顯示「神秘驚喜！」。 */
+  showTopic?: boolean;
 }
 
 export function UpcomingSessions({
   projectSlug = 'peer-group',
   registerPath = '/peer-group/register',
+  includeUnpublished = false,
+  showTopic = false,
 }: UpcomingSessionsProps) {
   const [sessions, setSessions] = useState<SessionSlot[] | null>(null);
   const [failed, setFailed] = useState(false);
@@ -42,7 +48,7 @@ export function UpcomingSessions({
       try {
         const project = await getProjectBySlug(projectSlug);
         if (!project) throw new Error('project not found');
-        const list = await getUpcomingSessions(project.id);
+        const list = await getUpcomingSessions(project.id, { includeUnpublished });
         if (alive) setSessions(list);
       } catch {
         if (alive) {
@@ -65,6 +71,10 @@ export function UpcomingSessions({
       </div>
     );
   }
+
+  // 未公布主題／來賓時，依裁決 3 顯示「神秘驚喜！」而非留白。
+  const mystery = (value?: string) =>
+    value ? <>{value}</> : <span className="font-black text-highlight">神秘驚喜！</span>;
 
   if (sessions.length === 0) {
     return (
@@ -89,6 +99,7 @@ export function UpcomingSessions({
       {sessions.map((s) => {
         const remaining = Math.max(0, s.capacity - s.bookedCount);
         const isFull = s.status === 'full' || remaining === 0;
+        const notYetOpen = s.status === 'closed';
         return (
           <div className="session-card" key={s.id}>
             <div className="p-6 space-y-4">
@@ -96,8 +107,18 @@ export function UpcomingSessions({
                 <span className="session-tag bg-accent-orange text-brown">
                   {new Date(s.startsAt).getMonth() + 1}月場
                 </span>
+                {notYetOpen ? (
+                  <span className="session-tag bg-gray-200 text-gray-600">即將開放</span>
+                ) : null}
                 <span className="font-bold text-brown text-lg">{s.title}</span>
               </div>
+              {showTopic ? (
+                <p className="text-brown font-bold">
+                  主題：{mystery(s.topic)}
+                  <span className="mx-2 text-brown/30">·</span>
+                  客座嘉賓：{mystery(s.guest)}
+                </p>
+              ) : null}
               <div className="flex flex-wrap gap-4 text-sm font-bold text-gray-600 bg-white/50 p-3 rounded-lg border border-brown/10">
                 <span className="flex items-center gap-1">
                   <Calendar className="w-4 h-4" /> {fmtDate(s.startsAt)}
@@ -106,11 +127,15 @@ export function UpcomingSessions({
                   <Clock className="w-4 h-4" /> {fmtTime(s.startsAt)} - {fmtTime(s.endsAt)}
                 </span>
                 <span className="flex items-center gap-1">
-                  <Users className="w-4 h-4" /> {isFull ? '已額滿' : `剩 ${remaining} 名`}
+                  <Users className="w-4 h-4" /> {notYetOpen ? '尚未開放報名' : isFull ? '已額滿' : `剩 ${remaining} 名`}
                 </span>
               </div>
               <div className="flex gap-3 pt-2">
-                {isFull ? (
+                {notYetOpen ? (
+                  <span className="btn-warm py-2 px-4 bg-gray-200 text-gray-500 text-sm pointer-events-none">
+                    即將開放，敬請期待
+                  </span>
+                ) : isFull ? (
                   <span className="btn-warm py-2 px-4 bg-gray-200 text-gray-500 text-sm pointer-events-none">
                     已額滿
                   </span>

@@ -65,6 +65,10 @@ function mapSession(r: Row): SessionSlot {
     capacity: r.capacity as number,
     bookedCount: r.booked_count as number,
     status: r.status as SessionSlot['status'],
+    topic: (r.topic as string) || undefined,
+    guest: (r.guest as string) || undefined,
+    registrationDeadline: (r.registration_deadline as string) ?? undefined,
+    slotOptions: (r.slot_options as SessionSlot['slotOptions']) ?? undefined,
     meetUrl: (r.meet_url as string) ?? undefined,
     instructorIds: (r.instructor_ids as string[]) ?? [],
     calendarEventId: (r.calendar_event_id as string) ?? undefined,
@@ -217,17 +221,24 @@ export async function getFormSchema(projectId: string): Promise<FormSchema | nul
 /** 前台可見場次（開放＋額滿，未結束），依開始時間排序。
  *  優先讀 sessions_public view（僅安全欄位，無 meet_url/calendar_event_id）；
  *  view 尚未建立（migration 20260719000001 未跑）時退回 sessions 本表。 */
-export async function getUpcomingSessions(projectId: string): Promise<SessionSlot[]> {
+export async function getUpcomingSessions(
+  projectId: string,
+  options: {
+    /** 一併取得尚未上架（`closed`）的場次，供前台顯示「即將開放」。報名頁請勿開啟。 */
+    includeUnpublished?: boolean;
+  } = {},
+): Promise<SessionSlot[]> {
+  const statuses = options.includeUnpublished ? ['open', 'full', 'closed'] : ['open', 'full'];
   const query = (table: string, columns: string) =>
     db()
       .from(table)
       .select(columns)
       .eq('project_id', projectId)
-      .in('status', ['open', 'full'])
+      .in('status', statuses)
       .gte('ends_at', new Date().toISOString())
       .order('starts_at', { ascending: true });
 
-  const SAFE_COLUMNS = 'id, project_id, title, starts_at, ends_at, capacity, booked_count, status';
+  const SAFE_COLUMNS = 'id, project_id, title, starts_at, ends_at, capacity, booked_count, status, topic, guest, registration_deadline, slot_options';
   let { data, error } = await query('sessions_public', SAFE_COLUMNS);
   if (error) {
     ({ data, error } = await query('sessions', SAFE_COLUMNS));

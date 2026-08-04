@@ -202,6 +202,14 @@ export interface SessionSlot {
   capacity: number;
   bookedCount: number;
   status: SessionStatus;
+  /** 本場主題；未公布時前台顯示「神秘驚喜！」。 */
+  topic?: string;
+  /** 本場客座來賓；未公布時前台顯示「神秘驚喜！」。 */
+  guest?: string;
+  /** 報名截止時間（親職＝前一週 23:59；導航＝前月 20 日 23:59）。 */
+  registrationDeadline?: string;
+  /** 導航計畫的候選時段（每月 1 位名額，5 個候選共用）。 */
+  slotOptions?: { label: string; note?: string; startsAt: string; endsAt: string }[];
   meetUrl?: string;
   /** 指派講師 profile id。 */
   instructorIds: string[];
