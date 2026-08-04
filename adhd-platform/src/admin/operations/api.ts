@@ -143,6 +143,9 @@ function mapRegistration(row: Row, projectName?: string): OperationalRegistratio
     priority: row.priority ?? 'normal',
     nextActionAt: row.next_action_at ?? undefined,
     archivedAt: row.archived_at ?? undefined,
+    reminderSentAt: row.reminder_sent_at ?? undefined,
+    counselorConfirmed: row.counselor_confirmed ?? undefined,
+    finalSlotAt: row.final_slot_at ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at ?? undefined,
     threadId: row.thread_id ?? undefined,
@@ -304,12 +307,19 @@ export async function updateRegistrationAdministration(id: string, input: {
   assignedTo?: string | null;
   priority?: WorkPriority;
   nextActionAt?: string | null;
+  /** 以下三欄：undefined＝不動，null＝清空（取消勾選／改回「—」）。 */
+  reminderSentAt?: string | null;
+  counselorConfirmed?: boolean | null;
+  finalSlotAt?: string | null;
 }) {
   const payload: Row = {};
   if (input.answers !== undefined) payload.answers = input.answers;
   if (input.assignedTo !== undefined) payload.assigned_to = input.assignedTo;
   if (input.priority !== undefined) payload.priority = input.priority;
   if (input.nextActionAt !== undefined) payload.next_action_at = input.nextActionAt;
+  if (input.reminderSentAt !== undefined) payload.reminder_sent_at = input.reminderSentAt;
+  if (input.counselorConfirmed !== undefined) payload.counselor_confirmed = input.counselorConfirmed;
+  if (input.finalSlotAt !== undefined) payload.final_slot_at = input.finalSlotAt;
   const { error } = await db().from('registrations').update(payload).eq('id', id);
   assert(error, '更新報名行政資料失敗');
 }

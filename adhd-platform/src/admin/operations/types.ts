@@ -35,6 +35,12 @@ export interface OperationalRegistration extends Registration {
   messages?: OperationalMessage[];
   /** 尚未寄過任何信的報名沒有 thread，因此可能為 undefined。 */
   mailStatus?: RegistrationMailStatus;
+  /** 提醒信寄出時間；undefined 表示 03_v4 的「已寄信提醒」未勾。 */
+  reminderSentAt?: string;
+  /** 諮商師回覆確認：undefined 未回覆、true 可、false 不可。 */
+  counselorConfirmed?: boolean;
+  /** 導航計畫最終確定時段的開始時間（結束＝開始＋60 分）。 */
+  finalSlotAt?: string;
 }
 
 export interface ContactRecord {

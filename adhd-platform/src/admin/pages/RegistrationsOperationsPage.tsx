@@ -8,8 +8,9 @@ import { createCaseFromRegistration, listContacts, listNotes, moveRegistrationSe
 import type { ContactRecord, InternalNote, OperationalRegistration, WorkPriority } from '../operations/types';
 import { EmptyPanel, InlineSpinner, OpsNotice, PageHeader, StatusPill } from '../operations/components';
 
-const STATUS_OPTIONS = ['pending', 'reviewing', 'confirmed', 'success', 'waitlist', 'rejected', 'withdrawn', 'cancelled'];
-const STATUS_LABEL: Record<string, string> = { pending: '待審核', reviewing: '審核中', confirmed: '已確認', success: '錄取／完成', waitlist: '候補', rejected: '不符合', withdrawn: '中途放棄', cancelled: '已取消' };
+const STATUS_OPTIONS = ['pending', 'reviewing', 'confirmed', 'success', 'waitlist', 'rejected', 'reschedule', 'withdrawn', 'cancelled'];
+// 標籤照 03_v4 定稿改寫；值一個都不動，既有報名不必遷移。`reschedule` 是唯一新增的值。
+const STATUS_LABEL: Record<string, string> = { pending: '待審核', reviewing: '回信確認中', confirmed: '報名成功', success: '錄取／完成', waitlist: '候補', rejected: '退回', reschedule: '待改訂時間', withdrawn: '中途放棄', cancelled: '已取消' };
 // 由報名頁注入、不在 form_schemas 裡的 answers key，給它們可讀標題。
 const ANSWER_LABEL: Record<string, string> = { preferredExactSlots: '可配合的確切時段（報名者勾選）', sessionIds: '選擇場次' };
 
