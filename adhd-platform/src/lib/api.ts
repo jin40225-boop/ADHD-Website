@@ -247,6 +247,21 @@ export async function getUpcomingSessions(
   return ((data ?? []) as unknown as Row[]).map(mapSession);
 }
 
+/** 活動軌跡：已完成的公開場次，最新在前（裁決 6：過期內容永久留存、標示已結束）。
+ *  只取 `done`——`cancelled`（含測試資料）與未上架場次一律不進公開軌跡。
+ *  走 sessions_public，因此不含 meet_url，歷史 Meet 連結自然下架。 */
+export async function getPastSessions(projectId: string): Promise<SessionSlot[]> {
+  const SAFE_COLUMNS = 'id, project_id, title, starts_at, ends_at, capacity, booked_count, status, topic, guest, registration_deadline, slot_options';
+  const { data, error } = await db()
+    .from('sessions_public')
+    .select(SAFE_COLUMNS)
+    .eq('project_id', projectId)
+    .eq('status', 'done')
+    .order('starts_at', { ascending: false });
+  if (error) throw new ApiError(error.message);
+  return ((data ?? []) as unknown as Row[]).map(mapSession);
+}
+
 /** 公開就醫推薦。Supabase 未設定或讀取失敗時，由頁面保留版本化 JSON 後援。 */
 export async function getPublicRecommendations(): Promise<Recommendation[]> {
   const { data, error } = await db()
