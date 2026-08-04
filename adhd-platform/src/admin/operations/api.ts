@@ -260,7 +260,8 @@ export async function saveTask(input: {
 }
 
 export async function updateRegistrationAdministration(id: string, input: {
-  answers?: Record<string, string | string[]>;
+  /** `group` 型別欄位（例：多位孩子）的答案是物件陣列。 */
+  answers?: Record<string, string | string[] | Record<string, string | string[]>[]>;
   assignedTo?: string | null;
   priority?: WorkPriority;
   nextActionAt?: string | null;

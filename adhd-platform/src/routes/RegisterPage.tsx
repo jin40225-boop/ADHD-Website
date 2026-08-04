@@ -113,7 +113,7 @@ export default function RegisterPage({ slug }: { slug: string }) {
     if (!project || !schema) return;
     setError(undefined);
     const raw = answers[SESSION_FIELD_KEY];
-    const sessionIds = Array.isArray(raw) ? raw : [];
+    const sessionIds = Array.isArray(raw) ? raw.filter((item): item is string => typeof item === 'string') : [];
     const emailKey = schema.fields.find((f) => f.type === 'email')?.key ?? 'email';
     const email = String(answers[emailKey] ?? '').trim();
     try {

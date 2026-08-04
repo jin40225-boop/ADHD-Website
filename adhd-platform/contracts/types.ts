@@ -127,7 +127,11 @@ export interface StatusFlow {
 
 export type FormFieldType =
   | 'text' | 'textarea' | 'email' | 'phone'
-  | 'select' | 'multiselect' | 'checkbox';
+  | 'select' | 'multiselect' | 'checkbox'
+  /** 單選 chip 群組；語意同 select，但選項全部攤開顯示。 */
+  | 'radio'
+  /** 可增減的重複群組（例：多位孩子）。答案為物件陣列。 */
+  | 'group';
 
 /** 表單選項；`disabled` 用於額滿時段（前台顯示 disabledLabel 且不可勾）。 */
 export interface FormFieldOption {
@@ -138,20 +142,46 @@ export interface FormFieldOption {
   disabledLabel?: string;
 }
 
+/** 條件顯示：僅當 `key` 欄位的值命中 `equals` 之一時才顯示與驗證本欄。 */
+export interface FormFieldCondition {
+  key: string;
+  equals: string[];
+}
+
 export interface FormField {
   key: string;
   label: string;
   type: FormFieldType;
   required: boolean;
   helpText?: string;
-  /** select / multiselect / checkbox 用。可為字串或含停用旗標的物件。 */
+  /** select / multiselect / checkbox / radio 用。可為字串或含停用旗標的物件。 */
   options?: (string | FormFieldOption)[];
+  /** 多階段表單的階段編號（1 起算）。未指定視為第 1 階段。 */
+  stage?: number;
+  /** 條件顯示；不成立時本欄不顯示、不驗證、不送出。 */
+  visibleWhen?: FormFieldCondition;
+  /** `group` 專用：每一筆的內層欄位。 */
+  subFields?: FormField[];
+  /** `group` 專用：最少／最多筆數與「新增一筆」按鈕文字。 */
+  minItems?: number;
+  maxItems?: number;
+  addLabel?: string;
+  itemLabel?: string;
+}
+
+/** 多階段表單的階段標題（對映 SchemaForm 的步驟指示器）。 */
+export interface FormStage {
+  stage: number;
+  title: string;
+  /** 顯示在該階段最上方的說明或提醒。 */
+  intro?: string;
 }
 
 /** 各專案自訂報名欄位定義（對映 `form_schemas`）。 */
 export interface FormSchema {
   projectId: string;
   fields: FormField[];
+  stages?: FormStage[];
 }
 
 /* ========================================================================== *
@@ -185,7 +215,8 @@ export interface Registration {
   projectId: string;
   /** 報名者勾選/確定的場次 id。 */
   sessionIds: string[];
-  answers: Record<string, string | string[]>;
+  /** `group` 型別欄位的答案是物件陣列（例：多位孩子）。 */
+  answers: Record<string, string | string[] | Record<string, string | string[]>[]>;
   /** 狀態 key，依該專案 StatusFlow。 */
   status: string;
   email: string;

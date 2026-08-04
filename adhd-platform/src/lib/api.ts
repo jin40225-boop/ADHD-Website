@@ -205,11 +205,13 @@ export async function getProjectBySlug(slug: string): Promise<Project | null> {
 export async function getFormSchema(projectId: string): Promise<FormSchema | null> {
   const { data, error } = await db()
     .from('form_schemas')
-    .select('project_id, fields')
+    .select('project_id, fields, stages')
     .eq('project_id', projectId)
     .maybeSingle();
   if (error) throw new ApiError(error.message);
-  return data ? { projectId: data.project_id, fields: data.fields as FormSchema['fields'] } : null;
+  return data
+    ? { projectId: data.project_id, fields: data.fields as FormSchema['fields'], stages: (data.stages ?? undefined) as FormSchema['stages'] }
+    : null;
 }
 
 /** 前台可見場次（開放＋額滿，未結束），依開始時間排序。
