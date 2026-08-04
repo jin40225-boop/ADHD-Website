@@ -418,3 +418,8 @@ enabled = true
 # declarative_schema_path = "./database"
 # JSON string passed through to pg-delta SQL formatting.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":80,\"commaStyle\":\"trailing\"}"
+
+# 信中「確認出席／請假改期」按鈕的落點：對方從信件點進來不會帶 JWT，必須公開。
+# 授權靠一次性 token（不可猜、只能用一次、30 天過期），函式只讀寫該 token 對應的那筆報名。
+[functions.confirm-attendance]
+verify_jwt = false

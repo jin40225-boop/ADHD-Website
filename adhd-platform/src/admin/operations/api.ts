@@ -115,10 +115,14 @@ function mapMailStatus(threads: Row[]): RegistrationMailStatus | undefined {
       String(a.last_outbound_at ?? a.last_inbound_at ?? ''),
     ),
   )[0];
-  const auto = (latest.mail_state ?? 'not_sent') as MailState;
+  const stored = (latest.mail_state ?? 'not_sent') as MailState;
   const override = (latest.mail_state_override ?? undefined) as MailState | undefined;
   const followUpDueAt = latest.follow_up_due_at ?? undefined;
   const dueMs = followUpDueAt ? Date.parse(followUpDueAt) : NaN;
+  // 「逾期未回覆」在讀取時推導，而不是存一個會過期的值：等待回覆的信一旦過了催覆期限就是逾期。
+  // 這樣不需要排程去把狀態翻面，也不會出現「資料庫說等待回覆、畫面上其實早就逾期」的落差。
+  const overdue = stored === 'waiting_reply' && !Number.isNaN(dueMs) && Date.now() > dueMs;
+  const auto = (overdue ? 'overdue' : stored) as MailState;
   return {
     threadId: latest.id,
     auto,

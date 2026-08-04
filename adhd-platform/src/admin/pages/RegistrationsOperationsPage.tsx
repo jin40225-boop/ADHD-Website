@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { adminListSessions } from '@/lib/api';
-import type { SessionSlot } from '@contracts/types';
+import { adminListEmailTemplates, adminListSessions, invokeSendEmail } from '@/lib/api';
+import type { EmailTemplate, SessionSlot } from '@contracts/types';
+import { applyTemplate, buildContext, withReplyDeadline } from '../operations/emailCompose';
 import { TextInput, Textarea, Select } from '@/components/ui/FormField/FormField';
 import { WarmButton } from '@/components/ui/WarmButton/WarmButton';
 import { createCaseFromRegistration, listContacts, listNotes, moveRegistrationSessions, saveNote, saveTask, transitionRegistration, updateRegistrationAdministration } from '../operations/api';
@@ -32,6 +33,9 @@ export default function RegistrationsOperationsPage() {
   const [contacts, setContacts] = useState<ContactRecord[]>([]); const [sessions, setSessions] = useState<SessionSlot[]>([]); const [selectedId, setSelectedId] = useState<string>(); const [notes, setNotes] = useState<InternalNote[]>([]); const [loading, setLoading] = useState(true); const [notice, setNotice] = useState<string>(); const [error, setError] = useState<string>(); const [busyId, setBusyId] = useState<string>();
   const [tab, setTab] = useState('navigator'); const [search, setSearch] = useState(''); const [statusFilter, setStatusFilter] = useState('active'); const [mailFilter, setMailFilter] = useState('all'); const [monthFilter, setMonthFilter] = useState('all');
   const [draft, setDraft] = useState<Partial<OperationalRegistration>>({}); const [answers, setAnswers] = useState<Record<string, string | string[] | Record<string, string | string[]>[]>>({}); const [note, setNote] = useState(''); const [noteType, setNoteType] = useState<'general' | 'eligibility' | 'handoff' | 'risk'>('general'); const [caseSummary, setCaseSummary] = useState('');
+  const [templates, setTemplates] = useState<EmailTemplate[]>([]);
+  const [compose, setCompose] = useState({ templateId: '', subject: '', body: '', attachButtons: true, isFollowUp: false, cc: [] as string[] });
+  const [missingVars, setMissingVars] = useState<string[]>([]); const [sending, setSending] = useState(false);
 
   const registrations = useMemo(() => contacts.flatMap((contact) => contact.registrations.map((registration) => ({ registration, contact }))), [contacts]);
   const current = registrations.find(({ registration }) => registration.id === selectedId);
@@ -39,7 +43,10 @@ export default function RegistrationsOperationsPage() {
   const sessionOf = (registration: OperationalRegistration) => registration.sessionIds.map((id) => sessionById.get(id)).find(Boolean);
   const activeTab = TABS.find((item) => item.slug === tab) ?? TABS[0];
 
-  const reload = async () => { const [people, slots] = await Promise.all([listContacts(), adminListSessions()]); setContacts(people); setSessions(slots); };
+  const reload = async () => {
+    const [people, slots, mailTemplates] = await Promise.all([listContacts(), adminListSessions(), adminListEmailTemplates()]);
+    setContacts(people); setSessions(slots); setTemplates(mailTemplates);
+  };
   useEffect(() => { reload().catch((e: unknown) => setError(e instanceof Error ? e.message : '讀取報名失敗')).finally(() => setLoading(false)); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     const requested = searchParams.get('registration');
@@ -103,6 +110,42 @@ export default function RegistrationsOperationsPage() {
   const addTask = async () => { if (!current) return; await saveTask({ projectId: current.registration.projectId, contactId: current.contact.id, registrationId: current.registration.id, title: `跟進報名：${current.contact.displayName}`, priority: draft.priority ?? 'normal', dueAt: draft.nextActionAt, status: 'open' }); setNotice('已建立追蹤待辦。'); };
   const createCase = async () => { if (!current) return; try { await createCaseFromRegistration(current.registration.id, 'ongoing', caseSummary); setNotice('已由報名建立個案，並保留人物與活動關聯。'); setCaseSummary(''); } catch (e) { setError(e instanceof Error ? e.message : '轉案失敗'); } };
 
+  /** 載入範本：變數在這裡就替換完成，使用者審閱到的即是實際會寄出的字。 */
+  const loadTemplate = (templateId: string) => {
+    const template = templates.find((item) => item.id === templateId);
+    if (!current || !template) { setCompose({ ...compose, templateId, subject: '', body: '' }); setMissingVars([]); return; }
+    const context = buildContext(current.registration, current.contact, sessions);
+    const subject = applyTemplate(template.subject, context);
+    const body = applyTemplate(template.body, context);
+    // 催覆信（出席確認信）預設帶回覆期限，期限＝設定裡的逾期門檻天數。
+    const isFollowUp = template.name.includes('催覆') || template.name.includes('出席確認');
+    const deadline = new Date(Date.now() + 3 * 86400000);
+    setCompose({
+      ...compose, templateId, subject: subject.text,
+      body: isFollowUp ? withReplyDeadline(body.text, deadline) : body.text,
+      isFollowUp,
+      // 婉拒信附出席確認按鈕沒有意義，預設關掉。
+      attachButtons: !template.name.includes('回絕'),
+    });
+    setMissingVars([...new Set([...subject.missing, ...body.missing])]);
+  };
+  const sendMail = async () => {
+    if (!current || !compose.subject.trim() || !compose.body.trim()) { setError('主旨與內容都要填。'); return; }
+    setSending(true);
+    try {
+      const result = await invokeSendEmail({
+        registrationId: current.registration.id, subject: compose.subject, body: compose.body,
+        cc: compose.cc, attachConfirmButtons: compose.attachButtons, isFollowUp: compose.isFollowUp,
+      });
+      await reload();
+      setCompose({ templateId: '', subject: '', body: '', attachButtons: true, isFollowUp: false, cc: [] });
+      setMissingVars([]); setError(undefined);
+      setNotice(`已寄出。信件狀態轉為「${result.mailState === 'reminded' ? '已催覆' : '已寄出・等待回覆'}」，已寄信提醒已勾起。`);
+    } catch (e) { setError(e instanceof Error ? e.message : '寄信失敗'); }
+    finally { setSending(false); }
+  };
+  const favourites = useMemo(() => contacts.filter((contact) => contact.isFavorite && contact.primaryEmail), [contacts]);
+
   const currentSession = current ? sessionOf(current.registration) : undefined;
   const preferred = current ? current.registration.answers?.preferredExactSlots : undefined;
   const preferredLabels = Array.isArray(preferred) ? preferred.filter((v): v is string => typeof v === 'string') : [];
@@ -156,6 +199,38 @@ export default function RegistrationsOperationsPage() {
               <small>建行事曆與 Meet 尚未接上（Phase 3-4 場次管理），目前只寫入時間。</small>
             </div> : null}
             <div className="ops-button-row"><WarmButton onClick={() => void saveAdmin()}>儲存行政欄位</WarmButton><WarmButton variant="secondary" onClick={() => void addTask()}>建立追蹤</WarmButton></div>
+          </article>
+          <article className="ops-panel">
+            <div className="ops-panel-header"><div><h2>✍️ 寄信</h2><p>選範本即帶入變數——你在這裡看到的字，就是實際會寄出的字。</p></div></div>
+            <div className="ops-form-grid">
+              <Select label="範本" value={compose.templateId} onChange={(e) => loadTemplate(e.target.value)}>
+                <option value="">不套範本，自己寫</option>
+                {templates.map((template) => <option key={template.id} value={template.id}>
+                  {template.name}{template.reviewStatus === 'draft' ? '（待審閱）' : ''}
+                </option>)}
+              </Select>
+              <Select label="副本（常用聯絡人）" value={compose.cc[0] ?? ''} onChange={(e) => setCompose({ ...compose, cc: e.target.value ? [e.target.value] : [] })}>
+                <option value="">無</option>
+                {favourites.map((contact) => <option key={contact.id} value={contact.primaryEmail}>{contact.displayName}</option>)}
+              </Select>
+              <div className="ops-full"><TextInput label="主旨" value={compose.subject} onChange={(e) => setCompose({ ...compose, subject: e.target.value })} /></div>
+              <div className="ops-full"><Textarea label="內容" rows={10} value={compose.body} onChange={(e) => setCompose({ ...compose, body: e.target.value })} /></div>
+            </div>
+            {missingVars.length ? <OpsNotice tone="warning">
+              這些變數在這筆報名上沒有值，原樣留在文字裡沒有替換：<b>{missingVars.map((name) => `{{${name}}}`).join('、')}</b>。寄出前請自己補掉。
+            </OpsNotice> : null}
+            <label className="ops-inline-check">
+              <input type="checkbox" checked={compose.attachButtons} onChange={(e) => setCompose({ ...compose, attachButtons: e.target.checked })} />
+              信末自動附「✅ 我確認出席／🔁 我需要請假改期」兩個連結（對方一點，系統就記錄並更新狀態）
+            </label>
+            <label className="ops-inline-check">
+              <input type="checkbox" checked={compose.isFollowUp} onChange={(e) => setCompose({ ...compose, isFollowUp: e.target.checked })} />
+              這是催覆信（寄出後狀態轉「已催覆」，而非「等待回覆」）
+            </label>
+            <div className="ops-button-row">
+              <WarmButton disabled={sending} onClick={() => void sendMail()}>{sending ? '寄送中…' : '寄出'}</WarmButton>
+              <span className="ops-cell-muted">寄給 {current.registration.email}；寄出後自動勾起「已寄信提醒」並記錄稽核。</span>
+            </div>
           </article>
           <article className="ops-panel"><div className="ops-panel-header"><div><h2>完整表單內容</h2><p>可補正缺漏資訊；所有欄位完整保留。</p></div></div>{answerEntries.length ? <div className="ops-form-grid">{answerEntries.map(([key, value]) => <Textarea key={key} label={ANSWER_LABEL[key] ?? key} value={Array.isArray(value) ? value.map((v) => typeof v === 'string' ? v : JSON.stringify(v)).join('\n') : typeof value === 'string' ? value : JSON.stringify(value)} onChange={(e) => setAnswers({ ...answers, [key]: Array.isArray(value) ? e.target.value.split('\n').filter(Boolean) : e.target.value })} />)}</div> : <EmptyPanel title="這筆報名沒有表單內容" />}</article>
           <article className="ops-panel"><div className="ops-panel-header"><h2>場次移轉</h2></div><div className="ops-list">{sessions.filter((s) => s.projectId === current.registration.projectId).map((session) => <label className="ops-list-row" key={session.id}><span><input type="checkbox" checked={(draft.sessionIds ?? []).includes(session.id)} onChange={() => toggleSession(session.id)} /> <strong>{session.title}</strong></span><small>{new Date(session.startsAt).toLocaleString('zh-TW')} · {session.bookedCount}/{session.capacity}</small></label>)}</div><WarmButton onClick={() => void saveSessions()}>確認移轉場次</WarmButton></article>

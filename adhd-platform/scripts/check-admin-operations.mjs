@@ -67,6 +67,18 @@ requireText('src/router.tsx', ["path: 'settings'", "path: 'documents'"]);
 // 文件產生中心在 Phase 6 前是佔位頁：產出鈕必須是停用的，且必須說明何時啟用。
 // 一顆看起來能按、按了沒反應的產出鈕，正是這個專案最初四大重症裡的「死按鈕」。
 requireText('src/admin/pages/DocumentsPage.tsx', ['<WarmButton disabled', 'Phase 6']);
+
+// Phase 4 信件系統。
+// 信中確認按鈕是「對方點開信件」偵測不可靠之後的替代方案（裁決 12），端點必須公開才點得到。
+requireText('supabase/config.toml', ['[functions.confirm-attendance]', 'verify_jwt = false']);
+requireText('supabase/functions/confirm-attendance/index.ts', ['attendance_confirmations', 'attend_confirmed', 'reschedule_requested', '.is(\'responded_at\', null)']);
+// 寄出這個動作本身要推進狀態機並勾起已寄信提醒，不能再靠人手動記得。
+requireText('supabase/functions/send-email-v2/index.ts', ['reminder_sent_at', 'follow_up_due_at', 'attendance_confirmations', 'gmail_bulk_send']);
+// 收到回信＝待處理；這是紅點與催覆判斷的來源。
+requireText('supabase/functions/gmail-sync/index.ts', ["mail_state: outbound ? 'waiting_reply' : 'replied_pending'"]);
+// 變數必須在後台載入範本時就替換完，使用者審閱到的才會是實際寄出的字。
+requireText('src/admin/operations/emailCompose.ts', ['applyTemplate', 'missing']);
+requireText('src/admin/pages/RegistrationsOperationsPage.tsx', ['loadTemplate(', 'attachConfirmButtons', 'isFollowUp']);
 requireText('supabase/migrations/20260804000017_settings_and_contact_audit.sql', [
   'create table if not exists public.app_settings', 'trg_contacts_admin_audit',
   'trg_contact_group_members_audit', 'review_status',

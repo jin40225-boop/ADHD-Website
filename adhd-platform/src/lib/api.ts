@@ -730,7 +730,7 @@ async function invokeFunction<T>(name: string, body: Record<string, unknown>): P
   return data as T;
 }
 
-/** 寄出報名回覆信（Gmail Edge Function）。 */
+/** 寄出報名回覆信（Gmail Edge Function）。寄出即推進信件狀態機並勾起「已寄信提醒」。 */
 export async function invokeSendEmail(input: {
   registrationId: string;
   subject: string;
@@ -738,7 +738,22 @@ export async function invokeSendEmail(input: {
   cc?: string[];
   bcc?: string[];
   threadId?: string;
-}): Promise<{ ok: boolean; threadId?: string }> {
+  /** 信末是否附「確認出席／請假改期」按鈕；婉拒信一類請關掉。預設附上。 */
+  attachConfirmButtons?: boolean;
+  /** 催覆信：寄出後狀態轉「已催覆」而非「等待回覆」。 */
+  isFollowUp?: boolean;
+}): Promise<{ ok: boolean; threadId?: string; mailState?: string; followUpDueAt?: string }> {
+  return invokeFunction('send-email-v2', input);
+}
+
+/** 群發：同一封信寄給多個聯絡人，各自建立信件串。不附出席確認按鈕、不動報名狀態。 */
+export async function invokeBulkEmail(input: {
+  contactIds: string[];
+  subject: string;
+  body: string;
+  cc?: string[];
+  bcc?: string[];
+}): Promise<{ ok: boolean; sent: number; failed: { contactId: string; reason: string }[] }> {
   return invokeFunction('send-email-v2', input);
 }
 
