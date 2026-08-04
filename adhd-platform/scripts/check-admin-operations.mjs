@@ -63,7 +63,10 @@ requireText('src/admin/operations/SessionTable.tsx', ['onReject(']);
 // 逾期門檻在 Phase 4 前只存值、Claude API 在 Phase 6 前不做輸入框。拿掉說明就等於假生效。
 requireText('src/admin/operations/SettingsTables.tsx', ['onPatch(', 'onToggleMember(', 'ops-member-chip']);
 requireText('src/admin/pages/SettingsPage.tsx', ['<ContactTable', '<GroupEditor', 'Phase 4', 'Phase 6', '待審閱']);
-requireText('src/router.tsx', ["path: 'settings'"]);
+requireText('src/router.tsx', ["path: 'settings'", "path: 'documents'"]);
+// 文件產生中心在 Phase 6 前是佔位頁：產出鈕必須是停用的，且必須說明何時啟用。
+// 一顆看起來能按、按了沒反應的產出鈕，正是這個專案最初四大重症裡的「死按鈕」。
+requireText('src/admin/pages/DocumentsPage.tsx', ['<WarmButton disabled', 'Phase 6']);
 requireText('supabase/migrations/20260804000017_settings_and_contact_audit.sql', [
   'create table if not exists public.app_settings', 'trg_contacts_admin_audit',
   'trg_contact_group_members_audit', 'review_status',

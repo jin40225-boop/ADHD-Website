@@ -71,6 +71,17 @@ export interface ContactGroupRecord {
   members: { contactId: string; source: 'manual' | 'auto'; addedAt: string }[];
 }
 
+/** 文件生成紀錄（計畫第四節第 7 項）。Phase 6 接上 `generate-document` 後才會有資料。 */
+export interface GeneratedDocumentRecord {
+  id: string;
+  docType: string;
+  scope: 'single' | 'batch' | 'aggregate';
+  title: string;
+  status: 'draft' | 'reviewed' | 'sent' | 'discarded';
+  redacted: boolean;
+  createdAt: string;
+}
+
 export interface AppSettings {
   /** 寄出後幾天未回覆算逾期。Phase 4 的信件狀態機接線後才會真的依它判斷。 */
   followUpDays: number;

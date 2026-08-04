@@ -7,6 +7,7 @@ import type {
   ContactRecord,
   EmailDraftRecord,
   FollowUpTask,
+  GeneratedDocumentRecord,
   GmailSyncState,
   InternalNote,
   MailState,
@@ -249,6 +250,25 @@ export async function setContactGroupMember(groupId: string, contactId: string, 
     : db().from('contact_group_members').delete().eq('group_id', groupId).eq('contact_id', contactId);
   const { error } = await query;
   assert(error, member ? '加入類群失敗' : '移出類群失敗');
+}
+
+/** 文件生成紀錄。Phase 6 之前必然是空的——生成功能還沒接上，沒有任何東西會寫入。 */
+export async function listGeneratedDocuments(): Promise<GeneratedDocumentRecord[]> {
+  const { data, error } = await db()
+    .from('generated_documents')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(50);
+  assert(error, '讀取文件生成紀錄失敗');
+  return (data ?? []).map((row: Row) => ({
+    id: row.id,
+    docType: row.doc_type,
+    scope: row.scope,
+    title: row.title,
+    status: row.status,
+    redacted: row.redacted,
+    createdAt: row.created_at,
+  }));
 }
 
 export async function getAppSettings(): Promise<AppSettings> {

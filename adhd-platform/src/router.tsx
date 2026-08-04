@@ -37,6 +37,7 @@ const FeedbackAdminPage = lazy(() => import('@/admin/pages/FeedbackPage'));
 const TeamPage = lazy(() => import('@/admin/pages/TeamPage'));
 const IntegrationsPage = lazy(() => import('@/admin/pages/IntegrationsPage'));
 const SettingsPage = lazy(() => import('@/admin/pages/SettingsPage'));
+const DocumentsPage = lazy(() => import('@/admin/pages/DocumentsPage'));
 const AuditPage = lazy(() => import('@/admin/pages/AuditPage'));
 const UiGallery = lazy(() => import('@/components/ui/_gallery').then((module) => ({ default: module.UiGallery })));
 
@@ -80,6 +81,7 @@ const router = createBrowserRouter([
     { path: 'team', element: withSuspense(<TeamPage />) },
     { path: 'integrations', element: withSuspense(<IntegrationsPage />) },
     { path: 'settings', element: withSuspense(<SettingsPage />) },
+    { path: 'documents', element: withSuspense(<DocumentsPage />) },
     { path: 'audit', element: withSuspense(<AuditPage />) },
     { path: 'gallery', element: withSuspense(<UiGallery />) },
   ]},

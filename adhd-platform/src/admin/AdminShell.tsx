@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
-  CalendarDays, CalendarRange, ClipboardCheck, FilePenLine, GraduationCap,
+  CalendarDays, CalendarRange, ClipboardCheck, FilePenLine, FileText, GraduationCap,
   HeartHandshake, Inbox, LayoutDashboard, ListTodo, MapPinned, Menu,
   MessageSquareHeart, PlugZap, ScrollText, Send, Settings, ShieldCheck, Users, X,
   type LucideIcon,
@@ -28,6 +28,7 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     { to: '/admin/sessions', label: '場次與行事曆', icon: CalendarDays },
     { to: '/admin/forms', label: '報名表設定', icon: FilePenLine },
     { to: '/admin/templates', label: '信件範本', icon: Send },
+    { to: '/admin/documents', label: '文件產生中心', icon: FileText },
   ]},
   { label: '內容與系統', items: [
     { to: '/admin/recommendations', label: '推薦資料審核', icon: MapPinned },
