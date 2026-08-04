@@ -106,14 +106,24 @@ const mailColumn: RegistrationColumn = { key: 'mail', header: '✉ 信件狀態�
 const reminderColumn: RegistrationColumn = {
   key: 'reminder',
   header: '☑ 已寄信提醒',
-  cell: (row) => <input
-    type="checkbox"
-    className="ops-cell-check"
-    checked={Boolean(row.registration.reminderSentAt)}
-    disabled={row.busy}
-    title={row.registration.reminderSentAt ? `寄出於 ${new Date(row.registration.reminderSentAt).toLocaleString('zh-TW')}` : '尚未寄送'}
-    onChange={(e) => row.patch({ reminderSentAt: e.target.checked ? new Date().toISOString() : null })}
-  />,
+  cell: (row) => {
+    // Notion 匯入的舊報名把它存成 answers.reminderSent（是／否）且沒有寄出時間，推不出
+    // timestamp。勾選框只綁新欄位（寫入語意才明確），舊值另外標出來，不讓表格謊稱沒寄過。
+    const legacy = textAnswer(row.registration, 'reminderSent');
+    return <span className="ops-inline-check">
+      <input
+        type="checkbox"
+        className="ops-cell-check"
+        checked={Boolean(row.registration.reminderSentAt)}
+        disabled={row.busy}
+        title={row.registration.reminderSentAt ? `寄出於 ${new Date(row.registration.reminderSentAt).toLocaleString('zh-TW')}` : '尚未寄送'}
+        onChange={(e) => row.patch({ reminderSentAt: e.target.checked ? new Date().toISOString() : null })}
+      />
+      {!row.registration.reminderSentAt && legacy
+        ? <span className="ops-cell-legacy" title="Notion 匯入的歷史紀錄，未記錄寄出時間">歷史：{legacy}</span>
+        : null}
+    </span>;
+  },
 };
 
 const counselorColumn: RegistrationColumn = {
@@ -143,13 +153,23 @@ const monthColumn: RegistrationColumn = {
 const finalSlotColumn: RegistrationColumn = {
   key: 'finalSlot',
   header: '✅ 最終確定時段',
-  cell: (row) => <input
-    type="datetime-local"
-    className="ops-cell-datetime"
-    value={toLocalInput(row.registration.finalSlotAt)}
-    disabled={row.busy}
-    onChange={(e) => row.patch({ finalSlotAt: e.target.value ? new Date(e.target.value).toISOString() : null })}
-  />,
+  cell: (row) => {
+    // 舊報名的 answers.finalSlot 是像「【五月場】5/23（六）11:00–12:00」的標籤，沒有年份，
+    // 轉成 timestamp 等於猜，所以原樣顯示；要落成正式時間就自己填右邊那格。
+    const legacy = textAnswer(row.registration, 'finalSlot');
+    return <span className="ops-inline-check">
+      <input
+        type="datetime-local"
+        className="ops-cell-datetime"
+        value={toLocalInput(row.registration.finalSlotAt)}
+        disabled={row.busy}
+        onChange={(e) => row.patch({ finalSlotAt: e.target.value ? new Date(e.target.value).toISOString() : null })}
+      />
+      {!row.registration.finalSlotAt && legacy
+        ? <span className="ops-cell-legacy" title="Notion 匯入的歷史紀錄，原文無年份，未自動換算">歷史：{legacy}</span>
+        : null}
+    </span>;
+  },
 };
 
 const ageColumn: RegistrationColumn = {
@@ -208,19 +228,38 @@ const attendColumn: RegistrationColumn = {
   },
 };
 
-/** 孩子是可增減的重複群組，一位一個標籤。 */
+/** `childAge` 的舊資料有的填「8」有的填「8歲」，補字前先看它有沒有自己帶。 */
+function ageText(value: string) {
+  if (!value) return '';
+  return /歲|個月/.test(value) ? value : `${value} 歲`;
+}
+
+/**
+ * 孩子欄。新報名是可增減的 `children` 群組，但**現有 19 筆親職報名全部是舊的平面
+ * key**（childName／childGender／…，`children` 群組零使用），所以沒有 fallback 的話
+ * 這一欄對真實資料全是「—」。兩種格式都要讀。
+ */
 const childrenColumn: RegistrationColumn = {
   key: 'children',
   header: '🧒 孩子',
   cell: (row) => {
     const children = row.registration.answers?.children;
-    if (!Array.isArray(children) || !children.length) return <span className="ops-cell-muted">—</span>;
-    return <span className="ops-chip-row">{children.map((child, index) => {
-      if (typeof child !== 'object' || child === null) return null;
-      const field = (key: string) => { const v = (child as Record<string, string | string[]>)[key]; return typeof v === 'string' ? v : Array.isArray(v) ? v.join('、') : ''; };
-      const parts = [field('alias') || `第 ${index + 1} 位`, field('gender'), field('age') ? `${field('age')} 歲` : '', field('medication')].filter(Boolean);
-      return <span className="ops-status ops-status--gray" key={index}>{parts.join('・')}</span>;
-    })}</span>;
+    if (Array.isArray(children) && children.length) {
+      return <span className="ops-chip-row">{children.map((child, index) => {
+        if (typeof child !== 'object' || child === null) return null;
+        const field = (key: string) => { const v = (child as Record<string, string | string[]>)[key]; return typeof v === 'string' ? v : Array.isArray(v) ? v.join('、') : ''; };
+        const parts = [field('alias') || `第 ${index + 1} 位`, field('gender'), ageText(field('age')), field('medication')].filter(Boolean);
+        const detail = [['年級', field('grade')], ['診斷', field('diagnosis')], ['現況', field('currentStatus')], ['其他疾病史', field('otherConditions')]]
+          .filter(([, value]) => value).map(([label, value]) => `${label}：${value}`).join('\n');
+        return <span className="ops-status ops-status--gray" key={index} title={detail || undefined}>{parts.join('・')}</span>;
+      })}</span>;
+    }
+    const legacy = (key: string) => textAnswer(row.registration, key);
+    const parts = [legacy('childName'), legacy('childGender'), ageText(legacy('childAge')), legacy('childMedication')].filter(Boolean);
+    if (!parts.length) return <span className="ops-cell-muted">—</span>;
+    const detail = [['年級', legacy('childGrade')], ['現況', legacy('childStatus')], ['其他疾病史', legacy('childOtherConditions')]]
+      .filter(([, value]) => value).map(([label, value]) => `${label}：${value}`).join('\n');
+    return <span className="ops-chip-row"><span className="ops-status ops-status--gray" title={detail || undefined}>{parts.join('・')}</span></span>;
   },
 };
 

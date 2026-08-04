@@ -442,6 +442,22 @@ migration `20260804000009`：移除標題補述、刪掉三個已被取代的表
 - **不記 `status`**——`admin_transition_registration` 已寫過一筆，重複記會讓同一動作在稽核頁出現兩列
 - `answers` **只記被改的 key 名稱、不記內容**：報名答案含個資，稽核表不該成為第二份個資副本
 
+### 3-3 修補：舊平面 key 的顯示 fallback（監督代驗抓到）
+
+親職分頁孩子欄上線後**19 筆真實報名全部顯示「—」**。根因：只讀新的 `children` 群組，而**現有報名一筆都沒有用群組格式**（`answers ? 'children'` 為 false 者 19／19）。用新格式假資料測起來全綠，真實資料全隱形——這是本輪最值得記住的教訓：**測試資料的形狀必須取自真實資料，不能取自新 schema**。
+
+順著這條線清點親職 `answers` 的 key（唯讀查詢，只取 key 名與筆數），發現同類的隱形欄位共三組：
+
+| legacy key | 筆數 | 值的形狀 | 處理 |
+|---|---|---|---|
+| `childName`／`childGender`／`childAge`／`childGrade`／`childStatus`／`childMedication`／`childOtherConditions` | 最多 19 | 平面字串 | 合成單一孩子標籤，細節進 tooltip |
+| `reminderSent` | 13 | `是`（12）／`否`（1） | 勾選框仍只綁 `reminder_sent_at`，舊值另標「歷史：是」 |
+| `finalSlot` | 10 | `【五月場】5/23（六）11:00–12:00` 陣列 | 原樣顯示 |
+
+⚠ **三組都只做顯示 fallback，不回填**：`reminderSent` 沒有寄出時間、`finalSlot` 原文**沒有年份**，硬轉成 timestamp 等於猜。要落成正式時間就由行政端在該格自己填。`childAge` 舊資料有的填「8」有的填「8歲」，補單位前先判斷。
+
+驗證：五種情況以真實舊格式渲染實測——舊平面（帶／不帶單位）、新群組（多筆）、兩者皆無（顯示「—」）、新欄位已有值（歷史標記自動消失）。
+
 ### CI 守門新增
 
 `check:operations` 現在斷言每一格的寫入呼叫（`reminderSentAt:`／`counselorConfirmed:`／`finalSlotAt:`／`row.setStatus(`／`row.setSessions(`／`row.patch({ email:`）、三組欄位常數都在、狀態標籤符合定稿且**禁用**舊用語（`reviewing: '審核中'` 等），以及兩支稽核 migration 的關鍵字。理由與 Phase 2 相同：「元件在不在」抓不到「這一格變成裝飾品」。已用「注入 → CI 紅 → 還原 → CI 綠」實證。

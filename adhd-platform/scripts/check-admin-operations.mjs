@@ -28,6 +28,9 @@ requireText('src/admin/operations/RegistrationTable.tsx', [
 ]);
 // 三個分頁各有自己的表頭；少掉任何一組就代表某一案的報名又退回共通欄位。
 requireText('src/admin/operations/RegistrationTable.tsx', ['NAVIGATOR_COLUMNS', 'PARENT_COLUMNS', 'PEER_COLUMNS']);
+// 現有親職報名全是 Notion 匯入的舊平面 key（`children` 群組零使用）。少了這幾個 fallback，
+// 表格對真實資料會整欄顯示「—」，而用新格式的假資料測起來卻是綠的——這正是本次踩到的。
+requireText('src/admin/operations/RegistrationTable.tsx', ["'childName'", "'childAge'", "'reminderSent'", "'finalSlot'"]);
 requireText('src/admin/pages/RegistrationsOperationsPage.tsx', ['columns: PARENT_COLUMNS', 'columns: PEER_COLUMNS']);
 requireText('src/admin/pages/RegistrationsOperationsPage.tsx', ['<RegistrationTable', 'ops-drawer']);
 // 狀態標籤是使用者拍板的對應表，改字等於改語意，因此連舊用語一起列為禁用。
