@@ -8,15 +8,15 @@ import { createCaseFromRegistration, listContacts, listNotes, moveRegistrationSe
 import type { ContactRecord, InternalNote, OperationalRegistration, WorkPriority } from '../operations/types';
 import { EmptyPanel, InlineSpinner, OpsNotice, PageHeader } from '../operations/components';
 import {
-  DEFAULT_COLUMNS, MailStatusTag, NAVIGATOR_COLUMNS, RegistrationTable, STATUS_LABEL, STATUS_OPTIONS,
+  DEFAULT_COLUMNS, MailStatusTag, NAVIGATOR_COLUMNS, PARENT_COLUMNS, PEER_COLUMNS, RegistrationTable, STATUS_LABEL, STATUS_OPTIONS,
   toLocalInput, type RegistrationColumn, type RegistrationPatch, type RowContext,
 } from '../operations/RegistrationTable';
 
-// 03_v4 的分頁。導航先照定稿把欄位配齊，其餘沿用共通欄位，3-3 再換上各自的表頭。
+// 03_v4 的分頁，各自的表頭。「全部」是安全網：專案沒有分頁的報名不會消失。
 const TABS: { slug: string; label: string; columns: RegistrationColumn[] }[] = [
   { slug: 'navigator', label: '導航計畫', columns: NAVIGATOR_COLUMNS },
-  { slug: 'parent', label: '親職諮詢', columns: DEFAULT_COLUMNS },
-  { slug: 'peer-group', label: '同儕聚會', columns: DEFAULT_COLUMNS },
+  { slug: 'parent', label: '親職諮詢', columns: PARENT_COLUMNS },
+  { slug: 'peer-group', label: '同儕聚會', columns: PEER_COLUMNS },
   { slug: 'all', label: '全部', columns: DEFAULT_COLUMNS },
 ];
 const MAIL_FILTERS: { value: string; label: string }[] = [
@@ -63,8 +63,22 @@ export default function RegistrationsOperationsPage() {
 
   const patchRegistration = async (id: string, input: RegistrationPatch) => {
     setBusyId(id);
-    try { await updateRegistrationAdministration(id, input); await reload(); setNotice('已更新並落庫。'); setError(undefined); }
+    try {
+      const target = registrations.find(({ registration }) => registration.id === id)?.registration;
+      // 信箱同時是名冊比對鍵與表單答案，只改一邊會讓兩份資料各說各話。
+      const answersPatch = input.email && typeof target?.answers?.email === 'string'
+        ? { answers: { ...target.answers, email: input.email.trim().toLowerCase() } }
+        : {};
+      await updateRegistrationAdministration(id, { ...input, ...answersPatch });
+      await reload(); setNotice('已更新並落庫。'); setError(undefined);
+    }
     catch (e) { setError(e instanceof Error ? e.message : '更新失敗'); }
+    finally { setBusyId(undefined); }
+  };
+  const changeSessions = async (id: string, sessionIds: string[]) => {
+    setBusyId(id);
+    try { await moveRegistrationSessions(id, sessionIds); await reload(); setNotice('場次已原子移轉，原場次與新場次名額同步更新。'); setError(undefined); }
+    catch (e) { setError(e instanceof Error ? e.message : '場次移轉失敗'); }
     finally { setBusyId(undefined); }
   };
   const changeStatus = async (id: string, status: string) => {
@@ -75,8 +89,10 @@ export default function RegistrationsOperationsPage() {
   };
   const rows: RowContext[] = filtered.map(({ registration, contact }) => ({
     registration, contact, session: sessionOf(registration), busy: busyId === registration.id,
+    projectSessions: sessions.filter((session) => session.projectId === registration.projectId),
     patch: (input) => void patchRegistration(registration.id, input),
     setStatus: (status) => void changeStatus(registration.id, status),
+    setSessions: (sessionIds) => void changeSessions(registration.id, sessionIds),
     open: () => setSelectedId(registration.id),
   }));
 

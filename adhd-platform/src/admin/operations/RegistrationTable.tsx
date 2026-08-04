@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import type { SessionSlot } from '@contracts/types';
 import type { ContactRecord, MailState, OperationalRegistration } from './types';
 
@@ -27,6 +27,8 @@ export interface RegistrationPatch {
   reminderSentAt?: string | null;
   counselorConfirmed?: boolean | null;
   finalSlotAt?: string | null;
+  /** 改信箱要連 answers.email 一起改，否則名冊與表單答案會各說各話。 */
+  email?: string;
 }
 
 export interface RowContext {
@@ -34,9 +36,13 @@ export interface RowContext {
   contact: ContactRecord;
   /** 這筆報名的主場次（session_ids 的第一筆）；導航＝該月名額。 */
   session?: SessionSlot;
+  /** 同專案的所有場次，供「確定場次」下拉選。 */
+  projectSessions: SessionSlot[];
   busy: boolean;
   patch: (input: RegistrationPatch) => void;
   setStatus: (status: string) => void;
+  /** 走 admin_move_registration_sessions，原場次與新場次名額原子同步。 */
+  setSessions: (sessionIds: string[]) => void;
   open: () => void;
 }
 
@@ -173,8 +179,109 @@ export function textAnswer(registration: OperationalRegistration, key: string) {
   return '';
 }
 
+/** 同一個欄位在不同分頁的表頭用語不同（例：審核狀態／處理狀態），只換標題不複製邏輯。 */
+function withHeader(column: RegistrationColumn, header: string): RegistrationColumn {
+  return { ...column, header };
+}
+
+/** 唯讀的表單答案欄。 */
+function answerColumn(key: string, header: string, fallbackKey?: string): RegistrationColumn {
+  return {
+    key,
+    header,
+    cell: (row) => {
+      const value = textAnswer(row.registration, key) || (fallbackKey ? textAnswer(row.registration, fallbackKey) : '');
+      return <span className="ops-cell-muted">{value || '—'}</span>;
+    },
+  };
+}
+
+/** 出席方式＝方式本身＋同行對象，兩個 key 合成一格才讀得懂。 */
+const attendColumn: RegistrationColumn = {
+  key: 'attend',
+  header: '出席方式',
+  cell: (row) => {
+    const mode = textAnswer(row.registration, 'attendMode');
+    const withWhom = textAnswer(row.registration, 'attendWith');
+    if (!mode) return <span className="ops-cell-muted">—</span>;
+    return <span className="ops-status ops-status--gray">{mode}{withWhom ? `・${withWhom}` : ''}</span>;
+  },
+};
+
+/** 孩子是可增減的重複群組，一位一個標籤。 */
+const childrenColumn: RegistrationColumn = {
+  key: 'children',
+  header: '🧒 孩子',
+  cell: (row) => {
+    const children = row.registration.answers?.children;
+    if (!Array.isArray(children) || !children.length) return <span className="ops-cell-muted">—</span>;
+    return <span className="ops-chip-row">{children.map((child, index) => {
+      if (typeof child !== 'object' || child === null) return null;
+      const field = (key: string) => { const v = (child as Record<string, string | string[]>)[key]; return typeof v === 'string' ? v : Array.isArray(v) ? v.join('、') : ''; };
+      const parts = [field('alias') || `第 ${index + 1} 位`, field('gender'), field('age') ? `${field('age')} 歲` : '', field('medication')].filter(Boolean);
+      return <span className="ops-status ops-status--gray" key={index}>{parts.join('・')}</span>;
+    })}</span>;
+  },
+};
+
+/** 確定場次：直接在格內換場次，走原子移轉。 */
+const sessionSelectColumn: RegistrationColumn = {
+  key: 'sessionPick',
+  header: '🕐 確定場次（可改）',
+  cell: (row) => <select
+    className={`ops-cell-select ops-cell-select--${row.session ? 'green' : 'gray'}`}
+    value={row.session?.id ?? ''}
+    disabled={row.busy}
+    onChange={(e) => row.setSessions(e.target.value ? [e.target.value] : [])}
+  >
+    <option value="">未指定</option>
+    {row.projectSessions.map((session) => <option key={session.id} value={session.id}>
+      {new Date(session.startsAt).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}｜{session.title}
+    </option>)}
+  </select>,
+};
+
+/** 格內編輯信箱：離開欄位才送出，免得每打一個字就打一次資料庫。 */
+function EmailCell({ row }: { row: RowContext }) {
+  const [value, setValue] = useState(row.registration.email);
+  useEffect(() => { setValue(row.registration.email); }, [row.registration.email]);
+  const commit = () => {
+    const next = value.trim();
+    if (!next || next === row.registration.email) { setValue(row.registration.email); return; }
+    row.patch({ email: next });
+  };
+  return <input
+    className="ops-cell-text" type="email" value={value} disabled={row.busy}
+    onChange={(e) => setValue(e.target.value)} onBlur={commit}
+    onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') setValue(row.registration.email); }}
+  />;
+}
+
+const emailColumn: RegistrationColumn = { key: 'email', header: '✉ 信箱（可改）', cell: (row) => <EmailCell row={row} /> };
+
 /** 導航計畫分頁的欄位，逐欄對應 03_v4 的表頭。 */
 export const NAVIGATOR_COLUMNS = [nameColumn, statusColumn, mailColumn, reminderColumn, counselorColumn, monthColumn, finalSlotColumn, ageColumn];
+/** 親職諮詢分頁（03_v4 的表頭＋使用者指定補上的家庭型態）。 */
+export const PARENT_COLUMNS = [
+  withHeader(nameColumn, 'Aa 稱呼'),
+  withHeader(statusColumn, '◉ 處理狀態（可改）'),
+  mailColumn,
+  answerColumn('relationship', '身份', 'relationshipOther'),
+  answerColumn('familyType', '家庭型態'),
+  attendColumn,
+  childrenColumn,
+  sessionSelectColumn,
+  reminderColumn,
+];
+/** 同儕聚會分頁（03_v4）。聚會是統計性質，沒有審核狀態欄。 */
+export const PEER_COLUMNS = [
+  withHeader(nameColumn, 'Aa 姓名／稱呼'),
+  withHeader(sessionSelectColumn, '場次（可改）'),
+  emailColumn,
+  answerColumn('phone', '📱 手機'),
+  answerColumn('note', '想聊的話題'),
+  withHeader(reminderColumn, '☑ 提醒信'),
+];
 /** 其餘分頁在 3-3 換上各自的欄位前，先用這組共通欄位，功能不缺。 */
 export const DEFAULT_COLUMNS = [nameColumn, statusColumn, mailColumn, reminderColumn, sessionColumn, createdColumn];
 

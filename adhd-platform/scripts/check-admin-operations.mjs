@@ -24,8 +24,11 @@ requireText('supabase/migrations/20260723000001_admin_operations_hub.sql', [
 // 後台報名工作台（03_v4）：表格內要真的能改，而不是只把欄位畫出來。三個行政欄位
 // 各自的寫入呼叫、以及狀態下拉，都直接列為斷言——少掉任何一個就代表那一格變成裝飾品。
 requireText('src/admin/operations/RegistrationTable.tsx', [
-  'reminderSentAt:', 'counselorConfirmed:', 'finalSlotAt:', 'row.setStatus(',
+  'reminderSentAt:', 'counselorConfirmed:', 'finalSlotAt:', 'row.setStatus(', 'row.setSessions(', 'row.patch({ email:',
 ]);
+// 三個分頁各有自己的表頭；少掉任何一組就代表某一案的報名又退回共通欄位。
+requireText('src/admin/operations/RegistrationTable.tsx', ['NAVIGATOR_COLUMNS', 'PARENT_COLUMNS', 'PEER_COLUMNS']);
+requireText('src/admin/pages/RegistrationsOperationsPage.tsx', ['columns: PARENT_COLUMNS', 'columns: PEER_COLUMNS']);
 requireText('src/admin/pages/RegistrationsOperationsPage.tsx', ['<RegistrationTable', 'ops-drawer']);
 // 狀態標籤是使用者拍板的對應表，改字等於改語意，因此連舊用語一起列為禁用。
 requireText('src/admin/operations/RegistrationTable.tsx', [
@@ -42,6 +45,8 @@ requireText('supabase/migrations/20260804000012_registration_admin_fields.sql', 
 requireText('supabase/migrations/20260804000013_registration_admin_audit.sql', [
   'trg_registrations_admin_audit', 'log_registration_admin_edit',
 ]);
+// 信箱是名冊比對鍵，格內可改就必須留歷程。
+requireText('supabase/migrations/20260804000014_audit_registration_email.sql', ["jsonb_build_object('email'"]);
 requireText('src/routes/RegisterPage.tsx', ['報名只接受資料庫正式場次']);
 if (read('src/routes/RegisterPage.tsx').includes('if (sessions.length === 0)')) throw new Error('Static registration slot fallback still exists.');
 for (const slug of ['submit-registration', 'send-email-v2', 'gmail-sync', 'team-invite']) {

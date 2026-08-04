@@ -156,7 +156,7 @@ npm audit --omit=dev       0 high vulnerabilities
 | Calendar／Meet | 程式與接點存在，尚未做本輪真實 E2E | 指定測試場次，確認事件、Meet URL、DB 回寫與重試 |
 | CAPTCHA | 後端可讀 `TURNSTILE_SECRET_KEY`，前端 widget 未啟用 | 前後端 token 流程、錯誤 UX 與無障礙驗證完成 |
 | 速率限制 | 已啟用 | 持續監測誤擋、繞過與管理者查核方式 |
-| `gmail-sync` HTML 轉純文字修正 | 2026-08-04 已部署（version 5 → **6**，ACTIVE）；使用者回報後台手動增量同步成功（未取得筆數） | 下次有新進信件時，確認收件匣內文為純文字（無 CSS 片段） |
+| `gmail-sync` HTML 轉純文字修正 | 2026-08-04 已部署（version 5 → **6**，ACTIVE）；同步筆數已由稽核頁取得：8/4 增量 11 封＋12 封、8/2 全量 63 封 | 下次有新進信件時，確認收件匣內文為純文字（無 CSS 片段） |
 | ~~親職報名「孩子可增減多筆」~~ | ✅ 2026-08-04 已實作：表單引擎新增 `group` 型別（見第 15 節） | — |
 | ~~報名確認頁顯示場次 UUID~~ | ✅ 2026-08-04 已修：確認頁的 `flatten()` 會把有 options 的欄位值對映回標籤 | — |
 | react-router 漏洞 | `npm audit` 有 2 個 moderate（未達 CI 的 high 門檻） | 評估升級 react-router / react-router-dom 後重跑完整驗收 |
@@ -402,6 +402,58 @@ migration `20260804000009`：移除標題補述、刪掉三個已被取代的表
 | 死按鈕（`id="copyButton"` 無 handler） | 0 | 四頁禁用 `id="copyButton"` |
 
 **這次學到的教訓已寫進守門**：原本的檢查斷言「元件在不在」，那永遠抓不到「內容過期」——首頁自己內嵌的那份親職過期場次表在所有檢查下都是綠的，是靠獨立爬站才發現。新守門改為直接禁用會過期的字樣，並以「注入 → CI 紅 → 還原 → CI 綠」實證過它真的會擋。
+
+## 16. 2026-08-04 全面重構 Phase 3（後台，進行中）
+
+### 3-1 資料層（migration `20260804000012`，已套用）
+
+`registrations` 新增三個 03_v4 表格要、但原本沒有的行政欄位。三欄都由行政端填寫，因此比照 `priority`／`next_action_at` 做成獨立欄位，不塞進 `answers`（`answers` 是報名者自己填的，混在一起會分不清誰寫的）：
+
+| 欄位 | 型別 | 決定理由 |
+|---|---|---|
+| `reminder_sent_at` | timestamptz | 「已寄信提醒」存時間戳而非布林：勾選框照常運作（非 null＝已勾），同時免費得到寄出時間給信件狀態機用 |
+| `counselor_confirmed` | boolean（可 null） | 三態精確對應 03_v4 的 —／yes／no |
+| `final_slot_at` | timestamptz | 只存開始；候選時段全為 1 小時，行事曆結束時間＝開始＋60 分 |
+
+⚠ **狀態新值 `reschedule`（待改訂時間）不需要任何 DDL**：`registrations.status` 是無 check constraint 的 text，且 `admin_transition_registration` 的釋額清單只有 `rejected/cancelled/withdrawn/canceled`——不含 `reschedule`，所以停在「待改訂時間」的報名**會保留名額**，正是這個狀態的語意。顯示標籤依使用者拍板的對應表改寫（審核中→回信確認中、已確認→報名成功、不符合→退回），**儲存值一個都沒動，既有報名零遷移**。
+
+驗收：25 版 local／remote 對齊；PostgREST 探測三個新欄位皆回 200（RLS 擋列但欄位存在），對照組假欄位回 400 `42703`，證明測試分得出「欄位不存在」與「被 RLS 擋」。
+
+### 3-2／3-3 後台報名工作台改為 03_v4 版型
+
+原本是「左列表＋右詳情」的 master-detail，03_v4 要的是**依專案分頁的表格＋格內直接編輯**，因此是版型置換而非加欄位。
+
+- **分頁**：導航計畫／親職諮詢／同儕聚會／全部，各帶筆數。「全部」是安全網——專案沒有對應分頁的報名不會消失。
+- **格內編輯**：狀態下拉（即時換色並立刻走 `admin_transition_registration`，名額同步）、已寄信提醒勾選框（寫時間戳）、諮商師回覆確認三態、最終確定時段 datetime、確定場次下拉（走 `admin_move_registration_sessions` 原子移轉）、同儕信箱欄（離開欄位才送出）。
+- **抽屜**收下原詳情的全部功能（表單內容、場次移轉、內部註記、轉案、建立追蹤、信件往來連結），版型置換沒有掉任何能力。另加「本月候選時段」快填鈕，★ 標出報名者勾過的。
+- **欄位設定驅動**：`RegistrationTable.tsx` 的 `NAVIGATOR_COLUMNS`／`PARENT_COLUMNS`／`PEER_COLUMNS` 只是設定，表格本身不因分頁而分岔。
+
+⚠ **與 03_v4 的一處刻意不一致**：定稿在親職分頁畫的處理狀態是另一組值（待處理／已聯繫／已完成／已取消）。實作**沿用使用者拍板的單一狀態表**，只把表頭寫成「處理狀態」。理由：那張對應表是已鎖的裁決，兩套狀態機會讓同一筆報名在不同分頁顯示不同狀態。
+
+⚠ 同儕分頁最後一欄，03_v4 畫的是「提醒信・已排程」。排程寄送屬 Phase 4，因此先掛既有的「已寄信提醒」欄，不做假的排程狀態。
+
+**信箱同步**：同儕分頁可直接改信箱。`registrations.email` 是名冊比對鍵、`answers.email` 是表單答案，只改一邊會各說各話，因此一次寫兩邊（migration `20260804000014` 把 email 納入編輯稽核）。
+
+### 修改歷程（migration `20260804000013`、`20260804000014`，已套用）
+
+格內編輯是對 `registrations` 直接 update，繞過原本唯一會寫稽核的 `admin_transition_registration`，所以裁決 11 的「修改需記錄歷程」原本會整段落空。新增 trigger `trg_registrations_admin_audit`：
+
+- 記 `email`／`reminder_sent_at`／`counselor_confirmed`／`final_slot_at`／`priority`／`assigned_to`／`next_action_at`／`session_ids` 的前後值
+- **不記 `status`**——`admin_transition_registration` 已寫過一筆，重複記會讓同一動作在稽核頁出現兩列
+- `answers` **只記被改的 key 名稱、不記內容**：報名答案含個資，稽核表不該成為第二份個資副本
+
+### CI 守門新增
+
+`check:operations` 現在斷言每一格的寫入呼叫（`reminderSentAt:`／`counselorConfirmed:`／`finalSlotAt:`／`row.setStatus(`／`row.setSessions(`／`row.patch({ email:`）、三組欄位常數都在、狀態標籤符合定稿且**禁用**舊用語（`reviewing: '審核中'` 等），以及兩支稽核 migration 的關鍵字。理由與 Phase 2 相同：「元件在不在」抓不到「這一格變成裝飾品」。已用「注入 → CI 紅 → 還原 → CI 綠」實證。
+
+### 驗收證據（3-2／3-3）
+
+後台在 `RequireAuth`＋`RequireAdmin` 之後且走 Google OAuth，AI 不持有帳號，因此表格互動改以「在 dev server 上用假資料實際渲染元件並模擬事件」驗證，再由使用者於監督視窗以真實登入代驗：
+
+- 導航：狀態下拉→`setStatus('reschedule')`；勾選框→`patch({reminderSentAt:null})`；三態→`patch({counselorConfirmed:false})`；`2026-09-14T20:00`→`patch({finalSlotAt:'2026-09-14T12:00:00.000Z'})`（+8 換算無誤差）；點姓名→開抽屜。表頭八欄與定稿逐字相同。
+- 親職：表頭九欄正確；孩子群組渲染成「小恩・男・8 歲・目前服藥中」多個標籤；出席方式合成「與他人一同出席・孩子」；場次下拉→`setSessions(['s2'])`、選「未指定」→`setSessions([])`。
+- 同儕：改信箱離開欄位→`patch({email})`（已 trim）；按 Enter 同樣送出；**清空後離開不送出且自動還原**，清空洗不掉信箱。
+- 使用者於監督視窗以真實登入代驗六＋一項全數通過（含稽核四筆精準入帳、狀態變更不重複記），測試資料為 `phase1-test` 且已全數還原。
 
 ## 14. 2026-08-04 全面重構 Phase 1 主體
 

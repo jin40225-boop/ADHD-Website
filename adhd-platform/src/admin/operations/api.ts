@@ -313,6 +313,8 @@ export async function updateRegistrationAdministration(id: string, input: {
   reminderSentAt?: string | null;
   counselorConfirmed?: boolean | null;
   finalSlotAt?: string | null;
+  /** 名冊比對用的信箱；呼叫端負責同時更新 answers.email。 */
+  email?: string;
 }) {
   const payload: Row = {};
   if (input.answers !== undefined) payload.answers = input.answers;
@@ -322,6 +324,7 @@ export async function updateRegistrationAdministration(id: string, input: {
   if (input.reminderSentAt !== undefined) payload.reminder_sent_at = input.reminderSentAt;
   if (input.counselorConfirmed !== undefined) payload.counselor_confirmed = input.counselorConfirmed;
   if (input.finalSlotAt !== undefined) payload.final_slot_at = input.finalSlotAt;
+  if (input.email !== undefined) payload.email = input.email.trim().toLowerCase();
   const { error } = await db().from('registrations').update(payload).eq('id', id);
   assert(error, '更新報名行政資料失敗');
 }

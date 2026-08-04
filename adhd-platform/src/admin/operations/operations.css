@@ -39,6 +39,9 @@
 .ops-cell-datetime{background:#fff;border:1.5px solid #e0d4c9;border-radius:7px;color:inherit;font:inherit;font-size:.78rem;padding:.16rem .35rem}
 .ops-cell-datetime:hover{border-color:#b9a294}.ops-cell-datetime:disabled{cursor:progress;opacity:.6}
 .ops-cell-muted{color:#7d675e;font-size:.82rem}
+.ops-cell-text{background:transparent;border:1.5px solid transparent;border-radius:7px;color:inherit;font:inherit;font-size:.82rem;min-width:190px;padding:.16rem .35rem}
+.ops-cell-text:hover{background:#fffdf6;border-color:#d7ccc8}.ops-cell-text:focus{background:#fff;border-color:#c4643c;outline:none}.ops-cell-text:disabled{cursor:progress;opacity:.6}
+.ops-chip-row{display:inline-flex;flex-wrap:wrap;gap:.25rem}
 .ops-dot{animation:ops-blink 1.4s infinite;background:#e53935;border-radius:50%;display:inline-block;height:8px;margin-left:.3rem;width:8px}
 @keyframes ops-blink{50%{opacity:.3}}
 .ops-row--busy{opacity:.55}
