@@ -4,12 +4,13 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { Project, SessionSlot } from '@contracts/types';
-import { TextInput, Select } from '@/components/ui/FormField/FormField';
+import type { EmailTemplate, Project, SessionSlot } from '@contracts/types';
+import { TextInput, Textarea, Select } from '@/components/ui/FormField/FormField';
 import { WarmButton } from '@/components/ui/WarmButton/WarmButton';
-import { adminListProjects, adminListSessions } from '@/lib/api';
-import { listContactGroups, listGeneratedDocuments } from '../operations/api';
-import type { ContactGroupRecord, GeneratedDocumentRecord } from '../operations/types';
+import { adminListEmailTemplates, adminListProjects, adminListSessions, invokeBulkEmail } from '@/lib/api';
+import { listContactGroups, listContacts, listGeneratedDocuments } from '../operations/api';
+import type { ContactGroupRecord, ContactRecord, GeneratedDocumentRecord } from '../operations/types';
+import { resolveBulkRecipients } from '../operations/emailCompose';
 import { EmptyPanel, InlineSpinner, OpsNotice, PageHeader } from '../operations/components';
 import { sessionDateText, sessionTimeText } from '../operations/SessionTable';
 
@@ -26,25 +27,50 @@ const DOC_TYPES = [
 export default function DocumentsPage() {
   const [sessions, setSessions] = useState<SessionSlot[]>([]); const [projects, setProjects] = useState<Project[]>([]);
   const [groups, setGroups] = useState<ContactGroupRecord[]>([]); const [documents, setDocuments] = useState<GeneratedDocumentRecord[]>([]);
-  const [loading, setLoading] = useState(true); const [error, setError] = useState<string>();
+  const [contacts, setContacts] = useState<ContactRecord[]>([]); const [templates, setTemplates] = useState<EmailTemplate[]>([]);
+  const [loading, setLoading] = useState(true); const [error, setError] = useState<string>(); const [notice, setNotice] = useState<string>();
   const [docType, setDocType] = useState(DOC_TYPES[0]); const [scope, setScope] = useState('all-h2'); const [audience, setAudience] = useState('none'); const [note, setNote] = useState('');
+  const [bulk, setBulk] = useState({ groupIds: [] as string[], includeIds: [] as string[], excludeIds: [] as string[], templateId: '', subject: '', body: '' });
+  const [sending, setSending] = useState(false); const [confirming, setConfirming] = useState(false);
 
+  const reload = () => Promise.all([adminListSessions(), adminListProjects(), listContactGroups(), listGeneratedDocuments(), listContacts(), adminListEmailTemplates()])
+    .then(([nextSessions, nextProjects, nextGroups, nextDocuments, nextContacts, nextTemplates]) => {
+      setSessions(nextSessions); setProjects(nextProjects); setGroups(nextGroups); setDocuments(nextDocuments);
+      setContacts(nextContacts); setTemplates(nextTemplates);
+    });
   useEffect(() => {
-    Promise.all([adminListSessions(), adminListProjects(), listContactGroups(), listGeneratedDocuments()])
-      .then(([nextSessions, nextProjects, nextGroups, nextDocuments]) => {
-        setSessions(nextSessions); setProjects(nextProjects); setGroups(nextGroups); setDocuments(nextDocuments);
-      })
+    reload()
       .catch((e: unknown) => setError(e instanceof Error ? e.message : '讀取文件中心資料失敗'))
       .finally(() => setLoading(false));
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const projectName = useMemo(() => new Map(projects.map((project) => [project.id, project.name])), [projects]);
   /** 選擇器接真實場次，Phase 6 接線時不必再換資料來源。已完成的場次不列入產生範圍。 */
   const scopeOptions = useMemo(() => sessions.filter((session) => session.status !== 'done' && session.status !== 'cancelled'), [sessions]);
 
+  const { recipients, skipped } = useMemo(
+    () => resolveBulkRecipients(groups, contacts, bulk),
+    [groups, contacts, bulk],
+  );
+  const sendBulk = async () => {
+    setSending(true);
+    try {
+      const result = await invokeBulkEmail({ contactIds: recipients.map((item) => item.contactId), subject: bulk.subject, body: bulk.body });
+      await reload();
+      setConfirming(false);
+      setBulk({ groupIds: [], includeIds: [], excludeIds: [], templateId: '', subject: '', body: '' });
+      setError(undefined);
+      setNotice(result.failed.length
+        ? `已寄出 ${result.sent} 封，${result.failed.length} 封失敗（失敗原因已記入稽核）。`
+        : `已寄出 ${result.sent} 封，全部成功。`);
+    } catch (e) { setError(e instanceof Error ? e.message : '群發失敗'); }
+    finally { setSending(false); }
+  };
+
   if (loading) return <InlineSpinner />;
   return <section className="ops-section">
     <PageHeader eyebrow="文件" title="📄 文件產生中心" description="只做整合性、集體性的文件。單一報名者的信件在報名工作台的詳情抽屜，單一場次的行政文件在場次詳情。" />
+    {notice ? <OpsNotice tone="success">{notice}</OpsNotice> : null}
     {error ? <OpsNotice tone="danger">{error}</OpsNotice> : null}
 
     <OpsNotice tone="warning">
@@ -77,6 +103,54 @@ export default function DocumentsPage() {
         送出前會顯示「將送出哪些資料」清單，且姓名／電話／信箱一律代號化後才送 API（裁決 15，去識別化固定啟用）。
         金鑰在 <Link to="/admin/settings">設定・聯絡人</Link> 的 Claude API 區設定，同樣要到 Phase 6。
       </OpsNotice>
+    </article>
+
+    <article className="ops-panel">
+      <div className="ops-panel-header"><div><h2>📨 範本群發（可用）</h2><p>選類群、加選或排除特定人，寄出前一定會先看到最終名單。這一區不經過 AI，是直接套範本寄信。</p></div></div>
+      <div className="ops-chip-row">{groups.map((group) => <label className="ops-member-chip" key={group.id}>
+        <input type="checkbox" checked={bulk.groupIds.includes(group.id)} onChange={(e) => {
+          setConfirming(false);
+          setBulk({ ...bulk, groupIds: e.target.checked ? [...bulk.groupIds, group.id] : bulk.groupIds.filter((id) => id !== group.id) });
+        }} />
+        {group.name}<span className="ops-cell-legacy">{group.members.length}</span>
+      </label>)}</div>
+      <div className="ops-form-grid">
+        <Select label="另外加選特定人" value="" onChange={(e) => { if (e.target.value) { setConfirming(false); setBulk({ ...bulk, includeIds: [...new Set([...bulk.includeIds, e.target.value])] }); } }}>
+          <option value="">選擇…</option>
+          {contacts.filter((contact) => contact.primaryEmail).map((contact) => <option key={contact.id} value={contact.id}>{contact.displayName}（{contact.primaryEmail}）</option>)}
+        </Select>
+        <Select label="範本" value={bulk.templateId} onChange={(e) => {
+          const template = templates.find((item) => item.id === e.target.value);
+          setConfirming(false);
+          setBulk({ ...bulk, templateId: e.target.value, subject: template?.subject ?? bulk.subject, body: template?.body ?? bulk.body });
+        }}>
+          <option value="">不套範本，自己寫</option>
+          {templates.map((template) => <option key={template.id} value={template.id}>{template.name}{template.reviewStatus === 'draft' ? '（待審閱）' : ''}</option>)}
+        </Select>
+        <div className="ops-full"><TextInput label="主旨" value={bulk.subject} onChange={(e) => { setConfirming(false); setBulk({ ...bulk, subject: e.target.value }); }} /></div>
+        <div className="ops-full"><Textarea label="內容" rows={8} value={bulk.body} onChange={(e) => { setConfirming(false); setBulk({ ...bulk, body: e.target.value }); }} /></div>
+      </div>
+      <OpsNotice tone="info">
+        群發不附「確認出席／請假改期」按鈕，也不會改動任何人的報名狀態——那兩件事屬於一對一的往來，在報名工作台的詳情裡做。
+        群發信件會各自建立以聯絡人為主的信件串。<b>變數不會帶入</b>（{'{{姓名}}'} 這類在群發沒有單一對象可代入），請寫成人人都讀得通的內容。
+      </OpsNotice>
+      <div className="ops-panel-header" style={{ marginTop: '.8rem' }}><div><h2>最終名單（{recipients.length} 人）</h2><p>去重後的實際收件人。點 ✕ 可把某人從這次群發排除。</p></div></div>
+      {recipients.length ? <div className="ops-chip-row">{recipients.map((recipient) => <span className="ops-member-chip" key={recipient.contactId}>
+        {recipient.displayName}<span className="ops-cell-legacy">{recipient.via}</span>
+        <button type="button" title="這次不寄給他" onClick={() => { setConfirming(false); setBulk({ ...bulk, excludeIds: [...bulk.excludeIds, recipient.contactId] }); }}>✕</button>
+      </span>)}</div> : <EmptyPanel title="還沒有收件人" description="先勾選類群，或加選特定人。" />}
+      {skipped.length ? <OpsNotice tone="warning">
+        以下 {skipped.length} 位在名單內但**寄不到**，不會列入寄出數：{skipped.map((item) => `${item.displayName}（${item.reason}）`).join('、')}
+      </OpsNotice> : null}
+      {bulk.excludeIds.length ? <p className="ops-cell-muted">已排除 {bulk.excludeIds.length} 人。<button type="button" className="ops-link-button" onClick={() => setBulk({ ...bulk, excludeIds: [] })}>復原排除</button></p> : null}
+      <div className="ops-button-row">
+        {confirming
+          ? <>
+            <WarmButton disabled={sending} onClick={() => void sendBulk()}>{sending ? '寄送中…' : `確認寄給這 ${recipients.length} 人`}</WarmButton>
+            <WarmButton variant="secondary" onClick={() => setConfirming(false)}>取消</WarmButton>
+          </>
+          : <WarmButton disabled={!recipients.length || !bulk.subject.trim() || !bulk.body.trim()} onClick={() => setConfirming(true)}>預覽名單並寄出</WarmButton>}
+      </div>
     </article>
 
     <article className="ops-panel">

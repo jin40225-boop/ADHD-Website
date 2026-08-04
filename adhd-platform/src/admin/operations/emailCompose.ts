@@ -61,6 +61,39 @@ export function applyTemplate(text: string, context: ComposeContext): { text: st
   return { text: filled, missing: [...new Set(missing)] };
 }
 
+export interface BulkRecipient { contactId: string; displayName: string; email: string; via: string }
+
+/**
+ * 群發名單：選定類群的成員 ＋ 另外加選的人 － 排除的人，依聯絡人去重。
+ * 沒有信箱的人不會進名單（也不會被靜靜吞掉，另外回報在 skipped）——寄不到卻顯示「已寄出 N 封」
+ * 是最容易讓人以為通知過了的假象。
+ */
+export function resolveBulkRecipients(
+  groups: { id: string; name: string; members: { contactId: string }[] }[],
+  contacts: { id: string; displayName: string; primaryEmail?: string }[],
+  selection: { groupIds: string[]; includeIds: string[]; excludeIds: string[] },
+): { recipients: BulkRecipient[]; skipped: { displayName: string; reason: string }[] } {
+  const byId = new Map(contacts.map((contact) => [contact.id, contact]));
+  const excluded = new Set(selection.excludeIds);
+  const via = new Map<string, string>();
+  for (const group of groups) {
+    if (!selection.groupIds.includes(group.id)) continue;
+    for (const member of group.members) if (!via.has(member.contactId)) via.set(member.contactId, group.name);
+  }
+  for (const id of selection.includeIds) if (!via.has(id)) via.set(id, '個別加選');
+
+  const recipients: BulkRecipient[] = []; const skipped: { displayName: string; reason: string }[] = [];
+  for (const [contactId, source] of via) {
+    if (excluded.has(contactId)) continue;
+    const contact = byId.get(contactId);
+    if (!contact) { skipped.push({ displayName: contactId, reason: '找不到這個聯絡人' }); continue; }
+    if (!contact.primaryEmail) { skipped.push({ displayName: contact.displayName, reason: '沒有信箱' }); continue; }
+    recipients.push({ contactId, displayName: contact.displayName, email: contact.primaryEmail, via: source });
+  }
+  recipients.sort((a, b) => a.displayName.localeCompare(b.displayName, 'zh-Hant'));
+  return { recipients, skipped };
+}
+
 /** 催覆信要帶回覆期限；沿用範本原文，只在信末補一行明確的期限。 */
 export function withReplyDeadline(body: string, deadline: Date) {
   const label = `${deadline.getFullYear()}/${pad(deadline.getMonth() + 1)}/${pad(deadline.getDate())}`;

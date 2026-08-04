@@ -77,7 +77,9 @@ requireText('supabase/functions/send-email-v2/index.ts', ['reminder_sent_at', 'f
 // 收到回信＝待處理；這是紅點與催覆判斷的來源。
 requireText('supabase/functions/gmail-sync/index.ts', ["mail_state: outbound ? 'waiting_reply' : 'replied_pending'"]);
 // 變數必須在後台載入範本時就替換完，使用者審閱到的才會是實際寄出的字。
-requireText('src/admin/operations/emailCompose.ts', ['applyTemplate', 'missing']);
+requireText('src/admin/operations/emailCompose.ts', ['applyTemplate', 'missing', 'resolveBulkRecipients']);
+// 群發一定要先看到最終名單才寄得出去；寄不到的人要單獨列出，不能混進「已寄出 N 封」。
+requireText('src/admin/pages/DocumentsPage.tsx', ['範本群發', '最終名單', 'setConfirming(true)']);
 requireText('src/admin/pages/RegistrationsOperationsPage.tsx', ['loadTemplate(', 'attachConfirmButtons', 'isFollowUp']);
 requireText('supabase/migrations/20260804000017_settings_and_contact_audit.sql', [
   'create table if not exists public.app_settings', 'trg_contacts_admin_audit',
