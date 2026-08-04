@@ -187,9 +187,13 @@ export default function RegisterPage({ slug, showPastSessions = false }: { slug:
     // 「每月 1 位」模型下，跨月複選只讓最早的月份佔用名額，其餘僅記錄為偏好；
     // 否則一位報名者送出時就會同時吃掉好幾個月各自唯一的名額。
     const sessionIds = slotMode ? orderedSessionIds.slice(0, 1) : orderedSessionIds;
-    const payload: FormAnswers = slotMode
-      ? { ...answers, [EXACT_SLOT_KEY]: picked.map(describeSlot) }
-      : answers;
+    // slotMode 下改存可讀標籤：原始值是 `<uuid>::<index>`，對審核者沒有意義，
+    // 而佔名額的場次本身已經記在 registrations.session_ids 欄位。
+    const payload: FormAnswers = { ...answers };
+    if (slotMode) {
+      delete payload[SESSION_FIELD_KEY];
+      payload[EXACT_SLOT_KEY] = picked.map(describeSlot);
+    }
     const emailKey = schema.fields.find((f) => f.type === 'email')?.key ?? 'email';
     const email = String(answers[emailKey] ?? '').trim();
     try {
