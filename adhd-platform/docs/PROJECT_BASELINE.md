@@ -226,6 +226,7 @@ UI 唯一基準為 `重構審閱稿_2026-08-04/` 內的 `01_v3`、`02_v2`、`03_
 
 | 日期 | 程式基準 | 狀態 | 證據 |
 |---|---|---|---|
+| 2026-08-04 | `c2d6293` | Phase 1 主體：同儕下半年 5 場、導航 9–12 月（每月 1 位）、聯絡人類群、出席確認、文件紀錄、信件狀態機、8 範本種子（migration `…0002`／`…0003`） | `migration list --linked` 15 版全對齊；三個報名頁 390px 實測；`sessions` 30 筆、`contact_groups` 5、`email_templates` 10 |
 | 2026-08-04 | `c2d6293` | Phase 1 插隊項：親職下半年 15 場次建立＋報名表單新增 10 欄位（migration `20260804000001`）；`gmail-sync` 補部署 v6 | `migration list --linked` 13 版全對齊；`/parent/register` 完整報名實測成功、額滿前後端雙重驗證 |
 | 2026-08-04 | `c2d6293` | 全面重構 Phase 0：`8a9bb42` 合併進 `main` 並部署；`check:operations` 納入 CI；正式站行動版 390px 驗證無水平溢位 | Actions `30882280259` success、CI log 出現 `Admin operations structural checks passed.`、資源切換為 `index-B_a12VJU.js`、9 個前台路由 390px 量測 `scrollWidth == clientWidth` 且無 console error |
 | 2026-08-02 | `766b71a` | Gmail 安全同步修復、migration 對帳、介面狀態文字校正與正式基準部署；正式站已切換新版資源 | Actions `30753845211`、首頁／後台／收件匣 HTTP 200、資源 `index-BGzeX90A.js` |
@@ -296,4 +297,39 @@ UI 唯一基準為 `重構審閱稿_2026-08-04/` 內的 `01_v3`、`02_v2`、`03_
 - 額滿邏輯雙重驗證：
   - 前端：重載表單後該時段顯示「（剩 0 名）（額滿）」且 `disabled=true`，其餘 14 場維持可選。
   - 後端：直接對 `submit-registration` 以該場次送出第 2 筆 → **HTTP 409 `SESSION_FULL_OR_CLOSED`**，且 `booked_count` 維持 1，未產生多餘預約。
-- ⚠️ 測試殘留：正式資料庫留有 1 筆測試報名（`phase1-test@example.com`，備註標示「【系統測試】2026-08-04 Phase 1 驗收，請刪除此筆」），佔用 12/20 11:00–12:00 名額。應於後台將其退回或刪除以釋出名額。
+- 測試殘留已清除（2026-08-04）：使用者於後台將 `phase1-test@example.com` 退回，狀態變為 `rejected`；後台場次清單顯示 12/20 11:00 為 `0/1`，公開報名頁該時段回復「剩 1 名」可選。**「退回 → `booked_count` 釋出 → 場次由 `full` 重開為 `open` → 前台即時反映」整條自動連動實測正常。**
+
+## 14. 2026-08-04 全面重構 Phase 1 主體
+
+### 變更內容
+
+`20260804000002_phase1_groups_mailstate_documents.sql`：
+
+- **共用**：新增 `public.is_ops_admin(uid)`（系統擁有者或任一專案 owner／admin_collab）。`sessions` 擴充 `registration_deadline`、`slot_options jsonb`、`quota_group`、`admin_note`；親職既有 15 場的報名截止依「場次前一週 23:59」回填。
+- **同儕聚會**（裁決 3）：下半年 5 場，同 5 日 14:00–16:00，capacity 100。8 月、9 月 `status='open'`；10–12 月 `status='closed'`（建立但未上架，主題與來賓未定）。`closed` 不會出現在 `getUpcomingSessions`（僅取 open/full），符合「即將開放」語意。
+- **導航計畫**（裁決 4）：9–12 月各 1 筆 session，`capacity=1`。⚠ **名額模型是「每月 1 位」，不是每時段 1 位**——現行 `enforce_session_capacity()` 逐 session 扣名額，若建 5 筆各 1 名額會變成每月 5 位。因此每月建 1 筆代表該月名額，5 個確切候選時段存於 `slot_options`（後台可逐一手動調整），並加 `quota_group`（`navigator-2026-09` 等）標示名額群組。`starts_at`／`ends_at` 取該月候選時段的最早起與最晚迄，使整個候選窗口都落在 `ends_at >= now()` 的可見範圍內。報名截止＝前一個月 20 日 23:59。四個月全部開放。
+- **導航報名表**：新增 `preferredExactSlots` multiselect（20 個確切候選時段，跨月可複選）。
+- **聯絡人類群**（計畫第八節）：`contact_groups`／`contact_group_members`，種子 5 個系統類群（講師群、報名者・親職諮詢／導航計畫／同儕聚會、行政協作）；`contacts` 加 `is_favorite` 旗標；`sync_registration_contact_group()` trigger 於 `registrations.contact_id` 掛上時自動把聯絡人加入對應專案的報名者類群。
+- **`attendance_confirmations`**：一次性 token（信中「確認出席／請假改期」按鈕），含 `action`、`responded_at`、`expires_at`（預設 30 天）。
+- **`generated_documents`**：文件生成紀錄（類型、範圍、對象、內容、狀態、`redacted` 旗標）。
+- **信件狀態機**（計畫第七節）：`email_threads` 加 `mail_state`（8 種狀態）、`mail_state_override`＋覆寫者／原因／時間、`last_outbound_at`／`last_inbound_at`／`follow_up_due_at`。顯示以覆寫值優先。
+- **`email_templates`**：INSERT 8 範本（確認信、出席確認信〔催覆〕、聯繫信、回絕信修訂版、講師行前通知信、家長行前信、月度宣傳信、客座邀請信）。**既有 2 筆完全未動**（以 `name` 做 NOT EXISTS 判定）。回絕信與家長行前信全文取自審閱指南 v3，其餘 6 封為草稿，需經使用者審閱。
+- **RLS**：四張新表一律 `is_ops_admin` 限定，並 `revoke all from anon`。
+- **`sessions_public`**：以 `create or replace view` 在既有欄位後追加 `registration_deadline`、`slot_options`、`quota_group`；`meet_url`／`calendar_event_id` 仍不外流。
+
+`20260804000003_navigator_title_clarify.sql`：導航場次標題補「（每月 1 位・確切時段另行確認）」，因月份窗口跨日時現行 `formatSlot` 會顯示成「20:00–10:00」易生誤解。Phase 2 新版導航頁改讀 `slot_options` 後可移除此補述。
+
+### 個資邊界
+
+計畫第四節第 3 點列出的常用聯絡人（鏡子、Lisa、張正怡）**信箱未寫入 Git migration**；本階段只建立 `is_favorite` 欄位與類群結構，實際人員建檔由後台操作處理。
+
+### 驗收證據
+
+- `migration list --linked`：**15 個版本 local／remote 全部成對，單邊 0**。
+- 資料表列數：`sessions` 30（原 6 ＋親職 15 ＋同儕 5 ＋導航 4）、`contact_groups` 5、`email_templates` 10（原 2 ＋新 8）、`contact_group_members`／`attendance_confirmations`／`generated_documents` 皆 0（空結構待使用）。
+- `sessions_public` 欄位確認含 `registration_deadline`、`slot_options`、`quota_group`。
+- 親職 15 場報名截止回填正確，與 01_v3 逐一吻合（8/16→8/9、9/6→8/30、10/11→10/4、11/8→11/1、12/20→12/13），無空值。
+- 正式站 390px 前台實測（皆 `scrollWidth == clientWidth`，溢位 0）：
+  - `/navigator/register`：4 個月份場次各「剩 1 名」（每月 1 位模型正確）、20 個確切候選時段全部列出。
+  - `/peer-group/register`：只出現 8 月與 9 月（open），10–12 月未上架不顯示。
+  - `/parent/register`：15 場全部可選，12/20 11:00 已回復「剩 1 名」。
