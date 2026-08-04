@@ -325,9 +325,28 @@ UI 唯一基準為 `重構審閱稿_2026-08-04/` 內的 `01_v3`、`02_v2`、`03_
 - 本機 dev server 390px 實測：階段一（15 個場次、未選時段擋下並顯示「請填寫「選擇場次」」）→ 階段二（條件欄位三項皆正確依答案出現：身份選「其他」→ 說明欄、出席方式選「與他人一同出席」→ 同行對象、聯繫時間勾「其他（自填）」→ 自填欄）→ 孩子多筆（新增至 2 位、超過最小筆數後出現「✕ 移除」）→ 確認頁（分階段顯示、逐階段「修改」、兩位孩子完整展開、場次顯示可讀標籤而非 UUID）。全程 `scrollWidth == clientWidth == 390`，無 console error。
 - 正式站部署後複驗：資源 `index-ahGg-BG4.js`，步驟指示器與 15 個場次正常，390px 溢位 0。
 
+### 已完成：互助聚會服務頁 `/peer-group`（六節第 2 項）
+
+手寫的「已經完成辦理活動區」共 437 行、17 張靜態場次卡（含 4 個寫死的 `meet.google.com` 連結）整段移除，改掛 `<SessionHistory />`：讀 `sessions_public` 且只取 `status='done'`，依民國年摺疊。歷史 Meet 連結因此是**結構性下架**（view 不含 `meet_url`），不是靠人記得刪。
+
+⚠ 範圍變化：舊手寫區把家長諮詢、導航計畫的場次也列在互助聚會頁上；`SessionHistory` 預設 `projectSlug='peer-group'`，因此本頁只剩互助聚會自己的軌跡。其餘兩案的軌跡歸各自服務頁（六節第 3 項）。
+
+聯繫區改為 02_v2 定稿：內嵌 LINE QR（`components/LineQrCode.tsx`）＋加友按鈕＋信箱一鍵複製。QR **不外連圖床**，路徑資料取自定稿並經解碼驗證（見驗收證據）。
+
+順帶修掉一個既有壞按鈕：頁尾「複製」鈕是從舊站搬來的靜態 HTML（`id="copyButton"`／`id="copyMessage"`，全 repo 無任何 handler），點了不會有反應。新增 `components/CopyButton.tsx` 取代，並在剪貼簿被拒時顯示「請手動複製」而非靜默失敗。**同一顆死按鈕仍存在於 `HomePage.tsx`、`ParentConsultPage.tsx`、`NavigatorConsultPage.tsx`**，於六節第 3 項一併換掉。
+
+`scripts/check-admin-operations.mjs` 對本頁的斷言同步改寫：原本斷言頁面含字串 `2026年7月11日 (六)`（手寫卡的日期，已隨手術消失），改為斷言含 `<SessionHistory />`、`<LineQrCode />`，且**不得**再出現 `meet.google.com`。
+
+### 驗收證據（互助聚會頁）
+
+- `npm run typecheck`、`npm run build`（✓ built in 4.15s）、`npm run check:operations` 三項皆通過。
+- 本機 dev server（:5174）DOM 實測：`meet.google.com` 連結 **0** 個；即將場次卡 5 張（8/9 月可報名、10–12 月「即將開放」不可報名）；活動軌跡 5 筆且全為 `done`；無 console error。
+- QR 驗證：以自寫解碼器（掃 SVG path → 29×29 模組矩陣 → 讀格式資訊 EC=M／mask=1 → 反遮罩 → byte 模式）解出內容為 `https://line.me/R/ti/p/@823pawtr`，與頁面加友按鈕同一目標。瀏覽器實際渲染出的 path 與來源 byte 相同（長度 8636、模組 432、hash 2601604142），渲染尺寸 132×132。
+- 複製鈕：兩顆（信箱、帳號）點擊後狀態皆變更，證明 handler 已接上。自動化分頁因 `Document is not focused` 走失敗分支顯示「請手動複製」；`isSecureContext=true`、`clipboard-write` 權限為 `granted`，真人點擊會走成功分支。
+
 ### Phase 2 剩餘項目
 
-1. `/peer-group` ＋ `/peer-group/register`（照 02_v2：原版場次卡、神秘驚喜、LINE QR 內嵌 SVG、報名彈窗、活動軌跡年度摺疊）
+1. `/peer-group/register`（照 02_v2 核對報名彈窗與欄位；服務頁 `/peer-group` 已完成）
 2. `/navigator/register`（照 04_v4：改讀 `slot_options` 逐一顯示確切時段、已完成月份收合）
 3. 首頁與 `/parent`、`/navigator` 服務頁（改讀 `sessions_public`、上半年文案移入活動軌跡、CTA 指向新報名頁、Meet 連結下架、頁尾信箱明示＋複製）
 4. `/guide`、`/articles` 內容清理（Notion 備份 id、114 年活動廣告、重複段落、Untitled 區塊）

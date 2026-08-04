@@ -1,37 +1,22 @@
 import { Link } from 'react-router-dom';
-import { ArrowUpRight, Calendar, ChevronDown, Clock, Copy, Mail, MessageCircle, PlayCircle, Sparkles, User, Video } from 'lucide-react';
-import { useSessionCardToggle } from '@/hooks/useSessionCardToggle';
+import { ArrowUpRight, Mail, MessageCircle, PlayCircle, Sparkles, Video } from 'lucide-react';
 import { UpcomingSessions } from '@/components/UpcomingSessions';
+import { SessionHistory } from '@/components/SessionHistory';
+import { CopyButton } from '@/components/CopyButton';
+import { LINE_URL, LineQrCode } from '@/components/LineQrCode';
 
 const BASE = import.meta.env.BASE_URL;
 const TODO_LINKS = {
   LINK_1: `${BASE}peer-group/register`,
   LINK_2: `${BASE}peer-group/register`,
-  LINK_3: `${BASE}navigator/register`,
-  LINK_4: `${BASE}navigator/register`,
-  LINK_5: `${BASE}navigator/register`,
-  LINK_6: `${BASE}peer-group/register`,
-  LINK_7: `${BASE}parent/register`,
-  LINK_8: `${BASE}parent/register`,
-  LINK_9: `${BASE}parent/register`,
-  LINK_10: `${BASE}peer-group/register`,
-  LINK_11: `${BASE}parent/register`,
-  LINK_12: `${BASE}parent/register`,
-  LINK_13: `${BASE}parent/register`,
-  LINK_14: `${BASE}navigator/register`,
-  LINK_15: `${BASE}peer-group/register`,
-  LINK_16: `${BASE}parent/register`,
-  LINK_17: `${BASE}parent/register`,
-  LINK_18: `${BASE}peer-group/register`,
   LINK_19: 'https://www.knews.com.tw/news/01CEE23784ECF429098274743517F227',
   LINK_20: 'https://www.youtube.com/watch?v=q1UL5Kn51gc',
   LINK_21: 'https://www.youtube.com/watch?v=CsHqUIdz0W4',
 };
 
 export default function PeerGroupPage() {
-  const sessionCardsRef = useSessionCardToggle();
   return (
-    <div className="min-h-screen bg-cream text-brown font-body" ref={sessionCardsRef}>
+    <div className="min-h-screen bg-cream text-brown font-body">
       <svg className="hidden" height="0" width="0"><filter id="hand-drawn"><feTurbulence baseFrequency="0.01" numOctaves="3" result="noise" type="fractalNoise"></feTurbulence><feDisplacementMap in="SourceGraphic" in2="noise" scale="2" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap></filter></svg><header className="hero-section pt-10 px-4 mb-16" id="about"><div className="absolute top-20 right-[-50px] w-96 h-96 opacity-40 animate-blob pointer-events-none"><svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><path d="M44.7,-76.4C58.9,-69.2,71.8,-59,79.6,-45.3C87.4,-31.7,90.2,-14.8,88.2,0.8C86.2,16.5,79.4,30.9,70.1,43.1C60.8,55.3,49,65.3,35.5,72.5C22,79.7,6.7,84.1,-8.9,83.9C-24.5,83.7,-40.4,78.9,-53.2,69.7C-66,60.5,-75.7,46.9,-81.3,31.8C-86.9,16.7,-88.4,0,-85.2,-15.2C-82,-30.4,-74.1,-44.1,-62.8,-52.9C-51.5,-61.7,-36.8,-65.7,-23.4,-73.1C-10,-80.5,2.1,-91.3,16.1,-90.8C30.1,-90.3,46,-83.5,44.7,-76.4Z" fill="#FFD6BA" transform="translate(100 100)"></path></svg></div><div className="max-w-4xl mx-auto flex flex-col items-center relative z-10"><div className="w-full space-y-8"><div className="text-center md:text-left"><div className="inline-block bg-white border-2 border-brown px-4 py-1 rounded-full text-sm font-bold shadow-warm transform -rotate-1 text-accent-teal mb-4">
                         ✨ 專屬單項服務介紹
                     </div><h1 className="font-heading text-4xl md:text-5xl font-black leading-tight text-brown">【大A彥宇】115年度成人ADHD線上互助聚會</h1></div>
@@ -53,444 +38,8 @@ export default function PeerGroupPage() {
 <div className="border-t-4 border-dashed border-brown/20 pt-8"><div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6"><div className="space-y-1"><h3 className="text-2xl font-bold text-brown flex items-center gap-2"><span className="bg-accent-teal text-white px-2 py-1 rounded text-lg border border-brown">辦理</span>
                             ADHD 成人同儕線上團體-場次說明
                         </h3><p className="text-gray-600 font-medium">(點開有詳細介紹喔！)</p></div></div><UpcomingSessions includeUnpublished showTopic />
-
-<div className="border-t-4 border-dashed border-brown/20 pt-8 mt-12 mb-6">
-<div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-<div className="space-y-1">
-<h3 className="text-2xl font-bold text-gray-500 flex items-center gap-2">
-<span className="bg-gray-400 text-white px-2 py-1 rounded text-lg border border-gray-500">歷史</span>
-                                    已經完成辦理活動區
-                                </h3>
-<p className="text-gray-500 font-medium">這些是我們過去美好的回憶！</p>
 </div>
-</div>
-
-<div className="session-card bg-gray-100 opacity-80">
-<div className="session-header" >
-<div className="flex items-center gap-3">
-<span className="session-tag bg-gray-300 text-gray-500">線上團體</span>
-<span className="font-bold text-gray-500 text-lg">【ADHD 成人同儕線上團體】釋放你的創意靈魂：創作不僅是專業，更是樂趣</span>
-</div>
-<ChevronDown className="w-5 h-5 text-gray-500 transition-transform duration-300"></ChevronDown>
-</div>
-<div className="session-content">
-<div className="p-6 space-y-4">
-<div className="flex flex-wrap gap-4 text-sm font-bold text-gray-600 bg-white/50 p-3 rounded-lg border border-brown/10">
-<span className="flex items-center gap-1"><Calendar className="w-4 h-4"></Calendar> 7月 18日 (六)</span>
-<span className="flex items-center gap-1"><Clock className="w-4 h-4"></Clock> 14:00 - 16:00</span>
-<span className="flex items-center gap-1"><User className="w-4 h-4"></User> 客座嘉賓：Vtuber 殷緋</span>
-</div>
-<div>
-<h4 className="font-bold text-gray-500 mb-2 border-l-4 border-orange-300 pl-2">我們聊什麼：</h4>
-<p className="text-gray-700 leading-relaxed text-justify">
-                                            誰說創作一定要很專業？只要覺得好玩，就是最棒的創作！<br/>
-                                            大家對創作有熱情嗎？不論是畫畫、寫小說、寫詩，或是裝置藝術，歡迎來到這裡大聊特聊你的創作世界。這次邀請 Vtuber 殷緋，和大家一起輕鬆聊天，分享創作過程中的樂趣與點滴，一起感受創作帶來的單純快樂。
-                                        </p>
-</div>
-</div>
-</div>
-</div>
-
-<div className="session-card bg-gray-100 opacity-80">
-<div className="session-header" >
-<div className="flex items-center gap-3">
-<span className="session-tag bg-gray-300 text-gray-500">導航計畫</span>
-<span className="font-bold text-gray-500 text-lg">【ADHD 導航計畫】免費公益線上諮詢：諮商心理師鏡子 🌿</span>
-</div>
-<ChevronDown className="w-5 h-5 text-gray-500 transition-transform duration-300"></ChevronDown>
-</div>
-<div className="session-content">
-<div className="p-6 space-y-4">
-<div className="flex flex-wrap gap-4 text-sm font-bold text-gray-600 bg-white/50 p-3 rounded-lg border border-brown/10">
-<span className="flex items-center gap-1"><Calendar className="w-4 h-4"></Calendar> 2026年8月3日 (一)</span>
-<span className="flex items-center gap-1"><Clock className="w-4 h-4"></Clock> 20:00 - 21:00</span>
-<span className="flex items-center gap-1"><User className="w-4 h-4"></User> 大A彥宇 × 諮商心理師宋致靜 (鏡子)</span>
-</div>
-<div>
-<h4 className="font-bold text-gray-500 mb-2 border-l-4 border-accent-pink pl-2">我們聊什麼：</h4>
-<p className="text-gray-700 leading-relaxed text-justify">今年，大A彥宇與諮商心理師宋致靜（鏡子）攜手合作，為 ADHD 族群推出專屬的免費公益諮詢服務。如果你覺得生活有些卡關，想釐清自己目前的心理狀態，或正在評估自己是否需要進一步的心理諮商，歡迎預約這項專屬服務，讓心理師陪你走一段內心的漫遊之旅。</p>
-</div>
-<div className="flex gap-3 pt-2">
-<a className="btn-warm py-2 px-4 bg-accent-pink text-gray-500 hover:opacity-80 text-sm" href={TODO_LINKS.LINK_3} target="_blank">報名連結</a>
-</div>
-</div>
-</div>
-</div>
-
-<div className="session-card bg-gray-100 opacity-80">
-<div className="session-header" >
-<div className="flex items-center gap-3">
-<span className="session-tag bg-gray-300 text-gray-500">導航計畫</span>
-<span className="font-bold text-gray-500 text-lg">【ADHD 導航計畫】免費公益線上諮詢：諮商心理師鏡子 🌿</span>
-</div>
-<ChevronDown className="w-5 h-5 text-gray-500 transition-transform duration-300"></ChevronDown>
-</div>
-<div className="session-content">
-<div className="p-6 space-y-4">
-<div className="flex flex-wrap gap-4 text-sm font-bold text-gray-600 bg-white/50 p-3 rounded-lg border border-brown/10">
-<span className="flex items-center gap-1"><Calendar className="w-4 h-4"></Calendar> 2026年7月11日 (六)</span>
-<span className="flex items-center gap-1"><Clock className="w-4 h-4"></Clock> 20:00 - 21:00</span>
-<span className="flex items-center gap-1"><User className="w-4 h-4"></User> 大A彥宇 × 諮商心理師宋致靜 (鏡子)</span>
-</div>
-<div>
-<h4 className="font-bold text-gray-500 mb-2 border-l-4 border-accent-pink pl-2">我們聊什麼：</h4>
-<p className="text-gray-700 leading-relaxed text-justify">今年，大A彥宇與諮商心理師宋致靜（鏡子）攜手合作，為 ADHD 族群推出專屬的免費公益諮詢服務。如果你覺得生活有些卡關，想釐清自己目前的心理狀態，或正在評估自己是否需要進一步的心理諮商，歡迎預約這項專屬服務，讓心理師陪你走一段內心的漫遊之旅。</p>
-</div>
-<div className="flex gap-3 pt-2">
-<a className="btn-warm py-2 px-4 bg-accent-pink text-gray-500 hover:opacity-80 text-sm" href={TODO_LINKS.LINK_4} target="_blank">報名連結</a>
-</div>
-</div>
-</div>
-</div>
-
-<div className="session-card bg-gray-100 opacity-80">
-<div className="session-header" >
-<div className="flex items-center gap-3">
-<span className="session-tag bg-gray-300 text-gray-500">導航計畫</span>
-<span className="font-bold text-gray-500 text-lg">【ADHD 導航計畫】免費公益線上諮詢：諮商心理師鏡子 🌿</span>
-</div>
-<ChevronDown className="w-5 h-5 text-gray-500 transition-transform duration-300"></ChevronDown>
-</div>
-<div className="session-content">
-<div className="p-6 space-y-4">
-<div className="flex flex-wrap gap-4 text-sm font-bold text-gray-600 bg-white/50 p-3 rounded-lg border border-brown/10">
-<span className="flex items-center gap-1"><Calendar className="w-4 h-4"></Calendar> 2026年6月8日 (一)</span>
-<span className="flex items-center gap-1"><Clock className="w-4 h-4"></Clock> 20:00 - 21:00</span>
-<span className="flex items-center gap-1"><User className="w-4 h-4"></User> 大A彥宇 × 諮商心理師宋致靜 (鏡子)</span>
-</div>
-<div>
-<h4 className="font-bold text-gray-500 mb-2 border-l-4 border-accent-pink pl-2">我們聊什麼：</h4>
-<p className="text-gray-700 leading-relaxed text-justify">今年，大A彥宇與諮商心理師宋致靜（鏡子）攜手合作，為 ADHD 族群推出專屬的免費公益諮詢服務。如果你覺得生活有些卡關，想釐清自己目前的心理狀態，或正在評估自己是否需要進一步的心理諮商，歡迎預約這項專屬服務，讓心理師陪你走一段內心的漫遊之旅。</p>
-</div>
-<div className="flex gap-3 pt-2">
-<a className="btn-warm py-2 px-4 bg-accent-pink text-gray-500 hover:opacity-80 text-sm" href={TODO_LINKS.LINK_5} target="_blank">報名連結</a>
-</div>
-</div>
-</div>
-</div>
-
-<div className="session-card bg-gray-100 opacity-80">
-<div className="session-header" >
-<div className="flex items-center gap-3">
-<span className="session-tag bg-gray-300 text-gray-500">線上團體</span>
-<span className="font-bold text-gray-500 text-lg">【ADHD 成人同儕線上團體】握緊方向盤的自信：行車安全與駕駛經驗</span>
-</div>
-<ChevronDown className="w-5 h-5 text-gray-500 transition-transform duration-300"></ChevronDown>
-</div>
-<div className="session-content">
-<div className="p-6 space-y-4">
-<div className="flex flex-wrap gap-4 text-sm font-bold text-gray-600 bg-white/50 p-3 rounded-lg border border-brown/10">
-<span className="flex items-center gap-1"><Calendar className="w-4 h-4"></Calendar> 6月 6日 (六)</span>
-<span className="flex items-center gap-1"><Clock className="w-4 h-4"></Clock> 14:00 - 16:00</span>
-<span className="flex items-center gap-1"><User className="w-4 h-4"></User> 客座嘉賓：傑夫 (Jeff)</span>
-</div>
-<div>
-<h4 className="font-bold text-gray-500 mb-2 border-l-4 border-green-400 pl-2">我們聊什麼：</h4>
-<p className="text-gray-700 leading-relaxed text-justify">
-                                            大家喜歡開車嗎？在駕駛的過程中，有沒有什麼獨特的習慣或趣事？<br/>
-                                            無論你是享受駕駛樂趣，還是對於上路有些許緊張，都歡迎來交流。本次邀請專業的私人駕訓教練傑夫，他非常懂得如何引導駕駛，大家可以從他身上學到實用的行車安全知識與開車訣竅，讓我們上路更安全、更從容！
-                                        </p>
-</div>
-<div className="flex gap-3 pt-2">
-<a className="btn-warm py-2 px-4 bg-white hover:bg-gray-100 text-sm text-gray-500" href="https://meet.google.com/hkv-gudh-tks" target="_blank"><Video className="w-4 h-4 mr-2"></Video> 視訊連結</a>
-<a className="btn-warm py-2 px-4 bg-[#A5D6A7] text-gray-500 hover:opacity-80 text-sm" href={TODO_LINKS.LINK_6} target="_blank">報名表單</a>
-</div>
-</div>
-</div>
-</div>
-
-<div className="session-card bg-gray-100 opacity-80">
-<div className="session-header" >
-<div className="flex items-center gap-3">
-<span className="session-tag bg-gray-300 text-gray-500">家長諮詢</span>
-<span className="font-bold text-gray-500 text-lg">【ADHD 家長諮詢服務】免費公益線上諮詢 (六月場三)</span>
-</div>
-<ChevronDown className="w-5 h-5 text-gray-500 transition-transform duration-300"></ChevronDown>
-</div>
-<div className="session-content">
-<div className="p-6 space-y-4">
-<div className="flex flex-wrap gap-4 text-sm font-bold text-gray-600 bg-white/50 p-3 rounded-lg border border-brown/10">
-<span className="flex items-center gap-1"><Calendar className="w-4 h-4"></Calendar> 2026年6月6日 (六)</span>
-<span className="flex items-center gap-1"><Clock className="w-4 h-4"></Clock> 11:00 - 12:00</span>
-<span className="flex items-center gap-1"><User className="w-4 h-4"></User> 大A彥宇 (前兒少社工)</span>
-</div>
-<div>
-<h4 className="font-bold text-gray-500 mb-2 border-l-4 border-accent-blue pl-2">我們聊什麼：</h4>
-<p className="text-gray-700 leading-relaxed text-justify">為了支持在教養路上感到疲憊的家長，我們特別推出專屬的免費公益諮詢服務。由身兼「成人 ADHD（大A）」與「前兒少社會工作者」雙重身分的專業工作者為您解答。我們將根據您的具體議題與需求，彈性邀請相關專業人員或其他大A夥伴共同參與，為您打造最貼近需求、最懂您的專屬對話空間。</p>
-</div>
-<div className="flex gap-3 pt-2">
-<a className="btn-warm py-2 px-4 bg-accent-blue text-gray-500 hover:opacity-80 text-sm" href={TODO_LINKS.LINK_7} target="_blank">報名連結</a>
-</div>
-</div>
-</div>
-</div>
-
-<div className="session-card bg-gray-100 opacity-80">
-<div className="session-header" >
-<div className="flex items-center gap-3">
-<span className="session-tag bg-gray-300 text-gray-500">家長諮詢</span>
-<span className="font-bold text-gray-500 text-lg">【ADHD 家長諮詢服務】免費公益線上諮詢 (六月場二)</span>
-</div>
-<ChevronDown className="w-5 h-5 text-gray-500 transition-transform duration-300"></ChevronDown>
-</div>
-<div className="session-content">
-<div className="p-6 space-y-4">
-<div className="flex flex-wrap gap-4 text-sm font-bold text-gray-600 bg-white/50 p-3 rounded-lg border border-brown/10">
-<span className="flex items-center gap-1"><Calendar className="w-4 h-4"></Calendar> 2026年6月6日 (六)</span>
-<span className="flex items-center gap-1"><Clock className="w-4 h-4"></Clock> 10:00 - 11:00</span>
-<span className="flex items-center gap-1"><User className="w-4 h-4"></User> 大A彥宇 (前兒少社工)</span>
-</div>
-<div>
-<h4 className="font-bold text-gray-500 mb-2 border-l-4 border-accent-blue pl-2">我們聊什麼：</h4>
-<p className="text-gray-700 leading-relaxed text-justify">為了支持在教養路上感到疲憊的家長，我們特別推出專屬的免費公益諮詢服務。由身兼「成人 ADHD（大A）」與「前兒少社會工作者」雙重身分的專業工作者為您解答。我們將根據您的具體議題與需求，彈性邀請相關專業人員或其他大A夥伴共同參與，為您打造最貼近需求、最懂您的專屬對話空間。</p>
-</div>
-<div className="flex gap-3 pt-2">
-<a className="btn-warm py-2 px-4 bg-accent-blue text-gray-500 hover:opacity-80 text-sm" href={TODO_LINKS.LINK_8} target="_blank">報名連結</a>
-</div>
-</div>
-</div>
-</div>
-
-<div className="session-card bg-gray-100 opacity-80">
-<div className="session-header" >
-<div className="flex items-center gap-3">
-<span className="session-tag bg-gray-300 text-gray-500">家長諮詢</span>
-<span className="font-bold text-gray-500 text-lg">【ADHD 家長諮詢服務】免費公益線上諮詢 (六月場一)</span>
-</div>
-<ChevronDown className="w-5 h-5 text-gray-500 transition-transform duration-300"></ChevronDown>
-</div>
-<div className="session-content">
-<div className="p-6 space-y-4">
-<div className="flex flex-wrap gap-4 text-sm font-bold text-gray-600 bg-white/50 p-3 rounded-lg border border-brown/10">
-<span className="flex items-center gap-1"><Calendar className="w-4 h-4"></Calendar> 2026年6月6日 (六)</span>
-<span className="flex items-center gap-1"><Clock className="w-4 h-4"></Clock> 09:00 - 10:00</span>
-<span className="flex items-center gap-1"><User className="w-4 h-4"></User> 大A彥宇 (前兒少社工)</span>
-</div>
-<div>
-<h4 className="font-bold text-gray-500 mb-2 border-l-4 border-accent-blue pl-2">我們聊什麼：</h4>
-<p className="text-gray-700 leading-relaxed text-justify">為了支持在教養路上感到疲憊的家長，我們特別推出專屬的免費公益諮詢服務。由身兼「成人 ADHD（大A）」與「前兒少社會工作者」雙重身分的專業工作者為您解答。我們將根據您的具體議題與需求，彈性邀請相關專業人員或其他大A夥伴共同參與，為您打造最貼近需求、最懂您的專屬對話空間。</p>
-</div>
-<div className="flex gap-3 pt-2">
-<a className="btn-warm py-2 px-4 bg-accent-blue text-gray-500 hover:opacity-80 text-sm" href={TODO_LINKS.LINK_9} target="_blank">報名連結</a>
-</div>
-</div>
-</div>
-</div>
-
-<div className="session-card bg-gray-100 opacity-80">
-<div className="session-header" >
-<div className="flex items-center gap-3">
-<span className="session-tag bg-gray-300 text-gray-500">線上團體</span>
-<span className="font-bold text-gray-500 text-lg">【ADHD 成人同儕線上團體】尋找心靈的平靜：多元的調適與自我照顧</span>
-</div>
-<ChevronDown className="w-5 h-5 text-gray-500 transition-transform duration-300"></ChevronDown>
-</div>
-<div className="session-content">
-<div className="p-6 space-y-4">
-<div className="flex flex-wrap gap-4 text-sm font-bold text-gray-600 bg-white/50 p-3 rounded-lg border border-brown/10">
-<span className="flex items-center gap-1"><Calendar className="w-4 h-4"></Calendar> 5月 23日 (六)</span>
-<span className="flex items-center gap-1"><Clock className="w-4 h-4"></Clock> 14:00 - 16:00</span>
-<span className="flex items-center gap-1"><User className="w-4 h-4"></User> 客座嘉賓：鏡子 (Mirror)</span>
-</div>
-<div>
-<h4 className="font-bold text-gray-500 mb-2 border-l-4 border-purple-300 pl-2">我們聊什麼：</h4>
-<p className="text-gray-700 leading-relaxed text-justify">心情低落或感到壓力時，大家都用什麼方式來陪伴自己？<br/>是尋求專業諮商、冥想運動，還是透過命理占卜來尋求安定的力量？一起來聊聊各種調適心情的方法吧！本次邀請大A夥伴鏡子，她將分享心理自我照顧的技巧，以及成年ADHD在面對憂鬱、焦慮時的調適建議，陪大家找回內心的平衡。</p>
-</div>
-<div className="flex gap-3 pt-2">
-<a className="btn-warm py-2 px-4 bg-white hover:bg-gray-100 text-sm text-gray-500" href="https://meet.google.com/bux-htfd-ief" target="_blank"><Video className="w-4 h-4 mr-2"></Video> 視訊連結</a><a className="btn-warm py-2 px-4 bg-[#E1BEE7] text-gray-500 hover:opacity-80 text-sm" href={TODO_LINKS.LINK_10} target="_blank">報名表單</a>
-</div>
-</div>
-</div>
-</div>
-
-<div className="session-card bg-gray-100 opacity-80">
-<div className="session-header" >
-<div className="flex items-center gap-3">
-<span className="session-tag bg-gray-300 text-gray-500">家長諮詢</span>
-<span className="font-bold text-gray-500 text-lg">【ADHD 家長諮詢服務】免費公益線上諮詢 (五月場三)</span>
-</div>
-<ChevronDown className="w-5 h-5 text-gray-500 transition-transform duration-300"></ChevronDown>
-</div>
-<div className="session-content">
-<div className="p-6 space-y-4">
-<div className="flex flex-wrap gap-4 text-sm font-bold text-gray-600 bg-white/50 p-3 rounded-lg border border-brown/10">
-<span className="flex items-center gap-1"><Calendar className="w-4 h-4"></Calendar> 2026年5月23日 (六)</span>
-<span className="flex items-center gap-1"><Clock className="w-4 h-4"></Clock> 11:00 - 12:00</span>
-<span className="flex items-center gap-1"><User className="w-4 h-4"></User> 大A彥宇 (前兒少社工)</span>
-</div>
-<div>
-<h4 className="font-bold text-gray-500 mb-2 border-l-4 border-accent-blue pl-2">我們聊什麼：</h4>
-<p className="text-gray-700 leading-relaxed text-justify">為了支持在教養路上感到疲憊的家長，我們特別推出專屬的免費公益諮詢服務。由身兼「成人 ADHD（大A）」與「前兒少社會工作者」雙重身分的專業工作者為您解答。我們將根據您的具體議題與需求，彈性邀請相關專業人員或其他大A夥伴共同參與，為您打造最貼近需求、最懂您的專屬對話空間。</p>
-</div>
-<div className="flex gap-3 pt-2">
-<a className="btn-warm py-2 px-4 bg-accent-blue text-gray-500 hover:opacity-80 text-sm" href={TODO_LINKS.LINK_11} target="_blank">報名連結</a>
-</div>
-</div>
-</div>
-</div>
-
-<div className="session-card bg-gray-100 opacity-80">
-<div className="session-header" >
-<div className="flex items-center gap-3">
-<span className="session-tag bg-gray-300 text-gray-500">家長諮詢</span>
-<span className="font-bold text-gray-500 text-lg">【ADHD 家長諮詢服務】免費公益線上諮詢 (五月場二)</span>
-</div>
-<ChevronDown className="w-5 h-5 text-gray-500 transition-transform duration-300"></ChevronDown>
-</div>
-<div className="session-content">
-<div className="p-6 space-y-4">
-<div className="flex flex-wrap gap-4 text-sm font-bold text-gray-600 bg-white/50 p-3 rounded-lg border border-brown/10">
-<span className="flex items-center gap-1"><Calendar className="w-4 h-4"></Calendar> 2026年5月23日 (六)</span>
-<span className="flex items-center gap-1"><Clock className="w-4 h-4"></Clock> 10:00 - 11:00</span>
-<span className="flex items-center gap-1"><User className="w-4 h-4"></User> 大A彥宇 (前兒少社工)</span>
-</div>
-<div>
-<h4 className="font-bold text-gray-500 mb-2 border-l-4 border-accent-blue pl-2">我們聊什麼：</h4>
-<p className="text-gray-700 leading-relaxed text-justify">為了支持在教養路上感到疲憊的家長，我們特別推出專屬的免費公益諮詢服務。由身兼「成人 ADHD（大A）」與「前兒少社會工作者」雙重身分的專業工作者為您解答。我們將根據您的具體議題與需求，彈性邀請相關專業人員或其他大A夥伴共同參與，為您打造最貼近需求、最懂您的專屬對話空間。</p>
-</div>
-<div className="flex gap-3 pt-2">
-<a className="btn-warm py-2 px-4 bg-accent-blue text-gray-500 hover:opacity-80 text-sm" href={TODO_LINKS.LINK_12} target="_blank">報名連結</a>
-</div>
-</div>
-</div>
-</div>
-
-<div className="session-card bg-gray-100 opacity-80">
-<div className="session-header" >
-<div className="flex items-center gap-3">
-<span className="session-tag bg-gray-300 text-gray-500">家長諮詢</span>
-<span className="font-bold text-gray-500 text-lg">【ADHD 家長諮詢服務】免費公益線上諮詢 (五月場一)</span>
-</div>
-<ChevronDown className="w-5 h-5 text-gray-500 transition-transform duration-300"></ChevronDown>
-</div>
-<div className="session-content">
-<div className="p-6 space-y-4">
-<div className="flex flex-wrap gap-4 text-sm font-bold text-gray-600 bg-white/50 p-3 rounded-lg border border-brown/10">
-<span className="flex items-center gap-1"><Calendar className="w-4 h-4"></Calendar> 2026年5月23日 (六)</span>
-<span className="flex items-center gap-1"><Clock className="w-4 h-4"></Clock> 09:00 - 10:00</span>
-<span className="flex items-center gap-1"><User className="w-4 h-4"></User> 大A彥宇 (前兒少社工)</span>
-</div>
-<div>
-<h4 className="font-bold text-gray-500 mb-2 border-l-4 border-accent-blue pl-2">我們聊什麼：</h4>
-<p className="text-gray-700 leading-relaxed text-justify">為了支持在教養路上感到疲憊的家長，我們特別推出專屬的免費公益諮詢服務。由身兼「成人 ADHD（大A）」與「前兒少社會工作者」雙重身分的專業工作者為您解答。我們將根據您的具體議題與需求，彈性邀請相關專業人員或其他大A夥伴共同參與，為您打造最貼近需求、最懂您的專屬對話空間。</p>
-</div>
-<div className="flex gap-3 pt-2">
-<a className="btn-warm py-2 px-4 bg-accent-blue text-gray-500 hover:opacity-80 text-sm" href={TODO_LINKS.LINK_13} target="_blank">報名連結</a>
-</div>
-</div>
-</div>
-</div>
-
-<div className="session-card bg-gray-100 opacity-80">
-<div className="session-header" >
-<div className="flex items-center gap-3">
-<span className="session-tag bg-gray-300 text-gray-500">導航計畫</span>
-<span className="font-bold text-gray-500 text-lg">【ADHD 導航計畫】免費公益線上諮詢：諮商心理師鏡子 🌿</span>
-</div>
-<ChevronDown className="w-5 h-5 text-gray-500 transition-transform duration-300"></ChevronDown>
-</div>
-<div className="session-content">
-<div className="p-6 space-y-4">
-<div className="flex flex-wrap gap-4 text-sm font-bold text-gray-600 bg-white/50 p-3 rounded-lg border border-brown/10">
-<span className="flex items-center gap-1"><Calendar className="w-4 h-4"></Calendar> 2026年5月9日 (六)</span>
-<span className="flex items-center gap-1"><Clock className="w-4 h-4"></Clock> 20:00 - 21:00</span>
-<span className="flex items-center gap-1"><User className="w-4 h-4"></User> 大A彥宇 × 諮商心理師宋致靜 (鏡子)</span>
-</div>
-<div>
-<h4 className="font-bold text-gray-500 mb-2 border-l-4 border-accent-pink pl-2">我們聊什麼：</h4>
-<p className="text-gray-700 leading-relaxed text-justify">今年，大A彥宇與諮商心理師宋致靜（鏡子）攜手合作，為 ADHD 族群推出專屬的免費公益諮詢服務。如果你覺得生活有些卡關，想釐清自己目前的心理狀態，或正在評估自己是否需要進一步的心理諮商，歡迎預約這項專屬服務，讓心理師陪你走一段內心的漫遊之旅。</p>
-</div>
-<div className="flex gap-3 pt-2">
-<a className="btn-warm py-2 px-4 bg-accent-pink text-gray-500 hover:opacity-80 text-sm" href={TODO_LINKS.LINK_14} target="_blank">報名連結</a>
-</div>
-</div>
-</div>
-</div>
-
-<div className="session-card bg-gray-100 opacity-80">
-<div className="session-header" >
-<div className="flex items-center gap-3">
-<span className="session-tag bg-gray-300 text-gray-500">線上團體</span>
-<span className="font-bold text-gray-500 text-lg">【ADHD 成人同儕線上團體】營養品怎麼選？成為自己的健康管理師</span>
-</div>
-<ChevronDown className="w-5 h-5 text-gray-500 transition-transform duration-300"></ChevronDown>
-</div>
-<div className="session-content">
-<div className="p-6 space-y-4">
-<div className="flex flex-wrap gap-4 text-sm font-bold text-gray-600 bg-white/50 p-3 rounded-lg border border-brown/10">
-<span className="flex items-center gap-1"><Calendar className="w-4 h-4"></Calendar> 4月 18日 (六)</span>
-<span className="flex items-center gap-1"><Clock className="w-4 h-4"></Clock> 14:00 - 16:00</span>
-<span className="flex items-center gap-1"><User className="w-4 h-4"></User> 客座嘉賓：食品「魏」管師</span>
-</div>
-<div>
-<h4 className="font-bold text-gray-500 mb-2 border-l-4 border-accent-blue pl-2">我們聊什麼：</h4>
-<p className="text-gray-700 leading-relaxed text-justify">魚油、B群、鋅......面對琳瑯滿目的營養品，大家平常都怎麼選擇與補充呢？<br/>歡迎大家帶著自己手邊的「罐罐」上線展示，分享你的使用經驗或疑問。這次特別邀請具備食品安全與營養專業的「魏」管師參與討論，若你對成分標示或如何攝取有任何好奇，都可以直接請教專家，讓我們吃得更安心、更精準！</p>
-</div>
-<div className="flex gap-3 pt-2">
-<a className="btn-warm py-2 px-4 bg-white hover:bg-gray-100 text-sm text-gray-500" href="https://meet.google.com/kwh-qyhy-ckh" target="_blank"><Video className="w-4 h-4 mr-2"></Video> 視訊連結</a><a className="btn-warm py-2 px-4 bg-accent-blue text-gray-500 hover:opacity-80 text-sm" href={TODO_LINKS.LINK_15} target="_blank">報名表單</a>
-</div>
-</div>
-</div>
-</div>
-
-<div className="session-card bg-gray-100 opacity-80">
-<div className="session-header" >
-<div className="flex items-center gap-3">
-<span className="session-tag bg-gray-300 text-gray-500">家長諮詢</span>
-<span className="font-bold text-gray-500 text-lg">【ADHD 家長諮詢服務】免費公益線上諮詢 (四月場二)</span>
-</div>
-<ChevronDown className="w-5 h-5 text-gray-500 transition-transform duration-300"></ChevronDown>
-</div>
-<div className="session-content">
-<div className="p-6 space-y-4">
-<div className="flex flex-wrap gap-4 text-sm font-bold text-gray-600 bg-white/50 p-3 rounded-lg border border-brown/10">
-<span className="flex items-center gap-1"><Calendar className="w-4 h-4"></Calendar> 2026年4月18日 (六)</span>
-<span className="flex items-center gap-1"><Clock className="w-4 h-4"></Clock> 11:00 - 12:00</span>
-<span className="flex items-center gap-1"><User className="w-4 h-4"></User> 大A彥宇 (前兒少社工)</span>
-</div>
-<div>
-<h4 className="font-bold text-gray-500 mb-2 border-l-4 border-accent-blue pl-2">我們聊什麼：</h4>
-<p className="text-gray-700 leading-relaxed text-justify">為了支持在教養路上感到疲憊的家長，我們特別推出專屬的免費公益諮詢服務。由身兼「成人 ADHD（大A）」與「前兒少社會工作者」雙重身分的專業工作者為您解答。我們將根據您的具體議題與需求，彈性邀請相關專業人員或其他大A夥伴共同參與，為您打造最貼近需求、最懂您的專屬對話空間。</p>
-</div>
-<div className="flex gap-3 pt-2">
-<a className="btn-warm py-2 px-4 bg-accent-blue text-gray-500 hover:opacity-80 text-sm" href={TODO_LINKS.LINK_16} target="_blank">報名連結</a>
-</div>
-</div>
-</div>
-</div>
-
-<div className="session-card bg-gray-100 opacity-80">
-<div className="session-header" >
-<div className="flex items-center gap-3">
-<span className="session-tag bg-gray-300 text-gray-500">家長諮詢</span>
-<span className="font-bold text-gray-500 text-lg">【ADHD 家長諮詢服務】免費公益線上諮詢 (四月場一)</span>
-</div>
-<ChevronDown className="w-5 h-5 text-gray-500 transition-transform duration-300"></ChevronDown>
-</div>
-<div className="session-content">
-<div className="p-6 space-y-4">
-<div className="flex flex-wrap gap-4 text-sm font-bold text-gray-600 bg-white/50 p-3 rounded-lg border border-brown/10">
-<span className="flex items-center gap-1"><Calendar className="w-4 h-4"></Calendar> 2026年4月18日 (六)</span>
-<span className="flex items-center gap-1"><Clock className="w-4 h-4"></Clock> 10:00 - 11:00</span>
-<span className="flex items-center gap-1"><User className="w-4 h-4"></User> 大A彥宇 (前兒少社工)</span>
-</div>
-<div>
-<h4 className="font-bold text-gray-500 mb-2 border-l-4 border-accent-blue pl-2">我們聊什麼：</h4>
-<p className="text-gray-700 leading-relaxed text-justify">為了支持在教養路上感到疲憊的家長，我們特別推出專屬的免費公益諮詢服務。由身兼「成人 ADHD（大A）」與「前兒少社會工作者」雙重身分的專業工作者為您解答。我們將根據您的具體議題與需求，彈性邀請相關專業人員或其他大A夥伴共同參與，為您打造最貼近需求、最懂您的專屬對話空間。</p>
-</div>
-<div className="flex gap-3 pt-2">
-<a className="btn-warm py-2 px-4 bg-accent-blue text-gray-500 hover:opacity-80 text-sm" href={TODO_LINKS.LINK_17} target="_blank">報名連結</a>
-</div>
-</div>
-</div>
-</div>
-<div className="session-card bg-gray-100 opacity-80"><div className="session-header" ><div className="flex items-center gap-3"><span className="session-tag bg-gray-300 text-gray-500">線上團體</span><span className="font-bold text-gray-500 text-lg">【ADHD 成人同儕線上團體】聊聊理財這件事：從經驗分享到專業建議</span></div><ChevronDown className="w-5 h-5 text-gray-500 transition-transform duration-300"></ChevronDown></div><div className="session-content"><div className="p-6 space-y-4"><div className="flex flex-wrap gap-4 text-sm font-bold text-gray-600 bg-white/50 p-3 rounded-lg border border-brown/10"><span className="flex items-center gap-1"><Calendar className="w-4 h-4"></Calendar> 3月 14日 (六)</span><span className="flex items-center gap-1"><Clock className="w-4 h-4"></Clock> 14:00 - 16:00</span><span className="flex items-center gap-1"><User className="w-4 h-4"></User> 客座嘉賓：博那 (Bona)</span></div><div><h4 className="font-bold text-gray-500 mb-2 border-l-4 border-accent-orange pl-2">我們聊什麼：</h4><p className="text-gray-700 leading-relaxed text-justify">
-                                    大家對於管理財務有什麼獨特的心得嗎？或是曾在理財路上遇過什麼難忘的經驗？<br/>
-                                    這次讓我們輕鬆聚在一起，分享彼此的理財故事。不管是你發現的好方法，或是希望能改進的地方，都歡迎提出來交流。我們邀請了好朋友博那，除了聽聽大家的故事，若有需要，她也能提供專業的理財觀點與建議喔！
-                                </p></div><div className="flex gap-3 pt-2"><a className="btn-warm py-2 px-4 bg-white hover:bg-gray-100 text-sm" href="https://meet.google.com/mvz-zyww-sgp" target="_blank"><Video className="w-4 h-4 mr-2"></Video> 視訊連結
-                                </a><a className="btn-warm py-2 px-4 bg-accent-orange text-gray-500 hover:bg-[#FFD180] text-sm" href={TODO_LINKS.LINK_18} target="_blank">報名表單</a></div></div></div></div>
-</div>
-</div>
+<SessionHistory />
 </section></div>
 
 <section className="max-w-4xl mx-auto px-4 mt-20 mb-12">
@@ -505,9 +54,26 @@ export default function PeerGroupPage() {
 </div>
 </div>
 </section>
-<div className="bg-[#F0FDF4] border-t border-line-green/20 py-16 mt-20" id="line-contact"><div className="max-w-3xl mx-auto px-4 flex flex-col items-center text-center gap-6"><h4 className="text-3xl font-black text-brown mb-2">加入官方 LINE</h4><p className="text-brown/80 mb-4 text-lg">取得最新活動資訊、連結以及即時提醒！<br/>不錯過任何一場聚會。</p><a className="btn-warm py-4 px-12 bg-line-green text-white hover:opacity-90 shadow-warm border-transparent text-xl w-full md:w-auto" href="https://line.me/R/ti/p/@823pawtr?oat_content=url&amp;ts=06051740" target="_blank"><MessageCircle className="w-6 h-6 mr-2"></MessageCircle> 立即加入好友
-            </a></div></div><div className="bg-gray-100 border-t border-gray-200 py-6" id="donate"><div className="max-w-2xl mx-auto px-4 text-center"><h4 className="text-sm font-bold text-gray-500 mb-1">支持我的行動</h4><p className="text-[10px] text-gray-400 mb-3 leading-tight">服務均為無償進行。若認同理念，歡迎小額贊助維持營運。<br/>(不論是否打賞，都歡迎來信打氣！)</p><div className="inline-block text-left text-xs"><div className="flex items-center justify-center gap-2 text-gray-500"><span>005 土地銀行</span><span className="font-mono">016-212-34037-9</span><button className="text-[10px] bg-gray-200 hover:bg-gray-300 text-gray-600 py-1 px-2 rounded transition-colors flex items-center gap-1" id="copyButton"><Copy className="w-3 h-3"></Copy> 複製
-                    </button></div></div><div className="text-[10px] text-green-500 font-bold mt-1 hidden" id="copyMessage">✓ 已複製</div><div className="flex justify-center gap-4 mt-4 text-[10px] text-gray-400"><a className="hover:text-gray-500 flex items-center gap-1" href="mailto:jin40225@gmail.com"><Mail className="w-3 h-3"></Mail> Email</a><span>© 2026 大A彥宇</span></div></div></div>
+<div className="bg-[#F0FDF4] border-t border-line-green/20 py-16 mt-20" id="line-contact">
+<div className="max-w-3xl mx-auto px-4 flex flex-col items-center text-center gap-6">
+<h4 className="text-3xl font-black text-brown mb-2">加入官方 LINE・搶先收到通知</h4>
+<p className="text-brown/80 text-lg">主題公布、開放報名、活動提醒都會在 LINE 第一時間通知！<br/>不錯過任何一場聚會。</p>
+<div className="flex flex-col md:flex-row items-center justify-center gap-8 w-full">
+<div className="bg-white border-2 border-brown rounded-2xl p-3 shadow-warm">
+<LineQrCode />
+<p className="text-xs font-bold text-brown mt-1">掃我加 LINE</p>
+</div>
+<div className="flex flex-col items-center gap-3">
+<a className="btn-warm py-4 px-12 bg-line-green text-white hover:opacity-90 shadow-warm border-transparent text-xl" href={LINE_URL} target="_blank" rel="noreferrer"><MessageCircle className="w-6 h-6 mr-2"></MessageCircle> 立即加入官方 LINE</a>
+<p className="text-brown/70 text-sm">或直接來信詢問：</p>
+<div className="flex items-center gap-2 bg-white border-2 border-brown/20 rounded-full py-2 px-4">
+<span className="font-mono text-sm text-brown">jin40225@gmail.com</span>
+<CopyButton value="jin40225@gmail.com" label="複製信箱" className="text-[11px] bg-gray-200 hover:bg-gray-300 text-gray-600 py-1 px-2 rounded transition-colors flex items-center gap-1" />
+</div>
+</div>
+</div>
+</div>
+</div><div className="bg-gray-100 border-t border-gray-200 py-6" id="donate"><div className="max-w-2xl mx-auto px-4 text-center"><h4 className="text-sm font-bold text-gray-500 mb-1">支持我的行動</h4><p className="text-[10px] text-gray-400 mb-3 leading-tight">服務均為無償進行。若認同理念，歡迎小額贊助維持營運。<br/>(不論是否打賞，都歡迎來信打氣！)</p><div className="inline-block text-left text-xs"><div className="flex items-center justify-center gap-2 text-gray-500"><span>005 土地銀行</span><span className="font-mono">016-212-34037-9</span><CopyButton value="016-212-34037-9" className="text-[10px] bg-gray-200 hover:bg-gray-300 text-gray-600 py-1 px-2 rounded transition-colors flex items-center gap-1" /></div></div><div className="flex justify-center gap-4 mt-4 text-[10px] text-gray-400"><a className="hover:text-gray-500 flex items-center gap-1" href="mailto:jin40225@gmail.com"><Mail className="w-3 h-3"></Mail> Email</a><span>© 2026 大A彥宇</span></div></div></div>
     </div>
   );
 }

@@ -38,5 +38,8 @@ requireText('src/admin/operations/api.ts', ['function cleanEmailBody', 'htmlToPl
 requireText('src/admin/AdminShell.tsx', ['applyPageMetadata(location.pathname)']);
 requireText('src/routes/PublicLayout.tsx', ['overflow-x-hidden']);
 requireText('src/pages/public/HomePage.tsx', ['2026年7月11日 (六)']);
-requireText('src/pages/public/PeerGroupPage.tsx', ['2026年7月11日 (六)']);
+// 互助聚會頁的歷史場次改由 SessionHistory 讀 sessions_public（status='done'），
+// 手寫場次卡與寫死的 Meet 連結一併下架，這裡守住不要被改回去。
+requireText('src/pages/public/PeerGroupPage.tsx', ['<SessionHistory />', '<LineQrCode />']);
+if (read('src/pages/public/PeerGroupPage.tsx').includes('meet.google.com')) throw new Error('PeerGroupPage still hard-codes Meet links.');
 console.log('Admin operations structural checks passed.');
