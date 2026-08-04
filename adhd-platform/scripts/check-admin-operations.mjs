@@ -37,9 +37,14 @@ requireText('src/admin/pages/IntegrationsPage.tsx', ['尚未建置 users.watch�
 requireText('src/admin/operations/api.ts', ['function cleanEmailBody', 'htmlToPlainText(bodyHtml)']);
 requireText('src/admin/AdminShell.tsx', ['applyPageMetadata(location.pathname)']);
 requireText('src/routes/PublicLayout.tsx', ['overflow-x-hidden']);
-requireText('src/pages/public/HomePage.tsx', ['2026年7月11日 (六)']);
-// 互助聚會頁的歷史場次改由 SessionHistory 讀 sessions_public（status='done'），
-// 手寫場次卡與寫死的 Meet 連結一併下架，這裡守住不要被改回去。
-requireText('src/pages/public/PeerGroupPage.tsx', ['<SessionHistory />', '<LineQrCode />']);
-if (read('src/pages/public/PeerGroupPage.tsx').includes('meet.google.com')) throw new Error('PeerGroupPage still hard-codes Meet links.');
+// 四個公開頁的場次一律讀 sessions_public：即將場次走 UpcomingSessions，
+// 歷史場次走 SessionHistory（status='done'）。手寫場次卡與寫死的 Meet 連結
+// 已全數下架，頁尾聯繫區統一為 LineContact（內嵌 QR＋可用的複製鈕）。
+for (const page of ['HomePage', 'PeerGroupPage', 'ParentConsultPage', 'NavigatorConsultPage']) {
+  const path = `src/pages/public/${page}.tsx`;
+  requireText(path, ['<SessionHistory', '<LineContact />']);
+  const source = read(path);
+  if (source.includes('meet.google.com')) throw new Error(`${path} still hard-codes Meet links.`);
+  if (source.includes('id="copyButton"')) throw new Error(`${path} still uses the handler-less copy button.`);
+}
 console.log('Admin operations structural checks passed.');

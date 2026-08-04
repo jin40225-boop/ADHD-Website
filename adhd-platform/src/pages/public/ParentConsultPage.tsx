@@ -1,5 +1,9 @@
 import { Link } from 'react-router-dom';
-import { ArrowUpRight, Clock, Copy, Edit3, Info, Mail, MessageCircle, PlayCircle, Sparkles } from 'lucide-react';
+import { ArrowUpRight, Clock, Edit3, Info, Mail, PlayCircle, Sparkles } from 'lucide-react';
+import { UpcomingSessions } from '@/components/UpcomingSessions';
+import { SessionHistory } from '@/components/SessionHistory';
+import { CopyButton } from '@/components/CopyButton';
+import { LineContact } from '@/components/LineContact';
 
 const BASE = import.meta.env.BASE_URL;
 const TODO_LINKS = {
@@ -51,23 +55,10 @@ export default function ParentConsultPage() {
 </div>
 <div className="bg-green-50 border-l-8 border-line-green p-6 rounded-r-2xl">
 <h4 className="font-bold text-brown text-xl mb-3 flex items-center gap-2">
-<Clock className="w-6 h-6"></Clock> 上半年度開放場次
+<Clock className="w-6 h-6"></Clock> 開放報名場次
                         </h4>
-<p className="text-xs font-bold text-brown mb-2">每月限定２個名額，報名截止時間為該場次活動前一週的晚上 12 點。</p>
-<ul className="text-brown space-y-2 font-bold text-sm">
-<li className="border-b border-green-200 pb-1">
-<strong>【四月場次】4/18</strong>：10:00-11:00 / 11:00-12:00
-                                <div className="text-[10px] text-gray-500 font-normal">截止日：4/11 23:59</div>
-</li>
-<li className="border-b border-green-200 pb-1">
-<strong>【五月場次】5/23</strong>：10:00-11:00 / 11:00-12:00
-                                <div className="text-[10px] text-gray-500 font-normal">截止日：5/16 23:59</div>
-</li>
-<li>
-<strong>【六月場次】6/6</strong>：10:00-11:00 / 11:00-12:00
-                                <div className="text-[10px] text-gray-500 font-normal">截止日：5/30 23:59</div>
-</li>
-</ul>
+<p className="text-xs font-bold text-brown mb-2">每月限定２個名額，報名截止時間為該場次活動前一週的晚上 12 點。名額即時更新。</p>
+<UpcomingSessions projectSlug="parent" registerPath="/parent/register" />
 </div>
 </div>
 <div className="bg-[#E0F7FA] border-2 border-brown p-6 rounded-2xl">
@@ -90,6 +81,7 @@ export default function ParentConsultPage() {
 </a>
 </div>
 </div>
+<SessionHistory projects={[{ slug: 'parent' }]} title="👣 服務軌跡・已完成場次" description="上半年度已完成的親職諮詢場次永久留存，讓新朋友看見這項服務的累積。" />
 </section></div>
 
 <section className="max-w-4xl mx-auto px-4 mt-20 mb-12">
@@ -104,9 +96,8 @@ export default function ParentConsultPage() {
 </div>
 </div>
 </section>
-<div className="bg-[#F0FDF4] border-t border-line-green/20 py-16 mt-20" id="line-contact"><div className="max-w-3xl mx-auto px-4 flex flex-col items-center text-center gap-6"><h4 className="text-3xl font-black text-brown mb-2">加入官方 LINE</h4><p className="text-brown/80 mb-4 text-lg">取得最新活動資訊、連結以及即時提醒！<br/>不錯過任何一場聚會。</p><a className="btn-warm py-4 px-12 bg-line-green text-white hover:opacity-90 shadow-warm border-transparent text-xl w-full md:w-auto" href="https://line.me/R/ti/p/@823pawtr?oat_content=url&amp;ts=06051740" target="_blank"><MessageCircle className="w-6 h-6 mr-2"></MessageCircle> 立即加入好友
-            </a></div></div><div className="bg-gray-100 border-t border-gray-200 py-6" id="donate"><div className="max-w-2xl mx-auto px-4 text-center"><h4 className="text-sm font-bold text-gray-500 mb-1">支持我的行動</h4><p className="text-[10px] text-gray-400 mb-3 leading-tight">服務均為無償進行。若認同理念，歡迎小額贊助維持營運。<br/>(不論是否打賞，都歡迎來信打氣！)</p><div className="inline-block text-left text-xs"><div className="flex items-center justify-center gap-2 text-gray-500"><span>005 土地銀行</span><span className="font-mono">016-212-34037-9</span><button className="text-[10px] bg-gray-200 hover:bg-gray-300 text-gray-600 py-1 px-2 rounded transition-colors flex items-center gap-1" id="copyButton"><Copy className="w-3 h-3"></Copy> 複製
-                    </button></div></div><div className="text-[10px] text-green-500 font-bold mt-1 hidden" id="copyMessage">✓ 已複製</div><div className="flex justify-center gap-4 mt-4 text-[10px] text-gray-400"><a className="hover:text-gray-500 flex items-center gap-1" href="mailto:jin40225@gmail.com"><Mail className="w-3 h-3"></Mail> Email</a><span>© 2026 大A彥宇</span></div></div></div>
+<LineContact />
+<div className="bg-gray-100 border-t border-gray-200 py-6" id="donate"><div className="max-w-2xl mx-auto px-4 text-center"><h4 className="text-sm font-bold text-gray-500 mb-1">支持我的行動</h4><p className="text-[10px] text-gray-400 mb-3 leading-tight">服務均為無償進行。若認同理念，歡迎小額贊助維持營運。<br/>(不論是否打賞，都歡迎來信打氣！)</p><div className="inline-block text-left text-xs"><div className="flex items-center justify-center gap-2 text-gray-500"><span>005 土地銀行</span><span className="font-mono">016-212-34037-9</span><CopyButton value="016-212-34037-9" className="text-[10px] bg-gray-200 hover:bg-gray-300 text-gray-600 py-1 px-2 rounded transition-colors flex items-center gap-1" /></div></div><div className="flex justify-center gap-4 mt-4 text-[10px] text-gray-400"><a className="hover:text-gray-500 flex items-center gap-1" href="mailto:jin40225@gmail.com"><Mail className="w-3 h-3"></Mail> Email</a><span>© 2026 大A彥宇</span></div></div></div>
     </div>
   );
 }

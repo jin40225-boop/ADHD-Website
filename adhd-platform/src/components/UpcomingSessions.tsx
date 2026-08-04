@@ -120,12 +120,27 @@ export function UpcomingSessions({
                 </p>
               ) : null}
               <div className="flex flex-wrap gap-4 text-sm font-bold text-gray-600 bg-white/50 p-3 rounded-lg border border-brown/10">
-                <span className="flex items-center gap-1">
-                  <Calendar className="w-4 h-4" /> {fmtDate(s.startsAt)}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Clock className="w-4 h-4" /> {fmtTime(s.startsAt)} - {fmtTime(s.endsAt)}
-                </span>
+                {/* 帶 slotOptions 的場次（導航計畫每月 1 位）starts_at～ends_at 是整個月的
+                    候選窗口而非單一場次時間，直接印會變成「20:00 - 10:00」這種跨日怪值。 */}
+                {s.slotOptions?.length ? (
+                  <>
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-4 h-4" /> {new Date(s.startsAt).getMonth() + 1} 月・共 {s.slotOptions.length} 個候選時段
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-4 h-4" /> 確切時段於報名頁勾選
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-4 h-4" /> {fmtDate(s.startsAt)}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-4 h-4" /> {fmtTime(s.startsAt)} - {fmtTime(s.endsAt)}
+                    </span>
+                  </>
+                )}
                 <span className="flex items-center gap-1">
                   <Users className="w-4 h-4" /> {notYetOpen ? '尚未開放報名' : isFull ? '已額滿' : `剩 ${remaining} 名`}
                 </span>

@@ -18,7 +18,7 @@ export default function AcknowledgementsContent() {
     <p className="text-brown leading-relaxed my-4">如果您有推薦的醫師，歡迎分享您的就醫經驗，以協助更多 ADHD 家長與夥伴找到合適的醫療資源。</p>
     <p className="text-brown leading-relaxed my-4">若發現資料有缺漏或錯誤，請隨時通知我，我將持續更新與修正，以確保資訊的準確性與完整性。</p>
     <p className="text-brown leading-relaxed my-4">感謝所有支持與貢獻此資料庫的家長與社群夥伴。也謝謝Elyse提供相關的法律協助，讓網站更加完善。</p>
-    <h2 className="text-2xl font-bold text-brown mt-8 mb-4">頁尾：家長推薦與醫療地圖回饋單（頁內嵌 Notion 表單）</h2>
+    <h2 className="text-2xl font-bold text-brown mt-8 mb-4">家長推薦與醫療地圖回饋單</h2>
     <p className="text-brown leading-relaxed my-4">若醫師異動、資訊有錯漏等，請大家協助回報！我會盡速改正！非常感謝。</p>
     <p className="text-brown leading-relaxed my-4">另外請注意，家長及大A推薦的醫師名單，後續我還是會先去查找驗證資訊，因此不會立即登錄，會需要一點時間。</p>
     <p className="text-brown leading-relaxed my-4">此表單的回覆將會顯示在網頁上。</p>

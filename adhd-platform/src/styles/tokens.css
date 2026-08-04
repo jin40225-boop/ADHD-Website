@@ -150,8 +150,9 @@
   background: linear-gradient(transparent 60%, var(--accent-orange) 60%);
 }
 
-/* session-card：場次摺疊卡（舊一頁式平移；HomePage/PeerGroupPage 共 94 處引用，
-   樣式與摺疊互動由 useSessionCardToggle 搭配 .open 切換） */
+/* session-card：場次卡外框，現由 UpcomingSessions 產生。
+   舊一頁式的 .session-header／.session-content 摺疊樣式與 useSessionCardToggle
+   已隨手寫場次卡一併移除——場次改由資料庫驅動後不再需要摺疊。 */
 .session-card {
   background: #ffffff;
   border: 2px solid var(--text-brown);
@@ -159,27 +160,6 @@
   margin-bottom: 16px;
   overflow: hidden;
   transition: all 0.3s ease;
-}
-.session-header {
-  padding: 16px;
-  cursor: pointer;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.session-header:hover {
-  background-color: rgba(0, 0, 0, 0.03);
-}
-.session-content {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.3s ease-out;
-  border-top: 1px dashed var(--text-brown);
-  background-color: #fffde7;
-}
-.session-content.open {
-  max-height: 1000px;
-  transition: max-height 0.5s ease-in;
 }
 .session-tag {
   font-size: 0.75rem;

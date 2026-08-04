@@ -2,33 +2,18 @@
 export default function RecommendationDbContent() {
   return (
     <article className="prose max-w-none">
-      <h1 className="text-3xl font-extrabold text-brown mb-6 border-b-2 border-brown pb-2">ADHD就醫家長推薦資料庫</h1>
-    <blockquote className="border-l-4 border-highlight bg-cream p-4 rounded-r-xl my-4 text-brown italic shadow-sm">
-    <p className="leading-relaxed my-2">Notion 備份 2026-07-11，頁面 id=d9d01c6a-326f-44d9-8446-f5870d3683fe</p>
-    </blockquote>
-    <img src={`${import.meta.env.BASE_URL}assets/map-preview.png`} alt="ADHD 就醫家長推薦資料庫預覽" loading="lazy" decoding="async" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
-    <p className="text-brown leading-relaxed my-4">💬</p>
-    <ul className="list-disc pl-6 my-4 space-y-2 text-brown">
+      <h1 className="text-3xl font-extrabold text-brown mb-6 border-b-2 border-brown pb-2">ADHD就醫家長推薦資料庫</h1>    <img src={`${import.meta.env.BASE_URL}assets/map-preview.png`} alt="ADHD 就醫家長推薦資料庫預覽" loading="lazy" decoding="async" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />    <ul className="list-disc pl-6 my-4 space-y-2 text-brown">
     <li className="leading-relaxed">ADHD 醫療資料庫  快捷鍵及使用聲明   ←請點我</li>
-    </ul>
-    <p className="text-brown leading-relaxed my-4">💬</p>
-    <h1 className="text-3xl font-extrabold text-brown mb-6 border-b-2 border-brown pb-2">ADHD 醫療資料庫  使用教學</h1>
+    </ul>    <h1 className="text-3xl font-extrabold text-brown mb-6 border-b-2 border-brown pb-2">ADHD 醫療資料庫  使用教學</h1>
     <p className="text-brown leading-relaxed my-4">💬 使用聲明</p>
     <p className="text-brown leading-relaxed my-4">「ADHD 醫療地圖」內的資訊來自 ADHD 患者與家長的個人經驗分享進行推薦，僅供參考。本網站不對資料的完整性、準確性或時效性做出保證，亦不為任何一位醫生背書。</p>
-    <h3 className="text-xl font-semibold text-brown mt-6 mb-3">(可直接按下面快捷鍵、往下滑跳過)</h3>
-    <p className="text-brown leading-relaxed my-4">💬</p>
-    <h2 className="text-2xl font-bold text-brown mt-8 mb-4">「推薦醫師及醫院資訊快捷」及各項快捷</h2>
+    <h3 className="text-xl font-semibold text-brown mt-6 mb-3">(可直接按下面快捷鍵、往下滑跳過)</h3>    <h2 className="text-2xl font-bold text-brown mt-8 mb-4">「推薦醫師及醫院資訊快捷」及各項快捷</h2>
     <h2 className="text-2xl font-bold text-brown mt-8 mb-4">「推薦醫師及就醫經驗分享」</h2>
     <p className="text-brown leading-relaxed my-4">說明：最底部↓有表單，可直接在本頁面填寫，填寫後不會立即更新，我們團隊會進行後續驗證後才登錄。</p>
-    <p className="text-brown leading-relaxed my-4">↓如果你想直接跳轉填寫↓</p>
-    <blockquote className="border-l-4 border-highlight bg-cream p-4 rounded-r-xl my-4 text-brown italic shadow-sm">
-    <p className="leading-relaxed my-2">▲▲Untitled ▼▼  ← 點這裡可以直接進入表單進行輸入。</p>
-    </blockquote>
-    <h2 className="text-2xl font-bold text-brown mt-8 mb-4">「醫療地圖」</h2>
+    <p className="text-brown leading-relaxed my-4">↓如果你想直接跳轉填寫↓</p>    <h2 className="text-2xl font-bold text-brown mt-8 mb-4">「醫療地圖」</h2>
     <p className="text-brown leading-relaxed my-4">說明：可以直接點選，就會進入地圖版面，直接點擊地圖中的地點即可展開資訊。</p>
-    <p className="text-brown leading-relaxed my-4">https://www.google.com/maps/d/embed?mid=1evABqI3MGLvGXp3lUAPR2_5TBZdAaGY&ehbc=2E312F</p>
     <h2 className="text-2xl font-bold text-brown mt-8 mb-4">↓直接點入資料庫可直接點下面↓</h2>
-    <p className="text-brown leading-relaxed my-4">ADHD就醫家長推薦資料庫</p>
+    <p className="text-brown leading-relaxed my-4"><a className="font-bold underline" href={`${import.meta.env.BASE_URL}map`}>ADHD就醫家長推薦資料庫</a></p>
     <hr className="border-t-2 border-brown my-8" />
     <ul className="list-disc pl-6 my-4 space-y-2 text-brown">
     <li className="leading-relaxed">資料庫使用教學  ←請點我</li>
@@ -36,8 +21,6 @@ export default function RecommendationDbContent() {
     <h1 className="text-3xl font-extrabold text-brown mb-6 border-b-2 border-brown pb-2">使用教學資料庫部分</h1>
     <h2 className="text-2xl font-bold text-brown mt-8 mb-4">在醫師姓名處有個開啟按紐，點擊後即可進入完整頁面查看完整內容。(如圖)</h2>
     <img src={`${import.meta.env.BASE_URL}assets/map-guide-search.jpg`} alt="推薦資料庫關鍵字搜尋操作示範" loading="lazy" decoding="async" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
-    <img src={`${import.meta.env.BASE_URL}assets/map-guide-search.jpg`} alt="推薦資料庫關鍵字搜尋操作示範" loading="lazy" decoding="async" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
-    <hr className="border-t-2 border-brown my-8" />
     <hr className="border-t-2 border-brown my-8" />
     <ul className="list-disc pl-6 my-4 space-y-2 text-brown">
     <li className="leading-relaxed">地圖使用教學 ←請點我</li>
@@ -51,12 +34,7 @@ export default function RecommendationDbContent() {
     <p className="text-brown leading-relaxed my-4">🔹 搜尋特定地區：在右上角的 搜尋欄 輸入 新北 或其他縣市名稱，即可篩選當地的推薦醫師。</p>
     <p className="text-brown leading-relaxed my-4">🔹 查閱詳細資訊：點擊 醫師名稱，可查看推薦者提供的評價、推薦理由等詳細內容。</p>
     <img src={`${import.meta.env.BASE_URL}assets/map-guide-search.jpg`} alt="推薦資料庫關鍵字搜尋操作示範" loading="lazy" decoding="async" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
-    <p className="text-brown leading-relaxed my-4">可以進入資料庫後，按搜尋，來搜尋需要的資訊。</p>
-    <ul className="list-disc pl-6 my-4 space-y-2 text-brown">
-    <li className="leading-relaxed">ADHD 醫療資料庫（地圖）謝誌與歷程說明</li>
-    </ul>
-    <p className="text-brown leading-relaxed my-4">💬</p>
-    <h1 className="text-3xl font-extrabold text-brown mb-6 border-b-2 border-brown pb-2">ADHD 醫療資料庫（地圖）謝誌與歷程說明</h1>
+    <p className="text-brown leading-relaxed my-4">可以進入資料庫後，按搜尋，來搜尋需要的資訊。</p>    <h1 className="text-3xl font-extrabold text-brown mb-6 border-b-2 border-brown pb-2">ADHD 醫療資料庫（地圖）謝誌與歷程說明</h1>
     <p className="text-brown leading-relaxed my-4">大家好，我是大A哥哥林彥宇，本身為成人 ADHD。</p>
     <p className="text-brown leading-relaxed my-4">ADHD 醫療資料庫（地圖）旨在協助家長及成人 ADHD 尋找合適的醫師與醫療資源。</p>
     <p className="text-brown leading-relaxed my-4">「醫療地圖」的概念最初由 ADHD 大孩子 Elyse 在 113 年的合作企劃中提出，我們希望透過蒐集醫師資訊，建立手機應用程式及網路平台，讓家長能夠有所依循。然而，因為種種因素，該企劃當時暫時擱置。</p>
@@ -74,22 +52,7 @@ export default function RecommendationDbContent() {
     <p className="text-brown leading-relaxed my-4">感謝所有支持與貢獻此資料庫的家長與社群夥伴。也謝謝Elyse提供相關的法律協助，讓網站更加完善。</p>
     <hr className="border-t-2 border-brown my-8" />
     <h2 className="text-2xl font-bold text-brown mt-8 mb-4">↓依照地區可直接點下面↓</h2>
-    <p className="text-brown leading-relaxed my-4">《子頁面》台北市 (id=1aa8b808-4dad-80ee-85ad-c0a55797a610)</p>
-    <p className="text-brown leading-relaxed my-4">《子頁面》新北市 (id=1aa8b808-4dad-8080-855b-ffbf7d645926)</p>
-    <p className="text-brown leading-relaxed my-4">《子頁面》桃園市 (id=1aa8b808-4dad-8003-aa5f-f731c55dd036)</p>
-    <p className="text-brown leading-relaxed my-4">《子頁面》新竹縣市 (id=1aa8b808-4dad-808b-a018-d14e77d4a2b8)</p>
-    <p className="text-brown leading-relaxed my-4">《子頁面》苗栗縣市 (id=1aa8b808-4dad-8030-80c1-c9dcc7ede1b4)</p>
-    <p className="text-brown leading-relaxed my-4">《子頁面》臺中市 (id=1aa8b808-4dad-8087-b4dc-c3b8cf001362)</p>
-    <p className="text-brown leading-relaxed my-4">《子頁面》彰化縣市 (id=1aa8b808-4dad-80bb-9388-c9cad579d0c7)</p>
-    <p className="text-brown leading-relaxed my-4">《子頁面》雲林縣 (id=1aa8b808-4dad-8022-a3ee-da696c8955f2)</p>
-    <p className="text-brown leading-relaxed my-4">《子頁面》嘉義縣市 (id=1aa8b808-4dad-8063-a29e-c60bdab17e19)</p>
-    <p className="text-brown leading-relaxed my-4">《子頁面》臺南市 (id=1aa8b808-4dad-805f-970c-e039ad89a55c)</p>
-    <p className="text-brown leading-relaxed my-4">《子頁面》高雄市 (id=1aa8b808-4dad-802e-bdda-ee856a51b442)</p>
-    <p className="text-brown leading-relaxed my-4">《子頁面》屏東縣 (id=1aa8b808-4dad-801c-b9dd-e740db6439e6)</p>
-    <p className="text-brown leading-relaxed my-4">《子頁面》臺東縣 (id=1aa8b808-4dad-8067-81c4-fd7c571cccb5)</p>
-    <p className="text-brown leading-relaxed my-4">《子頁面》南投縣 (id=1aa8b808-4dad-80d8-ac66-fe49abc21595)</p>
-    <p className="text-brown leading-relaxed my-4">《子頁面》花蓮縣 (id=1aa8b808-4dad-8068-95eb-f4f00b4a86cc)</p>
-    <p className="text-brown leading-relaxed my-4">《子頁面》宜蘭市 (id=1aa8b808-4dad-8096-ad28-e532afefa402)</p>
+    <p className="text-brown leading-relaxed my-4">各縣市的推薦名單已整合進站內的 <a className="font-bold underline" href={`${import.meta.env.BASE_URL}map`}>ADHD 就醫家長推薦地圖</a>，可直接依地區篩選查閱。</p>
     <img src={`${import.meta.env.BASE_URL}assets/map-guide-filter.jpg`} alt="推薦資料庫條件篩選操作示範" loading="lazy" decoding="async" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
     <iframe
       src="https://www.google.com/maps/d/embed?mid=1evABqI3MGLvGXp3lUAPR2_5TBZdAaGY&ehbc=2E312F"
@@ -98,10 +61,7 @@ export default function RecommendationDbContent() {
       style={{ height: '480px' }}
       loading="lazy"
     ></iframe>
-    <img src={`${import.meta.env.BASE_URL}assets/map-guide-filter.jpg`} alt="推薦資料庫條件篩選操作示範" loading="lazy" decoding="async" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
-    <p className="text-brown leading-relaxed my-4">《子資料庫》Untitled (id=19b8b808-4dad-8003-ba75-e4f6939739f1)</p>
-    <p className="text-brown leading-relaxed my-4">💬</p>
-    <h2 className="text-2xl font-bold text-brown mt-8 mb-4">後續更新</h2>
+    <img src={`${import.meta.env.BASE_URL}assets/map-guide-filter.jpg`} alt="推薦資料庫條件篩選操作示範" loading="lazy" decoding="async" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />    <h2 className="text-2xl font-bold text-brown mt-8 mb-4">後續更新</h2>
     <h2 className="text-2xl font-bold text-brown mt-8 mb-4">我原本計劃完成 使用說明與快捷鍵優化，但因為從113年9月開始製作至今已經拖延太久(我只能利用下班到家的一點時間製作，速度非常慢...…)因此先行釋出資料庫，讓大家提前使用。我將繼續補充與優化內容，讓使用體驗更流暢。</h2>
     <h2 className="text-2xl font-bold text-brown mt-8 mb-4">🔹 若有建議或發現錯誤，請留言告知，我會持續修正與擴充資料庫！**</h2>
     <h2 className="text-2xl font-bold text-brown mt-8 mb-4">感謝大家的支持與協助，讓我們一起讓這份資源更完整、更有幫助！ 💪✨</h2>

@@ -28,34 +28,50 @@ function rocYear(iso: string) {
   return new Date(iso).getFullYear() - 1911;
 }
 
+/** 一個要納入軌跡的服務；`label` 有值時，該服務的場次會標上服務標籤。 */
+export interface SessionHistorySource {
+  slug: string;
+  label?: string;
+}
+
 export interface SessionHistoryProps {
-  projectSlug?: string;
+  /** 要合併顯示的服務。多個服務會依日期交錯排列（首頁用）。 */
+  projects?: SessionHistorySource[];
   /** 標題文字；不同服務頁可自訂。 */
   title?: string;
   description?: string;
 }
 
+type TaggedSession = SessionSlot & { serviceLabel?: string };
+
 export function SessionHistory({
-  projectSlug = 'peer-group',
+  projects = [{ slug: 'peer-group' }],
   title = '👣 活動軌跡・已完成場次',
   description = '這些是我們過去美好的回憶！所有場次永久留存，讓新朋友看見這個社群的累積。',
 }: SessionHistoryProps) {
-  const [sessions, setSessions] = useState<SessionSlot[] | null>(null);
+  const [sessions, setSessions] = useState<TaggedSession[] | null>(null);
+  // 依 slug 比對即可，避免呼叫端每次 render 傳入新陣列而重跑。
+  const sourceKey = projects.map((p) => `${p.slug}:${p.label ?? ''}`).join(',');
 
   useEffect(() => {
     let alive = true;
     (async () => {
       try {
-        const project = await getProjectBySlug(projectSlug);
-        if (!project) throw new Error('project not found');
-        const list = await getPastSessions(project.id);
-        if (alive) setSessions(list);
+        const lists = await Promise.all(projects.map(async (source) => {
+          const project = await getProjectBySlug(source.slug);
+          if (!project) return [];
+          const list = await getPastSessions(project.id);
+          return list.map((s) => ({ ...s, serviceLabel: source.label }));
+        }));
+        const merged = lists.flat().sort((a, b) => b.startsAt.localeCompare(a.startsAt));
+        if (alive) setSessions(merged);
       } catch {
         if (alive) setSessions([]);
       }
     })();
     return () => { alive = false; };
-  }, [projectSlug]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sourceKey]);
 
   if (sessions === null || sessions.length === 0) return null;
 
@@ -82,6 +98,11 @@ export function SessionHistory({
                     <span className="inline-block bg-gray-200 text-gray-600 text-xs font-bold px-3 py-1 rounded-full border border-brown/20">
                       已結束
                     </span>
+                    {s.serviceLabel ? (
+                      <span className="inline-block bg-white text-brown/70 text-xs font-bold px-3 py-1 rounded-full border border-brown/20 ml-2">
+                        {s.serviceLabel}
+                      </span>
+                    ) : null}
                     <p className="font-bold text-brown mt-2">
                       {fmt(s.startsAt)} {s.topic ?? s.title}
                     </p>
