@@ -55,6 +55,8 @@ requireText('supabase/migrations/20260804000014_audit_registration_email.sql', [
 requireText('src/admin/operations/SessionTable.tsx', ['onCapacity(', 'onDeadline(', 'onPublish(', 'ops-switch']);
 requireText('src/admin/pages/SessionsPage.tsx', ['<SessionTable', 'topic:', 'guest:', '神秘驚喜']);
 requireText('src/lib/api.ts', ['topic: session.topic', 'guest: session.guest', 'registration_deadline: session.registrationDeadline', 'slot_options: session.slotOptions']);
+// 場次的名額、上下架、主題與客座都可直接改，同樣必須留歷程。
+requireText('supabase/migrations/20260804000016_session_admin_audit.sql', ['trg_sessions_admin_audit', 'log_session_admin_edit']);
 requireText('src/routes/RegisterPage.tsx', ['報名只接受資料庫正式場次']);
 if (read('src/routes/RegisterPage.tsx').includes('if (sessions.length === 0)')) throw new Error('Static registration slot fallback still exists.');
 for (const slug of ['submit-registration', 'send-email-v2', 'gmail-sync', 'team-invite']) {

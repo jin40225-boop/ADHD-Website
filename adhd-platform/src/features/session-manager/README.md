@@ -1,2 +1,5 @@
 # 場次管理
-`SessionManager` 需要 `sessions`、`instructors`，並以 `onSave(session)`、`onCreateCalendarEvent(session)` 交由 CLAUDE 的資料／Calendar 層執行。元件不建立 Meet、不存取行事曆；mock 為假資料。
+
+場次的後台介面已改為 `admin/operations/SessionTable.tsx`＋`admin/pages/SessionsPage.tsx`（03_v4 的可編輯表格與詳情抽屜）。原本的 `SessionManager` 彈窗編輯器隨該次改寫移除。
+
+此模組現在只留 `mockInstructors`，供 `InstructorSchedulingPage` 在 Supabase 未設定時顯示示意資料。

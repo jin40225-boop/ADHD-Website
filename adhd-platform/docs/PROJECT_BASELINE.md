@@ -470,7 +470,18 @@ migration `20260804000009`：移除標題補述、刪掉三個已被取代的表
 
 ⚠ `adminSaveSession` 原本的 payload **不含 `topic`／`guest`／`registration_deadline`／`slot_options`**，等於「公布神秘驚喜」沒有寫入路徑。本次補上；空字串存成 `null`（前台是以「有沒有值」決定顯不顯示神秘驚喜）。
 
-⚠ 改寫後 `features/session-manager` 的 `SessionManager` 元件與 `mockSessions` 無人引用（`mockInstructors` 仍被講師排班頁使用）。依「刪除類動作先確認」未刪除，待使用者裁決。
+改寫後 `features/session-manager` 的 `SessionManager` 元件與 `mockSessions` 無人引用，經使用者裁決**隨本輪移除**（連同只服務該元件的 `session-manager.css`）；`mockInstructors` 保留給 `InstructorSchedulingPage`，README 改為指向新位置。
+
+### 場次修改歷程（migration `20260804000016`，已套用）
+
+`trg_sessions_admin_audit` 記 `capacity`／`status`／`registration_deadline`／`topic`／`guest`／`slot_options`／`starts_at`／`ends_at` 的前後值，action 為 `session_admin_edit`。
+
+⚠ 兩個刻意的排除，理由與報名那支同源——稽核要留下人工決策，不是機器的例行動作：
+
+- **不記 `booked_count`**：它由 `enforce_session_capacity` 與 `admin_move_registration_sessions` 自動維護，每筆報名動作都會動到，而那些動作在報名端已各自留有稽核。
+- **`status` 只在 `booked_count` 未同時變動時才記**。這是區分人工與自動的可靠判準：自動轉 `full`／`open` 一定與 `booked_count` 在同一個 UPDATE 內發生，而後台上下架（`adminSaveSession`）的 payload 不含 `booked_count`。少了這個條件，每一筆讓場次額滿的報名都會多寫一列場次稽核。
+
+驗證：在單一 `do` 區塊內建立探針場次 → 改名額（稽核 1 列）→ 上架（2 列）→ 公布主題＋客座（3 列，兩欄同列）→ 模擬自動額滿即 `status` 與 `booked_count` 同時變（**仍是 3 列，未寫入**），最後以 `raise exception` 整段回滾。事後確認：探針場次 0 筆、`session_admin_edit` 0 列、場次總數仍 42、trigger 已安裝。
 
 驗證：表格抽成純元件 `SessionTable.tsx` 後以假資料實測——四種狀態的顯示與 toggle（開放中/額滿/未上架/已完成，已完成列顯示「—」不給 toggle）、名額四種輸入（低於已報名→拒絕還原、等於已報名→送出、清空→還原、與原值相同→不送出，全程只送出一次）、截止改值送出、點服務線開詳情。
 
