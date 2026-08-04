@@ -156,7 +156,9 @@ npm audit --omit=dev       0 high vulnerabilities
 | Calendar／Meet | 程式與接點存在，尚未做本輪真實 E2E | 指定測試場次，確認事件、Meet URL、DB 回寫與重試 |
 | CAPTCHA | 後端可讀 `TURNSTILE_SECRET_KEY`，前端 widget 未啟用 | 前後端 token 流程、錯誤 UX 與無障礙驗證完成 |
 | 速率限制 | 已啟用 | 持續監測誤擋、繞過與管理者查核方式 |
-| `gmail-sync` HTML 轉純文字修正 | 2026-08-04 已部署（version 5 → **6**，ACTIVE）；**尚未做管理員手動同步的端到端驗證** | 管理員在後台觸發一次增量同步，回傳 `success` 且新進信件內文為純文字（無 CSS 片段） |
+| `gmail-sync` HTML 轉純文字修正 | 2026-08-04 已部署（version 5 → **6**，ACTIVE）；使用者回報後台手動增量同步成功（未取得筆數） | 下次有新進信件時，確認收件匣內文為純文字（無 CSS 片段） |
+| 親職報名「孩子可增減多筆」 | 現行 `FormFieldType` 只有 text/textarea/email/phone/select/multiselect/checkbox，無可重複群組型別；2026-08-04 插隊項僅補單一孩子的服藥與疾病史欄位 | Phase 2 新版報名頁實作 repeatable renderer，並整併欄位 key |
+| 報名確認頁顯示場次 UUID | 現行 `/parent/register` 確認步驟的「選擇場次」顯示原始 session UUID 而非可讀標籤 | Phase 2 改為顯示場次標題與時段 |
 | react-router 漏洞 | `npm audit` 有 2 個 moderate（未達 CI 的 high 門檻） | 評估升級 react-router / react-router-dom 後重跑完整驗收 |
 
 「檔案存在」、「Function 已部署」或「測試回傳 400／401」不等於外部服務端到端完成；上述缺口必須用指定測試帳號與測試資料驗收後才能關閉。
@@ -224,6 +226,7 @@ UI 唯一基準為 `重構審閱稿_2026-08-04/` 內的 `01_v3`、`02_v2`、`03_
 
 | 日期 | 程式基準 | 狀態 | 證據 |
 |---|---|---|---|
+| 2026-08-04 | `c2d6293` | Phase 1 插隊項：親職下半年 15 場次建立＋報名表單新增 10 欄位（migration `20260804000001`）；`gmail-sync` 補部署 v6 | `migration list --linked` 13 版全對齊；`/parent/register` 完整報名實測成功、額滿前後端雙重驗證 |
 | 2026-08-04 | `c2d6293` | 全面重構 Phase 0：`8a9bb42` 合併進 `main` 並部署；`check:operations` 納入 CI；正式站行動版 390px 驗證無水平溢位 | Actions `30882280259` success、CI log 出現 `Admin operations structural checks passed.`、資源切換為 `index-B_a12VJU.js`、9 個前台路由 390px 量測 `scrollWidth == clientWidth` 且無 console error |
 | 2026-08-02 | `766b71a` | Gmail 安全同步修復、migration 對帳、介面狀態文字校正與正式基準部署；正式站已切換新版資源 | Actions `30753845211`、首頁／後台／收件匣 HTTP 200、資源 `index-BGzeX90A.js` |
 | 2026-07-24 | `60230a2` | 整合行政營運中心正式上線；資料庫 migration 與 4 個新 Functions 已發布 | Actions `30099005645`、正式路由抽查、登入後台桌面／行動版驗證 |
@@ -264,3 +267,33 @@ UI 唯一基準為 `重構審閱稿_2026-08-04/` 內的 `01_v3`、`02_v2`、`03_
 - **未完成**：管理員手動增量同步的端到端驗證需登入後台操作，尚未執行；見第 6 節缺口表。
 - `migration list --linked`（同日）：12 個版本 local／remote 全部成對，**無任何漂移**。
 - ⚠️ 發現：此 Supabase 專案同時託管另一專案「白露 LINE 工作助手」的 Function（`line-webhook` v49、`reminder-cron` v17，entrypoint 指向 `line-assistant` repo）。ADHD 平台與該專案共用同一個 Supabase project／資料庫。後續 `db push` 前必須先確認表名無衝突、且不影響該專案。
+
+## 13. 2026-08-04 全面重構 Phase 1（插隊項：親職下半年場次與表單欄位）
+
+### 為何插隊
+
+親職 8/16 場次的報名截止為 8/9，早於 Phase 2 新版報名頁的完成時程。現行 `/parent/register` 是 schema-driven，且 `RegisterPage.tsx` 會用 DB 場次取代表單裡的靜態 `preferredSlots` 選項，因此只要建好 `sessions`，現行頁面即可立即收件。經使用者核准後將此項提前執行。
+
+### 施工前唯讀盤點（共用專案風險）
+
+- `inspect db table-stats --linked` 結果：白露 LINE 助手的 11 張表全部位於 **`personal_assistant` schema**，與 ADHD 的 `public` schema 無命名衝突。
+- 計畫新表 `contact_groups`、`contact_group_members`、`attendance_confirmations`、`generated_documents` 遠端皆不存在，可安全建立。
+- `email_templates` **已存在**（2 筆），Phase 1 後續應以 INSERT 種子處理，不可 `create table`。
+- `public` 內有 4 張非 ADHD migration 建立的空表：`news`、`site_content`、`members`、`contact_messages`（皆 0 筆，來源不明）。**不得刪除或修改**，列入 Phase 5 收尾清點再查來源。
+
+### 變更內容（migration `20260804000001_parent_h2_sessions_and_fields.sql`）
+
+- 新增 15 筆 `public.sessions`：親職 5 日（8/16、9/6、10/11、11/8、12/20）× 3 時段（09–10／10–11／11–12），`capacity=1`、`status='open'`。施工前 `sessions` 表內親職場次為 0 筆。
+- 更新 1 筆 `public.form_schemas`（parent）：新增 10 個欄位（`preferredName`、`relationshipOther`、`familyType`、`attendMode`、`attendWith`、`contactTimes`、`contactTimeNote`、`contactMethod`、`childMedication`、`childOtherConditions`、`consultTopics`）。
+- **相容性策略：純新增**。既有 key（`parentName`、`childName`、`childGender` 等）一律不改名、不刪除，因為 `registrations` 已有 97 筆歷史資料使用舊 key，改名會使後台詳情讀不到值。欄位整併留待 Phase 2。
+
+### 驗收證據
+
+- `migration list --linked`：13 個版本 local／remote 全部成對，單邊項目 0。
+- `sessions_public` 查詢：15 筆親職場次全部建立，時間與裁決 2 一致（Asia/Taipei）。
+- `/parent/register` 390px 實測：`scrollWidth == clientWidth == 390`，10 個新欄位全部正確渲染，15 個場次選項全部列出。
+- 完整報名流程實測（虛構測試資料，時段選 12/20 11:00–12:00 以避開 8/16 急件）：填寫 → 確認頁 → 送出 → 「報名已送出！」；DB 該場次 `booked_count` 由 0 → 1、`status` 自動由 `open` → `full`。
+- 額滿邏輯雙重驗證：
+  - 前端：重載表單後該時段顯示「（剩 0 名）（額滿）」且 `disabled=true`，其餘 14 場維持可選。
+  - 後端：直接對 `submit-registration` 以該場次送出第 2 筆 → **HTTP 409 `SESSION_FULL_OR_CLOSED`**，且 `booked_count` 維持 1，未產生多餘預約。
+- ⚠️ 測試殘留：正式資料庫留有 1 筆測試報名（`phase1-test@example.com`，備註標示「【系統測試】2026-08-04 Phase 1 驗收，請刪除此筆」），佔用 12/20 11:00–12:00 名額。應於後台將其退回或刪除以釋出名額。
