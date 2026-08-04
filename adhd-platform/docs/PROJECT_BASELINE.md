@@ -156,7 +156,7 @@ npm audit --omit=dev       0 high vulnerabilities
 | Calendar／Meet | 程式與接點存在，尚未做本輪真實 E2E | 指定測試場次，確認事件、Meet URL、DB 回寫與重試 |
 | CAPTCHA | 後端可讀 `TURNSTILE_SECRET_KEY`，前端 widget 未啟用 | 前後端 token 流程、錯誤 UX 與無障礙驗證完成 |
 | 速率限制 | 已啟用 | 持續監測誤擋、繞過與管理者查核方式 |
-| `gmail-sync` HTML 轉純文字修正 | `8a9bb42` 已改 `supabase/functions/gmail-sync/index.ts`，但 Pages workflow 不部署 Edge Function，正式環境仍是舊版 | 執行 `npx supabase functions deploy gmail-sync` 後，以測試信驗證收件匣不再顯示 CSS 片段 |
+| `gmail-sync` HTML 轉純文字修正 | 2026-08-04 已部署（version 5 → **6**，ACTIVE）；**尚未做管理員手動同步的端到端驗證** | 管理員在後台觸發一次增量同步，回傳 `success` 且新進信件內文為純文字（無 CSS 片段） |
 | react-router 漏洞 | `npm audit` 有 2 個 moderate（未達 CI 的 high 門檻） | 評估升級 react-router / react-router-dom 後重跑完整驗收 |
 
 「檔案存在」、「Function 已部署」或「測試回傳 400／401」不等於外部服務端到端完成；上述缺口必須用指定測試帳號與測試資料驗收後才能關閉。
@@ -253,4 +253,14 @@ UI 唯一基準為 `重構審閱稿_2026-08-04/` 內的 `01_v3`、`02_v2`、`03_
 - `check:operations` 加入 `.github/workflows/deploy.yml`（commit `c2d6293`），位置在 `typecheck` 之後、`deploy` 之前。CI log 已確認輸出 `Admin operations structural checks passed.`。
 - 部署：Actions run `30882280259` `completed / success`，`pages_build_version = c2d6293`，正式站資源由 `index-BGzeX90A.js` 切換為 `index-B_a12VJU.js`。
 - 390px 行動版實測（正式站，量測 `document.documentElement`）：`/`、`/parent`、`/parent/register`、`/peer-group`、`/peer-group/register`、`/navigator`、`/navigator/register`、`/guide`、`/articles` 共 9 個路由，`scrollWidth` 均等於 `clientWidth`（390），溢位為 0，無 console error。首頁的裝飾性絕對定位元素仍超出視窗邊界，但已被 `overflow-x-hidden` 裁切，不產生水平捲動。
-- 本階段未觸碰 Supabase：未執行 `db push`、未部署 Edge Function、未變更 secrets 或正式資料。
+- Phase 0 主體未觸碰 Supabase：未執行 `db push`、未變更 secrets 或正式資料。
+
+### Phase 0 收尾：gmail-sync Edge Function 部署（2026-08-04）
+
+- 背景：`8a9bb42` 修改了 `supabase/functions/gmail-sync/index.ts`（收信 HTML 轉純文字），但 GitHub Pages workflow 只部署前端，造成正式後端與 `main` 程式基準版本漂移。經使用者核准後補部署。
+- 執行：`npx supabase functions deploy gmail-sync --project-ref sssseazkhiswjhtmbluh`
+- 結果：`Deployed Functions.`；`functions list` 確認 `gmail-sync` `status=ACTIVE`、`version` 由 **5 → 6**、`updated_at = 2026-08-04 14:21:47`（本地時間）。
+- 煙霧測試：未帶 JWT 對 `https://sssseazkhiswjhtmbluh.supabase.co/functions/v1/gmail-sync` POST → **401 Unauthorized**（`verify_jwt=true`，符合預期，未讀取任何信件）。
+- **未完成**：管理員手動增量同步的端到端驗證需登入後台操作，尚未執行；見第 6 節缺口表。
+- `migration list --linked`（同日）：12 個版本 local／remote 全部成對，**無任何漂移**。
+- ⚠️ 發現：此 Supabase 專案同時託管另一專案「白露 LINE 工作助手」的 Function（`line-webhook` v49、`reminder-cron` v17，entrypoint 指向 `line-assistant` repo）。ADHD 平台與該專案共用同一個 Supabase project／資料庫。後續 `db push` 前必須先確認表名無衝突、且不影響該專案。
