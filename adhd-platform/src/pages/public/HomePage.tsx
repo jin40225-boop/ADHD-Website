@@ -125,23 +125,10 @@ export default function HomePage() {
 </div>
 <div className="bg-green-50 border-l-8 border-line-green p-6 rounded-r-2xl">
 <h4 className="font-bold text-brown text-xl mb-3 flex items-center gap-2">
-<Clock className="w-6 h-6"></Clock> 上半年度開放場次
+<Clock className="w-6 h-6"></Clock> 開放報名場次
                         </h4>
-<p className="text-xs font-bold text-brown mb-2">每月限定２個名額，報名截止時間為該場次活動前一週的晚上 12 點。</p>
-<ul className="text-brown space-y-2 font-bold text-sm">
-<li className="border-b border-green-200 pb-1">
-<strong>【四月場次】4/18</strong>：10:00-11:00 / 11:00-12:00
-                                <div className="text-[10px] text-gray-500 font-normal">截止日：4/11 23:59</div>
-</li>
-<li className="border-b border-green-200 pb-1">
-<strong>【五月場次】5/23</strong>：10:00-11:00 / 11:00-12:00
-                                <div className="text-[10px] text-gray-500 font-normal">截止日：5/16 23:59</div>
-</li>
-<li>
-<strong>【六月場次】6/6</strong>：10:00-11:00 / 11:00-12:00
-                                <div className="text-[10px] text-gray-500 font-normal">截止日：5/30 23:59</div>
-</li>
-</ul>
+<p className="text-xs font-bold text-brown mb-2">每月限定２個名額，報名截止時間為該場次活動前一週的晚上 12 點。名額即時更新。</p>
+<UpcomingSessions projectSlug="parent" registerPath="/parent/register" />
 </div>
 </div>
 <div className="bg-[#E0F7FA] border-2 border-brown p-6 rounded-2xl">

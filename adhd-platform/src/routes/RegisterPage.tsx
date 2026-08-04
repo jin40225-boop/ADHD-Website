@@ -152,10 +152,11 @@ export default function RegisterPage({ slug, showPastSessions = false }: { slug:
     const withoutStatic = schema.fields.filter(
       (f) => f.key !== 'preferredSlots' && f.key !== SESSION_FIELD_KEY && f.key !== EXACT_SLOT_KEY,
     );
-    // 04_v4 的順序是「先挑時段、再填基本資料」；其餘專案沿用原本的 preferredSlots 位置。
-    const insertAt = slotMode ? 0 : schema.fields.findIndex((f) => f.key === 'preferredSlots');
+    // 定稿一律是「先挑場次／時段、再填基本資料」；schema 若留有 preferredSlots 就沿用它的位置，
+    // 沒有的話放在最前面（原本是接在最後，使用者得先填完資料才看到要選哪一場）。
+    const anchor = schema.fields.findIndex((f) => f.key === 'preferredSlots');
     const fields = [...withoutStatic];
-    fields.splice(insertAt >= 0 ? insertAt : fields.length, 0, sessionField);
+    fields.splice(slotMode || anchor < 0 ? 0 : anchor, 0, sessionField);
     return { ...schema, fields };
   }, [schema, sessions, slotMode]);
 
