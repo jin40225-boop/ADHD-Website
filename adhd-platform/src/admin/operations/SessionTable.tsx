@@ -15,6 +15,8 @@ export interface SessionTableHandlers {
   busyId?: string;
   onOpen: (session: SessionSlot) => void;
   onCapacity: (session: SessionSlot, capacity: number) => void;
+  /** 名額被格子端擋下時通知頁面顯示原因，避免數字無聲跳回。 */
+  onReject: (session: SessionSlot, reason: string) => void;
   onDeadline: (session: SessionSlot, iso?: string) => void;
   onPublish: (session: SessionSlot, published: boolean) => void;
 }
@@ -23,16 +25,25 @@ export interface SessionTableHandlers {
  * 名額格。受控＋離開欄位才送出：非受控的話，儲存被名額守衛擋下後，每次離開欄位都會
  * 重試同一筆失敗寫入，而且格子裡的數字會停在被拒絕的值、與資料庫脫節。
  */
-function CapacityCell({ session, busy, onCapacity }: { session: SessionSlot; busy: boolean; onCapacity: (session: SessionSlot, capacity: number) => void }) {
+function CapacityCell({ session, busy, onCapacity, onReject }: {
+  session: SessionSlot; busy: boolean;
+  onCapacity: (session: SessionSlot, capacity: number) => void;
+  onReject: (session: SessionSlot, reason: string) => void;
+}) {
   const [value, setValue] = useState(String(session.capacity));
   useEffect(() => { setValue(String(session.capacity)); }, [session.capacity]);
   const commit = () => {
     const next = Number(value);
     // 低於已報名數的名額會被上層擋下；在這裡就還原，格子才不會停在一個資料庫根本沒接受的數字。
-    if (!Number.isFinite(next) || next < Math.max(1, session.bookedCount) || next === session.capacity) {
+    // 但還原必須說明理由——數字自己跳回去卻沒有任何訊息，使用者只會以為壞了。
+    if (!Number.isFinite(next) || next < Math.max(1, session.bookedCount)) {
       setValue(String(session.capacity));
+      if (value.trim() !== '' && value !== String(session.capacity)) {
+        onReject(session, `名額不能小於已報名數（這個場次目前 ${session.bookedCount} 人）。要調降就得先移轉或退回報名。`);
+      }
       return;
     }
+    if (next === session.capacity) { setValue(String(session.capacity)); return; }
     onCapacity(session, next);
   };
   return <input
@@ -43,7 +54,7 @@ function CapacityCell({ session, busy, onCapacity }: { session: SessionSlot; bus
 }
 
 export function SessionTable({ sessions, handlers }: { sessions: SessionSlot[]; handlers: SessionTableHandlers }) {
-  const { projectName, busyId, onOpen, onCapacity, onDeadline, onPublish } = handlers;
+  const { projectName, busyId, onOpen, onCapacity, onReject, onDeadline, onPublish } = handlers;
   return <div className="ops-table-wrap">
     <table className="ops-table ops-table--editable">
       <thead><tr><th>服務線</th><th>日期</th><th>時段</th><th>名額（可改）</th><th>已報名</th><th>截止（可改）</th><th>狀態</th><th>上架</th></tr></thead>
@@ -56,7 +67,7 @@ export function SessionTable({ sessions, handlers }: { sessions: SessionSlot[]; 
           </button></td>
           <td><span className="ops-cell-muted">{sessionDateText(session.startsAt)}</span></td>
           <td><span className="ops-cell-muted">{sessionTimeText(session.startsAt)}–{sessionTimeText(session.endsAt)}</span></td>
-          <td><CapacityCell session={session} busy={busy} onCapacity={onCapacity} /></td>
+          <td><CapacityCell session={session} busy={busy} onCapacity={onCapacity} onReject={onReject} /></td>
           <td><span className="ops-cell-muted">{session.bookedCount}</span></td>
           <td><input
             type="datetime-local" className="ops-cell-datetime" value={toLocalInput(session.registrationDeadline)} disabled={busy}

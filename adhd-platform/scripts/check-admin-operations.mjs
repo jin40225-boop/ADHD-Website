@@ -57,6 +57,17 @@ requireText('src/admin/pages/SessionsPage.tsx', ['<SessionTable', 'topic:', 'gue
 requireText('src/lib/api.ts', ['topic: session.topic', 'guest: session.guest', 'registration_deadline: session.registrationDeadline', 'slot_options: session.slotOptions']);
 // 場次的名額、上下架、主題與客座都可直接改，同樣必須留歷程。
 requireText('supabase/migrations/20260804000016_session_admin_audit.sql', ['trg_sessions_admin_audit', 'log_session_admin_edit']);
+// 名額被格子端擋下時必須說明理由，否則數字無聲跳回、使用者只會以為壞了。
+requireText('src/admin/operations/SessionTable.tsx', ['onReject(']);
+// 設定・聯絡人（03_v4）：聯絡人與類群可直接編輯，且兩條防假原則要留在畫面上——
+// 逾期門檻在 Phase 4 前只存值、Claude API 在 Phase 6 前不做輸入框。拿掉說明就等於假生效。
+requireText('src/admin/operations/SettingsTables.tsx', ['onPatch(', 'onToggleMember(', 'ops-member-chip']);
+requireText('src/admin/pages/SettingsPage.tsx', ['<ContactTable', '<GroupEditor', 'Phase 4', 'Phase 6', '待審閱']);
+requireText('src/router.tsx', ["path: 'settings'"]);
+requireText('supabase/migrations/20260804000017_settings_and_contact_audit.sql', [
+  'create table if not exists public.app_settings', 'trg_contacts_admin_audit',
+  'trg_contact_group_members_audit', 'review_status',
+]);
 requireText('src/routes/RegisterPage.tsx', ['報名只接受資料庫正式場次']);
 if (read('src/routes/RegisterPage.tsx').includes('if (sessions.length === 0)')) throw new Error('Static registration slot fallback still exists.');
 for (const slug of ['submit-registration', 'send-email-v2', 'gmail-sync', 'team-invite']) {

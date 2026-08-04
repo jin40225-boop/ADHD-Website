@@ -286,6 +286,8 @@ export interface EmailTemplate {
   name: string;
   subject: string;
   body: string;
+  /** `draft`＝AI 起草、尚未經使用者審閱（Phase 4 逐封審定後改為 approved）。新建範本由 DB 預設 approved。 */
+  reviewStatus?: 'draft' | 'approved';
   createdAt: string;
   updatedAt?: string;
 }

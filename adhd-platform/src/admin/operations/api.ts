@@ -2,6 +2,8 @@ import { supabase } from '@/lib/supabase';
 import type {
   ActivityRecord,
   AuditRecord,
+  AppSettings,
+  ContactGroupRecord,
   ContactRecord,
   EmailDraftRecord,
   FollowUpTask,
@@ -185,21 +187,82 @@ export async function listContacts(): Promise<ContactRecord[]> {
     phone: row.phone ?? undefined,
     status: row.status,
     tags: row.tags ?? [],
+    isFavorite: row.is_favorite ?? false,
     createdAt: row.created_at,
     updatedAt: row.updated_at ?? undefined,
     registrations: (row.registrations ?? []).map((reg: Row) => mapRegistration(reg, projectNames.get(reg.project_id), projectSlugs.get(reg.project_id))),
   }));
 }
 
-export async function updateContact(id: string, patch: Partial<Pick<ContactRecord, 'displayName' | 'primaryEmail' | 'phone' | 'status' | 'tags'>>) {
+export async function updateContact(id: string, patch: Partial<Pick<ContactRecord, 'displayName' | 'primaryEmail' | 'phone' | 'status' | 'tags' | 'isFavorite'>>) {
   const payload: Row = {};
   if (patch.displayName !== undefined) payload.display_name = patch.displayName.trim();
   if (patch.primaryEmail !== undefined) payload.primary_email = patch.primaryEmail.trim().toLowerCase() || null;
   if (patch.phone !== undefined) payload.phone = patch.phone.trim() || null;
   if (patch.status !== undefined) payload.status = patch.status;
   if (patch.tags !== undefined) payload.tags = patch.tags;
+  if (patch.isFavorite !== undefined) payload.is_favorite = patch.isFavorite;
   const { error } = await db().from('contacts').update(payload).eq('id', id);
   assert(error, '更新人員主檔失敗');
+}
+
+export async function createContact(input: { displayName: string; primaryEmail?: string; phone?: string; isFavorite?: boolean; tags?: string[] }) {
+  const payload: Row = {
+    display_name: input.displayName.trim(),
+    primary_email: input.primaryEmail?.trim().toLowerCase() || null,
+    phone: input.phone?.trim() || null,
+    is_favorite: input.isFavorite ?? false,
+    tags: input.tags ?? [],
+  };
+  const { data, error } = await db().from('contacts').insert(payload).select('id').single();
+  assert(error, '新增聯絡人失敗');
+  return (data?.id ?? '') as string;
+}
+
+export async function listContactGroups(): Promise<ContactGroupRecord[]> {
+  const { data, error } = await db()
+    .from('contact_groups')
+    .select('*, contact_group_members(contact_id, source, added_at)')
+    .order('is_system', { ascending: false })
+    .order('name');
+  assert(error, '讀取聯絡人類群失敗');
+  return (data ?? []).map((row: Row) => ({
+    id: row.id,
+    key: row.key,
+    name: row.name,
+    description: row.description ?? undefined,
+    projectId: row.project_id ?? undefined,
+    autoRule: row.auto_rule ?? undefined,
+    isSystem: row.is_system ?? false,
+    members: (row.contact_group_members ?? []).map((member: Row) => ({
+      contactId: member.contact_id,
+      source: member.source,
+      addedAt: member.added_at,
+    })),
+  }));
+}
+
+/** 手動加入／移出類群。自動歸群由 sync_registration_contact_group 負責，不走這裡。 */
+export async function setContactGroupMember(groupId: string, contactId: string, member: boolean) {
+  const query = member
+    ? db().from('contact_group_members').insert({ group_id: groupId, contact_id: contactId, source: 'manual' })
+    : db().from('contact_group_members').delete().eq('group_id', groupId).eq('contact_id', contactId);
+  const { error } = await query;
+  assert(error, member ? '加入類群失敗' : '移出類群失敗');
+}
+
+export async function getAppSettings(): Promise<AppSettings> {
+  const { data, error } = await db().from('app_settings').select('*').maybeSingle();
+  assert(error, '讀取設定失敗');
+  return { followUpDays: data?.follow_up_days ?? 3, updatedAt: data?.updated_at ?? undefined };
+}
+
+export async function updateAppSettings(patch: { followUpDays: number }) {
+  const { error } = await db()
+    .from('app_settings')
+    .update({ follow_up_days: patch.followUpDays, updated_at: new Date().toISOString() })
+    .eq('id', true);
+  assert(error, '更新設定失敗');
 }
 
 export async function listNotes(target: { contactId?: string; registrationId?: string; caseId?: string }): Promise<InternalNote[]> {

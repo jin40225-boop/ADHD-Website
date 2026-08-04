@@ -97,6 +97,7 @@ function mapTemplate(r: Row): EmailTemplate {
     name: r.name as string,
     subject: r.subject as string,
     body: r.body as string,
+    reviewStatus: (r.review_status as EmailTemplate['reviewStatus']) ?? 'approved',
     createdAt: r.created_at as string,
     updatedAt: (r.updated_at as string) ?? undefined,
   };

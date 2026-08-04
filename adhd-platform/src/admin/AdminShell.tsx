@@ -3,7 +3,7 @@ import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
   CalendarDays, CalendarRange, ClipboardCheck, FilePenLine, GraduationCap,
   HeartHandshake, Inbox, LayoutDashboard, ListTodo, MapPinned, Menu,
-  MessageSquareHeart, PlugZap, ScrollText, Send, ShieldCheck, Users, X,
+  MessageSquareHeart, PlugZap, ScrollText, Send, Settings, ShieldCheck, Users, X,
   type LucideIcon,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
@@ -33,6 +33,7 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     { to: '/admin/recommendations', label: '推薦資料審核', icon: MapPinned },
     { to: '/admin/feedback', label: '活動回饋', icon: MessageSquareHeart },
     { to: '/admin/team', label: '成員與權限', icon: ShieldCheck },
+    { to: '/admin/settings', label: '設定・聯絡人', icon: Settings },
     { to: '/admin/integrations', label: '整合健康度', icon: PlugZap },
     { to: '/admin/audit', label: '稽核紀錄', icon: ScrollText },
   ]},

@@ -52,9 +52,29 @@ export interface ContactRecord {
   phone?: string;
   status: ContactStatus;
   tags: string[];
+  /** 常用聯絡人（團隊四人）置頂用。 */
+  isFavorite: boolean;
   createdAt: string;
   updatedAt?: string;
   registrations: OperationalRegistration[];
+}
+
+/** 聯絡人類群（計畫第八節）。`auto_rule` 為 registration 者由報名成立時自動歸群。 */
+export interface ContactGroupRecord {
+  id: string;
+  key: string;
+  name: string;
+  description?: string;
+  projectId?: string;
+  autoRule?: 'registration' | 'instructor' | 'manual';
+  isSystem: boolean;
+  members: { contactId: string; source: 'manual' | 'auto'; addedAt: string }[];
+}
+
+export interface AppSettings {
+  /** 寄出後幾天未回覆算逾期。Phase 4 的信件狀態機接線後才會真的依它判斷。 */
+  followUpDays: number;
+  updatedAt?: string;
 }
 
 export type NoteType = 'general' | 'contact' | 'eligibility' | 'handoff' | 'risk';

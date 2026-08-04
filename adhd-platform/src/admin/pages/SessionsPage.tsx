@@ -93,6 +93,7 @@ export default function SessionsPage() {
       busyId,
       onOpen: (session) => setSelectedId(session.id),
       onCapacity: (session, capacity) => void save(session, { capacity }, '名額已更新。'),
+      onReject: (_session, reason) => { setError(reason); setNotice(undefined); },
       onDeadline: (session, value) => void save(session, { registrationDeadline: value ? toIso(value) : undefined }, '報名截止已更新。'),
       onPublish: (session, published) => void save(
         session,
