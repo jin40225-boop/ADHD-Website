@@ -49,7 +49,7 @@ const router = createBrowserRouter([
     { path: 'peer-group', element: <PeerGroupPage /> },
     { path: 'peer-group/register', element: <RegisterPage slug="peer-group" /> },
     { path: 'navigator', element: <NavigatorConsultPage /> },
-    { path: 'navigator/register', element: <RegisterPage slug="navigator" /> },
+    { path: 'navigator/register', element: <RegisterPage slug="navigator" showPastSessions /> },
     { path: 'parent', element: <ParentConsultPage /> },
     { path: 'parent/register', element: <RegisterPage slug="parent" /> },
     { path: 'map', element: <RecommendationMapPage /> },

@@ -6,12 +6,13 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { FormField, FormSchema, Project, SessionSlot } from '@contracts/types';
+import type { FormField, FormFieldOption, FormSchema, Project, SessionSlot } from '@contracts/types';
 import { SchemaForm } from '@/features/form-engine';
 import type { FormAnswers } from '@/features/form-engine';
 import {
   ApiError,
   getFormSchema,
+  getPastSessions,
   getProjectBySlug,
   getUpcomingSessions,
   submitRegistration,
@@ -19,6 +20,11 @@ import {
 import { isSupabaseReady } from '@/lib/supabase';
 
 const SESSION_FIELD_KEY = 'sessionIds';
+/** 記錄使用者勾選的確切時段（可讀標籤），供後台審核時直接閱讀。 */
+const EXACT_SLOT_KEY = 'preferredExactSlots';
+/** 候選時段的選項值格式：`<sessionId>::<slotIndex>`。 */
+const SLOT_SEP = '::';
+const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六'];
 
 function pad(n: number) {
   return String(n).padStart(2, '0');
@@ -36,11 +42,56 @@ function formatSlot(s: SessionSlot) {
   return `${st.getFullYear()}/${pad(st.getMonth() + 1)}/${pad(st.getDate())} ${pad(st.getHours())}:${pad(st.getMinutes())}–${pad(en.getHours())}:${pad(en.getMinutes())}`;
 }
 
-export default function RegisterPage({ slug }: { slug: string }) {
+function monthLabel(iso: string) {
+  const d = new Date(iso);
+  return Number.isNaN(+d) ? '' : `${d.getMonth() + 1} 月`;
+}
+
+function formatDeadline(iso: string) {
+  const d = new Date(iso);
+  if (Number.isNaN(+d)) return '';
+  return `${d.getMonth() + 1}/${d.getDate()}（${WEEKDAYS[d.getDay()]}）${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+/**
+ * 把一筆場次攤成可勾選的選項。
+ *
+ * 一般場次＝一個選項。導航計畫的「每月 1 位」場次帶有 `slotOptions`（5 個確切候選
+ * 時段共用當月唯一名額），攤成 5 個選項並以月份分組，避免把整個月的時間窗
+ * render 成「9/12 20:00–10:00」這種看起來跨日的怪值。
+ */
+function optionsForSession(s: SessionSlot): FormFieldOption[] {
+  const remaining = Math.max(0, s.capacity - s.bookedCount);
+  const unavailable = s.status !== 'open' || remaining === 0;
+  if (!s.slotOptions?.length) {
+    return [{
+      value: s.id,
+      label: `${s.title}｜${formatSlot(s)}（剩 ${remaining} 名）`,
+      disabled: unavailable,
+      disabledLabel: '（額滿）',
+    }];
+  }
+  const groupNote = [
+    unavailable ? '已額滿' : '開放中',
+    s.registrationDeadline ? `報名截止 ${formatDeadline(s.registrationDeadline)}` : '',
+  ].filter(Boolean).join('・');
+  return s.slotOptions.map((slot, index) => ({
+    value: `${s.id}${SLOT_SEP}${index}`,
+    label: slot.label,
+    note: slot.note,
+    group: monthLabel(s.startsAt),
+    groupNote,
+    disabled: unavailable,
+    disabledLabel: '（額滿）',
+  }));
+}
+
+export default function RegisterPage({ slug, showPastSessions = false }: { slug: string; showPastSessions?: boolean }) {
   const [state, setState] = useState<'loading' | 'ready' | 'unavailable'>('loading');
   const [project, setProject] = useState<Project | null>(null);
   const [schema, setSchema] = useState<FormSchema | null>(null);
   const [sessions, setSessions] = useState<SessionSlot[]>([]);
+  const [pastSessions, setPastSessions] = useState<SessionSlot[]>([]);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string>();
   const [reloadKey, setReloadKey] = useState(0);
@@ -59,11 +110,16 @@ export default function RegisterPage({ slug }: { slug: string }) {
           setState('unavailable');
           return;
         }
-        const [s, ss] = await Promise.all([getFormSchema(p.id), getUpcomingSessions(p.id)]);
+        const [s, ss, past] = await Promise.all([
+          getFormSchema(p.id),
+          getUpcomingSessions(p.id),
+          showPastSessions ? getPastSessions(p.id) : Promise.resolve([]),
+        ]);
         if (cancelled) return;
         setProject(p);
         setSchema(s);
         setSessions(ss);
+        setPastSessions(past);
         setState(s ? 'ready' : 'unavailable');
       } catch {
         if (!cancelled) setState('unavailable');
@@ -72,32 +128,34 @@ export default function RegisterPage({ slug }: { slug: string }) {
     return () => {
       cancelled = true;
     };
-  }, [slug, reloadKey]);
+  }, [slug, reloadKey, showPastSessions]);
+
+  /** 任一場次帶候選時段＝本專案採「每月 1 位、5 個確切時段」模型（導航計畫）。 */
+  const slotMode = useMemo(() => sessions.some((s) => s.slotOptions?.length), [sessions]);
 
   // DB 有場次 → 以真場次欄位取代 schema 的 preferredSlots 靜態選項
   const effectiveSchema = useMemo<FormSchema | null>(() => {
     if (!schema) return null;
     const sessionField: FormField = {
       key: SESSION_FIELD_KEY,
-      label: '選擇場次',
+      label: slotMode ? '勾選可配合的確切時段' : '選擇場次',
       type: 'multiselect',
       required: true,
-      helpText: '可複選；額滿場次無法勾選，名額即時更新。',
-      options: sessions.map((s) => ({
-        value: s.id,
-        label: `${s.title}｜${formatSlot(s)}（剩 ${Math.max(0, s.capacity - s.bookedCount)} 名）`,
-        disabled: s.status !== 'open',
-        disabledLabel: '（額滿）',
-      })),
+      helpText: slotMode
+        ? '可跨月複選。每月僅 1 位名額，最終將由團隊與您確認其中一個時段。'
+        : '可複選；額滿場次無法勾選，名額即時更新。',
+      options: sessions.flatMap(optionsForSession),
     };
+    // 舊的靜態候選時段欄位（preferredExactSlots）已由上面的真實候選時段取代
     const withoutStatic = schema.fields.filter(
-      (f) => f.key !== 'preferredSlots' && f.key !== SESSION_FIELD_KEY,
+      (f) => f.key !== 'preferredSlots' && f.key !== SESSION_FIELD_KEY && f.key !== EXACT_SLOT_KEY,
     );
-    const insertAt = schema.fields.findIndex((f) => f.key === 'preferredSlots');
+    // 04_v4 的順序是「先挑時段、再填基本資料」；其餘專案沿用原本的 preferredSlots 位置。
+    const insertAt = slotMode ? 0 : schema.fields.findIndex((f) => f.key === 'preferredSlots');
     const fields = [...withoutStatic];
     fields.splice(insertAt >= 0 ? insertAt : fields.length, 0, sessionField);
     return { ...schema, fields };
-  }, [schema, sessions]);
+  }, [schema, sessions, slotMode]);
 
   // 必填時段欄無任何可選項＝報名不可能完成 → 改顯示防呆卡（後台建立新場次後自動恢復表單）
   const noOpenSlots = useMemo(() => {
@@ -109,15 +167,33 @@ export default function RegisterPage({ slug }: { slug: string }) {
     return enabledOptions(slotField).length === 0;
   }, [effectiveSchema]);
 
+  /** 把 `<sessionId>::<slotIndex>` 還原成後台可直接閱讀的「9 月｜9/14（一）20:00–21:00」。 */
+  const describeSlot = (value: string) => {
+    const [sessionId, index] = value.split(SLOT_SEP);
+    const session = sessions.find((s) => s.id === sessionId);
+    if (!session) return value;
+    const slot = index === undefined ? undefined : session.slotOptions?.[Number(index)];
+    return slot ? `${monthLabel(session.startsAt)}｜${slot.label}` : session.title;
+  };
+
   const handleSubmit = async (answers: FormAnswers) => {
     if (!project || !schema) return;
     setError(undefined);
     const raw = answers[SESSION_FIELD_KEY];
-    const sessionIds = Array.isArray(raw) ? raw.filter((item): item is string => typeof item === 'string') : [];
+    const picked = Array.isArray(raw) ? raw.filter((item): item is string => typeof item === 'string') : [];
+    // 勾選值可能是 `<sessionId>::<slotIndex>`；場次名額以 sessionId 為單位。
+    const pickedSessionIds = new Set(picked.map((value) => value.split(SLOT_SEP)[0]));
+    const orderedSessionIds = sessions.filter((s) => pickedSessionIds.has(s.id)).map((s) => s.id);
+    // 「每月 1 位」模型下，跨月複選只讓最早的月份佔用名額，其餘僅記錄為偏好；
+    // 否則一位報名者送出時就會同時吃掉好幾個月各自唯一的名額。
+    const sessionIds = slotMode ? orderedSessionIds.slice(0, 1) : orderedSessionIds;
+    const payload: FormAnswers = slotMode
+      ? { ...answers, [EXACT_SLOT_KEY]: picked.map(describeSlot) }
+      : answers;
     const emailKey = schema.fields.find((f) => f.type === 'email')?.key ?? 'email';
     const email = String(answers[emailKey] ?? '').trim();
     try {
-      await submitRegistration({ projectId: project.id, sessionIds, answers, email });
+      await submitRegistration({ projectId: project.id, sessionIds, answers: payload, email });
       setDone(true);
       window.scrollTo(0, 0);
     } catch (err) {
@@ -174,6 +250,21 @@ export default function RegisterPage({ slug }: { slug: string }) {
               >
                 {error}
               </p>
+            ) : null}
+
+            {pastSessions.length ? (
+              <details className="bg-white border-2 border-brown rounded-2xl px-5 py-4 shadow-warm">
+                <summary className="cursor-pointer font-bold">
+                  📂 已完成月份（{pastSessions.length} 場）——服務軌跡留存
+                </summary>
+                <p className="flex flex-wrap gap-2 mt-3">
+                  {pastSessions.map((s) => (
+                    <span key={s.id} className="inline-block bg-gray-200 text-gray-600 text-xs font-bold px-3 py-1 rounded-full border border-brown/20">
+                      {monthLabel(s.startsAt)}・已完成
+                    </span>
+                  ))}
+                </p>
+              </details>
             ) : null}
 
             {noOpenSlots ? (

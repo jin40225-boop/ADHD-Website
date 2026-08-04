@@ -140,6 +140,12 @@ export interface FormFieldOption {
   disabled?: boolean;
   /** 停用時附加顯示（例：「（額滿）」）。 */
   disabledLabel?: string;
+  /** 選項下方的小字補充（例：「平日晚間」）。 */
+  note?: string;
+  /** 分組標題；同一標題的選項會被歸在一起（例：導航計畫的「9 月」）。 */
+  group?: string;
+  /** 分組標題右側的補充（例：「開放中・報名截止 8/20（四）23:59」）。 */
+  groupNote?: string;
 }
 
 /** 條件顯示：僅當 `key` 欄位的值命中 `equals` 之一時才顯示與驗證本欄。 */
