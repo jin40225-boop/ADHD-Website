@@ -9,6 +9,8 @@ import { Link } from 'react-router-dom';
 import type { FormField, FormFieldOption, FormSchema, Project, SessionSlot } from '@contracts/types';
 import { SchemaForm } from '@/features/form-engine';
 import type { FormAnswers } from '@/features/form-engine';
+import { CopyButton } from '@/components/CopyButton';
+import { CONTACT_EMAIL } from '@/components/LineContact';
 import {
   ApiError,
   getFormSchema,
@@ -298,6 +300,20 @@ export default function RegisterPage({ slug, showPastSessions = false }: { slug:
                 ) : null}
               </div>
             )}
+
+            {/* 04_v4 頁尾：信箱明示＋可用的複製鈕，不要只留一個 mailto: */}
+            <footer className="text-center text-sm text-brown/70 space-y-2 pt-2">
+              <p>有任何問題，歡迎直接來信：</p>
+              <span className="inline-flex items-center gap-2 bg-white border-2 border-brown/20 rounded-full py-2 px-4">
+                <span className="font-mono text-brown">{CONTACT_EMAIL}</span>
+                <CopyButton
+                  value={CONTACT_EMAIL}
+                  label="複製信箱"
+                  className="text-[11px] bg-gray-200 hover:bg-gray-300 text-gray-600 py-1 px-2 rounded transition-colors flex items-center gap-1"
+                />
+              </span>
+              <p className="text-xs text-brown/50">© 2026 大A彥宇</p>
+            </footer>
           </>
         )}
       </div>
