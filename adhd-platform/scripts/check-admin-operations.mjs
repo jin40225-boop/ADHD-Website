@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const root = resolve(import.meta.dirname, '..');
@@ -46,5 +46,18 @@ for (const page of ['HomePage', 'PeerGroupPage', 'ParentConsultPage', 'Navigator
   const source = read(path);
   if (source.includes('meet.google.com')) throw new Error(`${path} still hard-codes Meet links.`);
   if (source.includes('id="copyButton"')) throw new Error(`${path} still uses the handler-less copy button.`);
+}
+
+// 寫死的場次表會悄悄過期，而且同一份常被複製到多個頁面（首頁就曾留著 /parent 已經
+// 清掉的那份，四月到六月的日期與截止日照樣掛在站上）。上面的檢查看的是「元件在不在」，
+// 抓不到這種內容腐爛，所以直接把這些字樣列為禁用——場次一律從 sessions_public 來。
+const STALE_SCHEDULE = ['上半年度開放場次', '【四月場次】', '【五月場次】', '【六月場次】', '截止日：'];
+for (const page of readdirSync(resolve(root, 'src/pages/public'))) {
+  if (!page.endsWith('.tsx')) continue;
+  const source = read(`src/pages/public/${page}`);
+  const found = STALE_SCHEDULE.filter((needle) => source.includes(needle));
+  if (found.length) {
+    throw new Error(`src/pages/public/${page} hard-codes a session schedule (${found.join(', ')}); read sessions_public instead.`);
+  }
 }
 console.log('Admin operations structural checks passed.');
