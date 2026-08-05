@@ -44,9 +44,9 @@ export default function KnowledgeMeetupContent() {
     <h3 className="text-xl font-semibold text-brown mt-6 mb-3">對那位剛加入的家長，我們當天談了很多小時候的回憶。說的時候笑著，但其實那些都是痛苦的經驗。我們每個人小時候都是麻煩人物，受盡各種惡意與排斥。</h3>
     <h3 className="text-xl font-semibold text-brown mt-6 mb-3">我們也分享了現在的工作與生活。我們是在告訴家長：「看看我們，當初那些讓大人擔心的小ADHD，現在一個個都成了帥氣的大人。」也在告訴小A：「不要徬徨，未來一片光明。」</h3>
     <h3 className="text-xl font-semibold text-brown mt-6 mb-3">我想，這就是我們聚在一起、與大眾接觸的意義所在。這是我這兩次活動的心得，與大家分享。這樣的活動，我會不斷、持續地辦下去，期待各位的參與。</h3>
-    <h3 className="text-xl font-semibold text-brown mt-6 mb-3">114413 林彥宇</h3>
+    <h3 className="text-xl font-semibold text-brown mt-6 mb-3">114/4/13 林彥宇</h3>
     <h3 className="text-xl font-semibold text-brown mt-6 mb-3">對了，最後我們還一起看了成員養的水母，可愛又療癒。</h3>
-    <img src={`${import.meta.env.BASE_URL}assets/meetup-schedule.jpg`} alt="ADHD 線上知識交流會時程" loading="lazy" decoding="async" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
+
     </article>
   );
 }

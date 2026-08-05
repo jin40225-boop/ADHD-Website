@@ -26,14 +26,12 @@ export default function RecommendationDbContent() {
     <li className="leading-relaxed">地圖使用教學 ←請點我</li>
     </ul>
     <h2 className="text-2xl font-bold text-brown mt-8 mb-4">地圖部分則直接點擊按紐，點擊後即可進入完整頁面查看完整內容。(如圖)</h2>
-    <img src={`${import.meta.env.BASE_URL}assets/map-guide-search.jpg`} alt="推薦資料庫關鍵字搜尋操作示範" loading="lazy" decoding="async" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
     <p className="text-brown leading-relaxed my-4">💬 使用方式</p>
     <p className="text-brown leading-relaxed my-4">🔹 快速查看地區：點擊下方快捷連結，即可顯示各地區推薦的醫師與醫院資訊。(請點姓名處可展開資訊)</p>
     <p className="text-brown leading-relaxed my-4">🔹 快速查看地圖：再往下滑會看到地圖，點擊地圖即可看到資訊。</p>
     <p className="text-brown leading-relaxed my-4">🔹 瀏覽完整資料庫：向下滑動，點擊 資料庫總表，可檢視完整推薦名單。</p>
     <p className="text-brown leading-relaxed my-4">🔹 搜尋特定地區：在右上角的 搜尋欄 輸入 新北 或其他縣市名稱，即可篩選當地的推薦醫師。</p>
     <p className="text-brown leading-relaxed my-4">🔹 查閱詳細資訊：點擊 醫師名稱，可查看推薦者提供的評價、推薦理由等詳細內容。</p>
-    <img src={`${import.meta.env.BASE_URL}assets/map-guide-search.jpg`} alt="推薦資料庫關鍵字搜尋操作示範" loading="lazy" decoding="async" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
     <p className="text-brown leading-relaxed my-4">可以進入資料庫後，按搜尋，來搜尋需要的資訊。</p>    <h1 className="text-3xl font-extrabold text-brown mb-6 border-b-2 border-brown pb-2">ADHD 醫療資料庫（地圖）謝誌與歷程說明</h1>
     <p className="text-brown leading-relaxed my-4">大家好，我是大A哥哥林彥宇，本身為成人 ADHD。</p>
     <p className="text-brown leading-relaxed my-4">ADHD 醫療資料庫（地圖）旨在協助家長及成人 ADHD 尋找合適的醫師與醫療資源。</p>
@@ -61,7 +59,7 @@ export default function RecommendationDbContent() {
       style={{ height: '480px' }}
       loading="lazy"
     ></iframe>
-    <img src={`${import.meta.env.BASE_URL}assets/map-guide-filter.jpg`} alt="推薦資料庫條件篩選操作示範" loading="lazy" decoding="async" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />    <h2 className="text-2xl font-bold text-brown mt-8 mb-4">後續更新</h2>
+    <h2 className="text-2xl font-bold text-brown mt-8 mb-4">後續更新</h2>
     <h2 className="text-2xl font-bold text-brown mt-8 mb-4">我原本計劃完成 使用說明與快捷鍵優化，但因為從113年9月開始製作至今已經拖延太久(我只能利用下班到家的一點時間製作，速度非常慢...…)因此先行釋出資料庫，讓大家提前使用。我將繼續補充與優化內容，讓使用體驗更流暢。</h2>
     <h2 className="text-2xl font-bold text-brown mt-8 mb-4">🔹 若有建議或發現錯誤，請留言告知，我會持續修正與擴充資料庫！**</h2>
     <h2 className="text-2xl font-bold text-brown mt-8 mb-4">感謝大家的支持與協助，讓我們一起讓這份資源更完整、更有幫助！ 💪✨</h2>

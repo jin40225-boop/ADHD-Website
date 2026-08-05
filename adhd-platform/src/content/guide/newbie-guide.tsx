@@ -52,7 +52,7 @@ export default function NewbieGuideContent() {
     <h2 className="text-2xl font-bold text-brown mt-8 mb-4">✉️ Email  ID：jin40225@gmail.com</h2>
     <p className="text-brown leading-relaxed my-4">或在下面的意見回饋與聯繫表留言喔！</p>
     <hr className="border-t-2 border-brown my-8" />
-    <img src={`${import.meta.env.BASE_URL}assets/newbie-guide-sessions.jpg`} alt="ADHD 線上交流會活動畫面" loading="lazy" decoding="async" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />    <hr className="border-t-2 border-brown my-8" />
+    <hr className="border-t-2 border-brown my-8" />
     <p className="text-brown leading-relaxed my-4">Back to Top 👆</p>
     </article>
   );
