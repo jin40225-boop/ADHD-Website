@@ -574,6 +574,25 @@ Phase 6 之前是**佔位頁**，比照設定頁的 Claude API 區：三段選�
 
 **測試後的還原一律走 `admin_transition_registration`，或在還原後補一筆稽核註記說明。** 本輪 `reschedule` 分支測完是用 raw update 把狀態改回 `rejected`，資料是對的，但稽核軌跡上只看得到「轉入 reschedule」而看不到轉回去——留下一條與現況矛盾的歷程。稽核的用途正是在事後回答「這筆為什麼是現在這樣」，還原若不留痕，等於在證據裡挖一個洞。
 
+### 18-6 新紀律：CRUD 的驗收必須涵蓋 Create，不能只驗 Update
+
+**新增場次自 `20260804000002` 起就是壞的，直到 2026-08-05 使用者當場被擋住才發現。**
+
+`sessions.slot_options` 是 `not null default '[]'::jsonb`，而 `adminSaveSession` 送
+`slot_options: session.slotOptions ?? null`。**明確送 NULL 不會讓 DB 預設值生效**——預設值只在
+「欄位整個沒出現在 INSERT 裡」時才套用，送 null 就是踩 not-null constraint。新場次的草稿沒有
+候選時段，所以每一次新增都失敗；既有場次讀回來是 `[]`，所以更新一直是好的。同一個 payload 裡
+`instructor_ids`（`not null default '{}'`）是同型的坑，一併改成 `?? []`。
+
+已查 `src/lib/api.ts` 其餘 8 處 `?? null`，對應欄位皆為可為 null，無同型問題。
+
+**紀律**：任何有 Create／Update 兩條路徑的功能，驗收清單必須各驗一次。Phase 3 的場次管理驗了
+六項，全部是「改既有場次」——格內改名額、改截止、上下架 toggle、主題與客座、候選時段——
+沒有任何一項是「按下新增」。共用同一段程式的兩條路徑，其中一條可以整整壞掉而另一條全綠。
+
+**測法**：欄位對映抽成可匯出的純函式（`sessionRowFor`），用「畫面上那顆新增鈕實際送出的草稿物件」
+逐欄斷言，而不是用手寫的完整假資料——後者會自己把缺的欄位補齊，正好繞過這個 bug。
+
 ## Phase 3 收官（2026-08-05）
 
 六個分頁全部完成並經監督視窗以真實登入代驗通過：
