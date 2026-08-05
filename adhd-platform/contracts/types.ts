@@ -288,6 +288,11 @@ export interface EmailTemplate {
   body: string;
   /** `draft`＝AI 起草、尚未經使用者審閱（Phase 4 逐封審定後改為 approved）。新建範本由 DB 預設 approved。 */
   reviewStatus?: 'draft' | 'approved';
+  /**
+   * 信件類型，決定撰寫面板的寄信行為（是否為催覆、是否附出席確認按鈕）。
+   * 取代先前用範本名稱猜的做法；未填時才退回名稱判斷（見 `emailCompose.letterKindOf`）。
+   */
+  letterKind?: 'confirm' | 'follow_up' | 'notice' | 'bulk' | 'instructor' | 'reject';
   createdAt: string;
   updatedAt?: string;
 }

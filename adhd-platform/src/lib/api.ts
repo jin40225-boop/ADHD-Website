@@ -98,6 +98,8 @@ function mapTemplate(r: Row): EmailTemplate {
     subject: r.subject as string,
     body: r.body as string,
     reviewStatus: (r.review_status as EmailTemplate['reviewStatus']) ?? 'approved',
+    // 欄位還沒套用 migration、或這一列還沒標類型，兩種情況都是 undefined，呼叫端會退回名稱判斷。
+    letterKind: (r.letter_kind as EmailTemplate['letterKind']) ?? undefined,
     createdAt: r.created_at as string,
     updatedAt: (r.updated_at as string) ?? undefined,
   };

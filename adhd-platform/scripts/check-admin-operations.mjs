@@ -87,6 +87,20 @@ requireText('src/admin/operations/emailCompose.ts', ['applyTemplate', 'missing',
 requireText('src/admin/pages/DocumentsPage.tsx', ['範本群發', '最終名單', 'setConfirming(true)']);
 // 催覆信的回覆期限要跟著設定走。寫死的天數與設定不符時畫面上看不出來——信寄出去才知道。
 requireText('src/admin/pages/RegistrationsOperationsPage.tsx', ['loadTemplate(', 'attachConfirmButtons', 'isFollowUp', 'followUpDays']);
+// 寄信行為由 letter_kind 決定，不由範本名稱決定：範本改名不該改變信怎麼寄。名稱判斷只留在
+// emailCompose.letterKindOf 這一個退路裡，撰寫面板不得自己再猜一次。
+requireText('src/admin/pages/RegistrationsOperationsPage.tsx', ['letterKindOf(', 'TEMPLATE_VARIABLES']);
+if (read('src/admin/pages/RegistrationsOperationsPage.tsx').includes('template.name.includes')) {
+  throw new Error('RegistrationsOperationsPage.tsx still decides send behaviour from the template name; use letterKindOf().');
+}
+requireText('src/admin/operations/emailCompose.ts', ['letterKindOf', 'letterKind', '團隊署名', '報名連結', '場次清單']);
+requireText('supabase/migrations/20260805000018_email_template_letter_kind.sql', ['add column if not exists letter_kind']);
+// 範本是會原封不動寄給真人的文字，改動必須留歷程；只記名稱與變動欄位，不記全文。
+requireText('supabase/migrations/20260805000019_email_template_audit.sql', [
+  'trg_email_templates_audit', 'log_email_template_edit', 'trg_email_templates_life',
+]);
+// 直接從 Gmail 寄出的信重設等待計時，催覆期限要一起重算，否則舊期限已過會立刻顯示逾期。
+requireText('supabase/functions/gmail-sync/index.ts', ['follow_up_due_at', 'follow_up_days']);
 requireText('supabase/migrations/20260804000017_settings_and_contact_audit.sql', [
   'create table if not exists public.app_settings', 'trg_contacts_admin_audit',
   'trg_contact_group_members_audit', 'review_status',

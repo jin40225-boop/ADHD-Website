@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { adminListEmailTemplates, adminListSessions, invokeSendEmail } from '@/lib/api';
 import type { EmailTemplate, SessionSlot } from '@contracts/types';
-import { applyTemplate, buildContext, withReplyDeadline } from '../operations/emailCompose';
+import { TEMPLATE_VARIABLES, applyTemplate, buildContext, letterKindOf, withReplyDeadline } from '../operations/emailCompose';
 import { TextInput, Textarea, Select } from '@/components/ui/FormField/FormField';
 import { WarmButton } from '@/components/ui/WarmButton/WarmButton';
 import { createCaseFromRegistration, getAppSettings, listContacts, listNotes, moveRegistrationSessions, saveNote, saveTask, transitionRegistration, updateRegistrationAdministration } from '../operations/api';
@@ -34,7 +34,9 @@ export default function RegistrationsOperationsPage() {
   const [tab, setTab] = useState('navigator'); const [search, setSearch] = useState(''); const [statusFilter, setStatusFilter] = useState('active'); const [mailFilter, setMailFilter] = useState('all'); const [monthFilter, setMonthFilter] = useState('all');
   const [draft, setDraft] = useState<Partial<OperationalRegistration>>({}); const [answers, setAnswers] = useState<Record<string, string | string[] | Record<string, string | string[]>[]>>({}); const [note, setNote] = useState(''); const [noteType, setNoteType] = useState<'general' | 'eligibility' | 'handoff' | 'risk'>('general'); const [caseSummary, setCaseSummary] = useState('');
   const [templates, setTemplates] = useState<EmailTemplate[]>([]); const [followUpDays, setFollowUpDays] = useState<number>();
-  const [compose, setCompose] = useState({ templateId: '', subject: '', body: '', attachButtons: true, isFollowUp: false, cc: [] as string[] });
+  // attachButtons 預設 false：沒有選範本就無從判斷這是不是要對方回覆出席的信，
+  // 而多附兩個確認連結是寄出去才會發現的錯，少附則當場看得到那個沒勾的框。
+  const [compose, setCompose] = useState({ templateId: '', subject: '', body: '', attachButtons: false, isFollowUp: false, cc: [] as string[] });
   const [missingVars, setMissingVars] = useState<string[]>([]); const [sending, setSending] = useState(false);
 
   const registrations = useMemo(() => contacts.flatMap((contact) => contact.registrations.map((registration) => ({ registration, contact }))), [contacts]);
@@ -113,20 +115,23 @@ export default function RegistrationsOperationsPage() {
   /** 載入範本：變數在這裡就替換完成，使用者審閱到的即是實際會寄出的字。 */
   const loadTemplate = (templateId: string) => {
     const template = templates.find((item) => item.id === templateId);
-    if (!current || !template) { setCompose({ ...compose, templateId, subject: '', body: '' }); setMissingVars([]); return; }
-    const context = buildContext(current.registration, current.contact, sessions);
+    if (!current || !template) { setCompose({ ...compose, templateId, subject: '', body: '', attachButtons: false, isFollowUp: false }); setMissingVars([]); return; }
+    const context = buildContext(current.registration, current.contact, sessions, `${location.origin}${import.meta.env.BASE_URL}`);
     const subject = applyTemplate(template.subject, context);
     const body = applyTemplate(template.body, context);
     // 催覆信（出席確認信）預設帶回覆期限，期限＝設定裡的逾期門檻天數（app_settings.follow_up_days）。
     // 讀不到就不寫期限——信上一個與後台不符的日期，比沒有日期更難收拾。
-    const isFollowUp = template.name.includes('催覆') || template.name.includes('出席確認');
+    const kind = letterKindOf(template);
+    const isFollowUp = kind === 'follow_up';
+    const hasSession = current.registration.sessionIds.length > 0;
     const deadline = followUpDays === undefined ? undefined : new Date(Date.now() + followUpDays * 86400000);
     setCompose({
       ...compose, templateId, subject: subject.text,
       body: isFollowUp && deadline ? withReplyDeadline(body.text, deadline) : body.text,
       isFollowUp,
-      // 婉拒信附出席確認按鈕沒有意義，預設關掉。
-      attachButtons: !template.name.includes('回絕'),
+      // 確認按鈕只對「要對方回覆出席與否」的信有意義，而且要有場次可掛——沒有場次的 token
+      // 會帶著 session_id = null 存進去，事後看不出那次確認是針對哪一場。
+      attachButtons: hasSession && (kind === 'confirm' || kind === 'follow_up'),
     });
     setMissingVars([...new Set([...subject.missing, ...body.missing])]);
   };
@@ -139,7 +144,7 @@ export default function RegistrationsOperationsPage() {
         cc: compose.cc, attachConfirmButtons: compose.attachButtons, isFollowUp: compose.isFollowUp,
       });
       await reload();
-      setCompose({ templateId: '', subject: '', body: '', attachButtons: true, isFollowUp: false, cc: [] });
+      setCompose({ templateId: '', subject: '', body: '', attachButtons: false, isFollowUp: false, cc: [] });
       setMissingVars([]); setError(undefined);
       setNotice(`已寄出。信件狀態轉為「${result.mailState === 'reminded' ? '已催覆' : '已寄出・等待回覆'}」，已寄信提醒已勾起。`);
     } catch (e) { setError(e instanceof Error ? e.message : '寄信失敗'); }
@@ -218,6 +223,8 @@ export default function RegistrationsOperationsPage() {
               <div className="ops-full"><TextInput label="主旨" value={compose.subject} onChange={(e) => setCompose({ ...compose, subject: e.target.value })} /></div>
               <div className="ops-full"><Textarea label="內容" rows={10} value={compose.body} onChange={(e) => setCompose({ ...compose, body: e.target.value })} /></div>
             </div>
+            {/* 可用變數就列在編輯框旁邊——寫範本的人不必去翻文件才知道打得出哪幾個。 */}
+            <p className="ops-cell-muted">可用變數：{TEMPLATE_VARIABLES.map((name) => `{{${name}}}`).join('、')}</p>
             {missingVars.length ? <OpsNotice tone="warning">
               這些變數在這筆報名上沒有值，原樣留在文字裡沒有替換：<b>{missingVars.map((name) => `{{${name}}}`).join('、')}</b>。寄出前請自己補掉。
             </OpsNotice> : null}
