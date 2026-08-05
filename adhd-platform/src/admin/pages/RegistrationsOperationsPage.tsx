@@ -5,7 +5,7 @@ import type { EmailTemplate, SessionSlot } from '@contracts/types';
 import { applyTemplate, buildContext, withReplyDeadline } from '../operations/emailCompose';
 import { TextInput, Textarea, Select } from '@/components/ui/FormField/FormField';
 import { WarmButton } from '@/components/ui/WarmButton/WarmButton';
-import { createCaseFromRegistration, listContacts, listNotes, moveRegistrationSessions, saveNote, saveTask, transitionRegistration, updateRegistrationAdministration } from '../operations/api';
+import { createCaseFromRegistration, getAppSettings, listContacts, listNotes, moveRegistrationSessions, saveNote, saveTask, transitionRegistration, updateRegistrationAdministration } from '../operations/api';
 import type { ContactRecord, InternalNote, OperationalRegistration, WorkPriority } from '../operations/types';
 import { EmptyPanel, InlineSpinner, OpsNotice, PageHeader, SavingIndicator } from '../operations/components';
 import {
@@ -33,7 +33,7 @@ export default function RegistrationsOperationsPage() {
   const [contacts, setContacts] = useState<ContactRecord[]>([]); const [sessions, setSessions] = useState<SessionSlot[]>([]); const [selectedId, setSelectedId] = useState<string>(); const [notes, setNotes] = useState<InternalNote[]>([]); const [loading, setLoading] = useState(true); const [notice, setNotice] = useState<string>(); const [error, setError] = useState<string>(); const [busyId, setBusyId] = useState<string>();
   const [tab, setTab] = useState('navigator'); const [search, setSearch] = useState(''); const [statusFilter, setStatusFilter] = useState('active'); const [mailFilter, setMailFilter] = useState('all'); const [monthFilter, setMonthFilter] = useState('all');
   const [draft, setDraft] = useState<Partial<OperationalRegistration>>({}); const [answers, setAnswers] = useState<Record<string, string | string[] | Record<string, string | string[]>[]>>({}); const [note, setNote] = useState(''); const [noteType, setNoteType] = useState<'general' | 'eligibility' | 'handoff' | 'risk'>('general'); const [caseSummary, setCaseSummary] = useState('');
-  const [templates, setTemplates] = useState<EmailTemplate[]>([]);
+  const [templates, setTemplates] = useState<EmailTemplate[]>([]); const [followUpDays, setFollowUpDays] = useState<number>();
   const [compose, setCompose] = useState({ templateId: '', subject: '', body: '', attachButtons: true, isFollowUp: false, cc: [] as string[] });
   const [missingVars, setMissingVars] = useState<string[]>([]); const [sending, setSending] = useState(false);
 
@@ -44,8 +44,8 @@ export default function RegistrationsOperationsPage() {
   const activeTab = TABS.find((item) => item.slug === tab) ?? TABS[0];
 
   const reload = async () => {
-    const [people, slots, mailTemplates] = await Promise.all([listContacts(), adminListSessions(), adminListEmailTemplates()]);
-    setContacts(people); setSessions(slots); setTemplates(mailTemplates);
+    const [people, slots, mailTemplates, settings] = await Promise.all([listContacts(), adminListSessions(), adminListEmailTemplates(), getAppSettings()]);
+    setContacts(people); setSessions(slots); setTemplates(mailTemplates); setFollowUpDays(settings.followUpDays);
   };
   useEffect(() => { reload().catch((e: unknown) => setError(e instanceof Error ? e.message : '讀取報名失敗')).finally(() => setLoading(false)); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
@@ -117,12 +117,13 @@ export default function RegistrationsOperationsPage() {
     const context = buildContext(current.registration, current.contact, sessions);
     const subject = applyTemplate(template.subject, context);
     const body = applyTemplate(template.body, context);
-    // 催覆信（出席確認信）預設帶回覆期限，期限＝設定裡的逾期門檻天數。
+    // 催覆信（出席確認信）預設帶回覆期限，期限＝設定裡的逾期門檻天數（app_settings.follow_up_days）。
+    // 讀不到就不寫期限——信上一個與後台不符的日期，比沒有日期更難收拾。
     const isFollowUp = template.name.includes('催覆') || template.name.includes('出席確認');
-    const deadline = new Date(Date.now() + 3 * 86400000);
+    const deadline = followUpDays === undefined ? undefined : new Date(Date.now() + followUpDays * 86400000);
     setCompose({
       ...compose, templateId, subject: subject.text,
-      body: isFollowUp ? withReplyDeadline(body.text, deadline) : body.text,
+      body: isFollowUp && deadline ? withReplyDeadline(body.text, deadline) : body.text,
       isFollowUp,
       // 婉拒信附出席確認按鈕沒有意義，預設關掉。
       attachButtons: !template.name.includes('回絕'),

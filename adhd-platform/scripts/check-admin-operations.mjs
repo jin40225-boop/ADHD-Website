@@ -85,7 +85,8 @@ requireText('supabase/functions/gmail-sync/index.ts', ["mail_state: outbound ? '
 requireText('src/admin/operations/emailCompose.ts', ['applyTemplate', 'missing', 'resolveBulkRecipients']);
 // 群發一定要先看到最終名單才寄得出去；寄不到的人要單獨列出，不能混進「已寄出 N 封」。
 requireText('src/admin/pages/DocumentsPage.tsx', ['範本群發', '最終名單', 'setConfirming(true)']);
-requireText('src/admin/pages/RegistrationsOperationsPage.tsx', ['loadTemplate(', 'attachConfirmButtons', 'isFollowUp']);
+// 催覆信的回覆期限要跟著設定走。寫死的天數與設定不符時畫面上看不出來——信寄出去才知道。
+requireText('src/admin/pages/RegistrationsOperationsPage.tsx', ['loadTemplate(', 'attachConfirmButtons', 'isFollowUp', 'followUpDays']);
 requireText('supabase/migrations/20260804000017_settings_and_contact_audit.sql', [
   'create table if not exists public.app_settings', 'trg_contacts_admin_audit',
   'trg_contact_group_members_audit', 'review_status',
