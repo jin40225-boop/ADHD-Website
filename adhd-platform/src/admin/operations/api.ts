@@ -313,11 +313,12 @@ export async function getAppSettings(): Promise<AppSettings> {
     syncLabelIds: Array.isArray(data?.sync_label_ids) ? (data!.sync_label_ids as string[]).map(String) : [],
     syncLabelId: data?.sync_label_id ?? undefined,
     syncSubjectKeywords: Array.isArray(data?.sync_subject_keywords) ? (data!.sync_subject_keywords as string[]).map(String) : [],
+    syncSince: data?.sync_since ? String(data.sync_since).slice(0, 10) : undefined,
     updatedAt: data?.updated_at ?? undefined,
   };
 }
 
-export async function updateAppSettings(patch: { followUpDays?: number; syncLabelIds?: string[]; syncSubjectKeywords?: string[] }) {
+export async function updateAppSettings(patch: { followUpDays?: number; syncLabelIds?: string[]; syncSubjectKeywords?: string[]; syncSince?: string | null }) {
   const { error } = await db()
     .from('app_settings')
     .update({
@@ -326,6 +327,7 @@ export async function updateAppSettings(patch: { followUpDays?: number; syncLabe
       // 被這裡覆寫掉的話，那條退路就在使用者沒察覺的情況下消失了。
       ...(patch.syncLabelIds === undefined ? {} : { sync_label_ids: patch.syncLabelIds }),
       ...(patch.syncSubjectKeywords === undefined ? {} : { sync_subject_keywords: patch.syncSubjectKeywords }),
+      ...(patch.syncSince === undefined ? {} : { sync_since: patch.syncSince || null }),
       updated_at: new Date().toISOString(),
     })
     .eq('id', true);
@@ -625,6 +627,23 @@ export async function createEmailAttachmentUrl(storagePath: string) {
   assert(error, '建立附件下載連結失敗');
   if (!data?.signedUrl) throw new Error('附件下載連結不存在');
   return data.signedUrl;
+}
+
+/** 清空同步佇列。那是同步狀態、不是信件內容——清掉不會失去任何資料，但會寫稽核。 */
+export async function clearGmailQueue() {
+  const { data, error } = await db().functions.invoke('gmail-sync', { body: { clearQueue: true } });
+  await assertFunction(error, '清空同步佇列失敗');
+  return data as { ok: boolean; cleared: number };
+}
+
+/**
+ * 匯入某個人的完整歷史往來。**不受起始日限制**——起始日管的是「系統自己去找什麼」，
+ * 不是「使用者能拿什麼」。會寫稽核（誰、什麼時候、匯入了誰的）。
+ */
+export async function importGmailHistory(email: string) {
+  const { data, error } = await db().functions.invoke('gmail-sync', { body: { importHistoryFor: email } });
+  await assertFunction(error, '匯入歷史往來失敗');
+  return data as { ok: boolean; importedFor: string; found: number; alreadyStored: number; queued: number; queueLength: number };
 }
 
 export async function triggerGmailSync(full = false, discoverOnly = false) {

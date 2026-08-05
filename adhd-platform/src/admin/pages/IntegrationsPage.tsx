@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getGmailSyncState, triggerGmailSync } from '../operations/api';
+import { clearGmailQueue, getGmailSyncState, triggerGmailSync } from '../operations/api';
 import type { GmailSyncState } from '../operations/types';
 import { WarmButton } from '@/components/ui/WarmButton/WarmButton';
 import { MetricCard, OpsNotice, PageHeader, StatusPill } from '../operations/components';
@@ -29,6 +29,18 @@ export default function IntegrationsPage() {
       setError(e instanceof Error ? e.message : '量體失敗');
     } finally { setBusy(false); }
   };
+  /** 清空佇列。會確認一次——它是明確動作，不該按錯就發生；清掉會寫稽核。 */
+  const clearQueue = async () => {
+    if (!window.confirm('清空同步佇列？\n\n佇列裡是「已排隊、還沒抓內容」的信件編號，清掉不會刪除任何已收的信件。\n之後若需要某個人的歷史往來，到人員主檔按「匯入這個人的歷史往來」即可。')) return;
+    setBusy(true); setError(undefined);
+    try {
+      const result = await clearGmailQueue();
+      setNotice(`已清空同步佇列（${result.cleared} 筆待處理編號）。已收進來的信件與信件串完全沒有變動，這個動作已寫入稽核。`);
+      await reload();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '清空佇列失敗');
+    } finally { setBusy(false); }
+  };
   const sync = async (full: boolean) => {
     setBusy(true);
     setError(undefined);
@@ -37,20 +49,29 @@ export default function IntegrationsPage() {
        * 分批是因為單次做太多會把函式的記憶體與 CPU 撐爆；接連叫是因為使用者要的是
        * 「按一次就同步完」，不是「按十次」。中途離開這一頁也不會壞：進度存在
        * gmail_sync_state 的佇列裡，下次再按會從剩下的接著做。 */
-      let synced = 0; let skipped = 0; let rounds = 0; let remaining = 0;
+      let synced = 0; let skipped = 0; let rounds = 0; let remaining = 0; let stopped: string | undefined;
       do {
-        const result = await triggerGmailSync(rounds === 0 ? full : false);
-        synced += result.synced ?? 0; skipped += result.skipped ?? 0; remaining = result.remaining ?? 0;
+        try {
+          const result = await triggerGmailSync(rounds === 0 ? full : false);
+          synced += result.synced ?? 0; skipped += result.skipped ?? 0; remaining = result.remaining ?? 0;
+        } catch (e) {
+          // 某一批失敗不該把前面幾批的成果一起吞掉。停下來，把做到哪裡與為什麼停一起講。
+          stopped = e instanceof Error ? e.message : '同步失敗';
+          break;
+        }
         rounds += 1;
-        setNotice(`Gmail 同步中…已收進 ${synced} 封、範圍外略過 ${skipped} 封${remaining ? `，還有 ${remaining} 封排隊中` : ''}。`);
+        setNotice(`Gmail 同步中…第 ${rounds} 批，已收進 ${synced} 封、範圍外略過 ${skipped} 封${remaining ? `，還有 ${remaining} 封排隊中` : ''}。`);
         await reload();
       } while (remaining > 0 && rounds < MAX_BATCHES);
+      await reload();
       // 略過幾封要講出來——那是「收信範圍過濾有沒有在動」的唯一外顯訊號。
-      setNotice([
-        `Gmail 同步完成：收進 ${synced} 封`,
+      const summary = [
+        `Gmail 同步：跑了 ${rounds} 批，收進 ${synced} 封`,
         skipped ? `，範圍外略過 ${skipped} 封（未讀取內容）` : '',
         remaining ? `。還有 ${remaining} 封排隊中——再按一次會接著處理` : '。',
-      ].join(''));
+      ].join('');
+      if (stopped) setError(`${summary}（第 ${rounds + 1} 批中止：${stopped}。已完成的部分都已存檔，再按一次會從剩下的接著做。）`);
+      else setNotice(summary);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Gmail 同步失敗');
     } finally {
@@ -109,6 +130,10 @@ export default function IntegrationsPage() {
           {/* 第一次完整同步會撈出好幾個月的歷史往來。先量一次，知道量體再決定要不要開始。 */}
           <WarmButton variant="secondary" disabled={busy} onClick={() => void measure()}>
             先量體（不收信）
+          </WarmButton>
+          {/* 收信範圍改了之後，佇列裡的舊候選就不該收了。那是同步狀態、不是信件內容。 */}
+          <WarmButton variant="secondary" disabled={busy} onClick={() => void clearQueue()}>
+            清空同步佇列
           </WarmButton>
         </div>
         <p className="ops-cell-muted">

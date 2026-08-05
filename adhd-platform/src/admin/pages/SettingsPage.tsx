@@ -23,11 +23,11 @@ export default function SettingsPage() {
   const [newContact, setNewContact] = useState({ displayName: '', primaryEmail: '', phone: '' });
   const [daysDraft, setDaysDraft] = useState('3');
   const [labels, setLabels] = useState<GmailLabel[]>([]); const [labelError, setLabelError] = useState<string>();
-  const [keywordDraft, setKeywordDraft] = useState('');
+  const [keywordDraft, setKeywordDraft] = useState(''); const [sinceDraft, setSinceDraft] = useState('');
 
   const reload = async () => {
     const [nextContacts, nextGroups, nextTemplates, nextSettings] = await Promise.all([listContacts(), listContactGroups(), adminListEmailTemplates(), getAppSettings()]);
-    setContacts(nextContacts); setGroups(nextGroups); setTemplates(nextTemplates); setSettings(nextSettings); setDaysDraft(String(nextSettings.followUpDays)); setKeywordDraft((nextSettings.syncSubjectKeywords ?? []).join('、'));
+    setContacts(nextContacts); setGroups(nextGroups); setTemplates(nextTemplates); setSettings(nextSettings); setDaysDraft(String(nextSettings.followUpDays)); setKeywordDraft((nextSettings.syncSubjectKeywords ?? []).join('、')); setSinceDraft(nextSettings.syncSince ?? '');
   };
   useEffect(() => { reload().catch((e: unknown) => setError(e instanceof Error ? e.message : '讀取設定失敗')).finally(() => setLoading(false)); }, []);
   // 標籤清單讀不到不該讓整頁失敗——它只是下拉的選項來源，其餘設定照樣要能改。
@@ -73,6 +73,10 @@ export default function SettingsPage() {
     const value = Number(daysDraft);
     if (!Number.isInteger(value) || value < 0 || value > 60) { setError('逾期門檻請填 0–60 的整數天數。'); return; }
     await run('settings', () => updateAppSettings({ followUpDays: value }), `逾期門檻已存為 ${value} 天（Phase 4 狀態機接線後生效）。`);
+  };
+  const saveSince = async () => {
+    await run('sync-since', () => updateAppSettings({ syncSince: sinceDraft || null }),
+      sinceDraft ? `自動收信起始日已設為 ${sinceDraft}；這之前的信不會自動收進來。` : '起始日已清空——自動搜尋將不再受時間限制，每個人的完整歷史都會被拉進來。');
   };
   const saveKeywords = async () => {
     const words = [...new Set(keywordDraft.split(/[、,，]/).map((word) => word.trim()).filter(Boolean))];
@@ -170,6 +174,21 @@ export default function SettingsPage() {
         /></div>
       </div>
       <div className="ops-button-row"><WarmButton variant="secondary" onClick={() => void saveKeywords()}>儲存關鍵字</WarmButton></div>
+      {/* 收信範圍的第二個維度：時間。沒有它的話，規則一開就把每個人從古至今的往來全拉進來。 */}
+      <div className="ops-form-grid">
+        <TextInput
+          type="date" label="自動收信起始日" value={sinceDraft}
+          helpText="這個日期之前的信不會自動收進來。"
+          onChange={(e) => setSinceDraft(e.target.value)}
+        />
+      </div>
+      <div className="ops-button-row"><WarmButton variant="secondary" onClick={() => void saveSince()}>儲存起始日</WarmButton></div>
+      <OpsNotice tone="info">
+        起始日只管<b>系統自己去找什麼</b>，不管<b>你能拿什麼</b>。兩個不受它限制的入口：
+        ①在 Gmail 貼上上面勾選的標籤——不論那封信多舊都會被收進來；
+        ②人員主檔與報名詳情裡的「<b>匯入這個人的歷史往來</b>」——要跟某位家長談之前，按一下就把你跟他的完整往來拉進來。
+        平常只長出新的往來，需要誰的歷史時你主動去拿。
+      </OpsNotice>
       {labelError ? <OpsNotice tone="warning">讀不到 Gmail 標籤清單（{labelError}）。標籤設定這一區暫時只能維持現狀。</OpsNotice> : null}
       {settings.updatedAt ? <p className="ops-cell-muted">上次更新：{new Date(settings.updatedAt).toLocaleString('zh-TW')}</p> : null}
     </article>

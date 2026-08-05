@@ -5,7 +5,7 @@ import type { EmailTemplate, SessionSlot } from '@contracts/types';
 import { TEMPLATE_VARIABLES, applyTemplate, buildContext, letterKindOf, withReplyDeadline } from '../operations/emailCompose';
 import { TextInput, Textarea, Select } from '@/components/ui/FormField/FormField';
 import { WarmButton } from '@/components/ui/WarmButton/WarmButton';
-import { createCaseFromRegistration, getAppSettings, listContacts, listNotes, moveRegistrationSessions, saveNote, saveTask, transitionRegistration, updateRegistrationAdministration } from '../operations/api';
+import { createCaseFromRegistration, getAppSettings, importGmailHistory, listContacts, listNotes, moveRegistrationSessions, saveNote, saveTask, transitionRegistration, updateRegistrationAdministration } from '../operations/api';
 import type { ContactRecord, InternalNote, OperationalRegistration, WorkPriority } from '../operations/types';
 import { EmptyPanel, InlineSpinner, OpsNotice, PageHeader, SavingIndicator } from '../operations/components';
 import {
@@ -112,6 +112,21 @@ export default function RegistrationsOperationsPage() {
   const addTask = async () => { if (!current) return; await saveTask({ projectId: current.registration.projectId, contactId: current.contact.id, registrationId: current.registration.id, title: `跟進報名：${current.contact.displayName}`, priority: draft.priority ?? 'normal', dueAt: draft.nextActionAt, status: 'open' }); setNotice('已建立追蹤待辦。'); };
   const createCase = async () => { if (!current) return; try { await createCaseFromRegistration(current.registration.id, 'ongoing', caseSummary); setNotice('已由報名建立個案，並保留人物與活動關聯。'); setCaseSummary(''); } catch (e) { setError(e instanceof Error ? e.message : '轉案失敗'); } };
 
+  /**
+   * 匯入這個人的完整歷史往來。不受「自動收信起始日」限制——起始日管的是系統自己去找什麼，
+   * 不是你能拿什麼。要跟這位家長談之前按一下，往來就會排進佇列等同步抓內容。
+   */
+  const importHistory = async () => {
+    const email = current?.registration.email || current?.contact.primaryEmail;
+    if (!email) { setError('這筆報名沒有信箱，無法匯入往來。'); return; }
+    if (!window.confirm(`匯入 ${email} 的完整歷史往來？\n\n會把你與這個信箱之間的所有信件排進同步佇列，不受「自動收信起始日」限制。\n接著到整合設定按一次同步，內容才會真的被抓進來。`)) return;
+    try {
+      const result = await importGmailHistory(email);
+      setNotice(`找到 ${result.found} 封往來，其中 ${result.alreadyStored} 封已經收過；新排入佇列 ${result.queued} 封。請到整合設定按同步把內容抓進來。`);
+      setError(undefined);
+    } catch (e) { setError(e instanceof Error ? e.message : '匯入歷史往來失敗'); }
+  };
+
   /** 載入範本：變數在這裡就替換完成，使用者審閱到的即是實際會寄出的字。 */
   const loadTemplate = (templateId: string) => {
     const template = templates.find((item) => item.id === templateId);
@@ -182,7 +197,7 @@ export default function RegistrationsOperationsPage() {
         </header>
         <div className="ops-drawer-body">
           <article className="ops-panel">
-            <div className="ops-button-row"><Link className="ops-link-button" to={`/admin/inbox?registration=${current.registration.id}`}>查看信件往來</Link><Link className="ops-link-button" to={`/admin/people?contact=${current.contact.id}`}>人物主檔</Link></div>
+            <div className="ops-button-row"><Link className="ops-link-button" to={`/admin/inbox?registration=${current.registration.id}`}>查看信件往來</Link><Link className="ops-link-button" to={`/admin/people?contact=${current.contact.id}`}>人物主檔</Link><WarmButton variant="secondary" onClick={() => void importHistory()}>匯入這個人的歷史往來</WarmButton></div>
             <div className="ops-form-grid">
               <Select label="報名狀態" value={current.registration.status} onChange={(e) => void changeStatus(current.registration.id, e.target.value)}>{(STATUS_OPTIONS.includes(current.registration.status) ? STATUS_OPTIONS : [current.registration.status, ...STATUS_OPTIONS]).map((status) => <option value={status} key={status}>{STATUS_LABEL[status] ?? status}</option>)}</Select>
               <Select label="優先度" value={draft.priority ?? 'normal'} onChange={(e) => setDraft({ ...draft, priority: e.target.value as WorkPriority })}><option value="low">低</option><option value="normal">一般</option><option value="high">高</option><option value="urgent">緊急</option></Select>

@@ -188,6 +188,25 @@ requireText('supabase/functions/gmail-sync/index.ts', [
 // 只排除完全相同的位址：+alias 的報名信箱是測試錨點，必須留著。
 requireText('supabase/functions/gmail-sync/index.ts', ['const mailboxAddress', "addr !== mailboxAddress"]);
 requireText('supabase/migrations/20260805000027_app_settings_subject_keywords.sql', ['add column if not exists sync_subject_keywords']);
+// 收信範圍的第二個維度：時間。自動發現受起始日限制，人工指定不受限制——
+// 沒有這條的話，規則一開就把每個人從古至今的往來全部拉進來（量體 444 封）。
+requireText('supabase/migrations/20260805000028_app_settings_sync_since.sql', ['add column if not exists sync_since']);
+requireText('supabase/functions/gmail-sync/index.ts', ['const withAfter', 'withAfter(`(${chunk.map', 'withAfter(`subject:(', 'importHistoryFor', 'queue-cleared', 'gmail_import_history']);
+{
+  const source = withoutComments(read('supabase/functions/gmail-sync/index.ts'));
+  // 標籤查詢刻意不帶 after:：貼標籤就是「我要這封」，加時間條件會廢掉它補收舊信的用途。
+  if (/search\(\{ labelId: withAfter/.test(source) || /labelId \}\s*\)[^\n]*withAfter/.test(source)) {
+    throw new Error('the label query is time-limited; labelling old mail is how the user asks for it explicitly.');
+  }
+  // 匯入某個人的歷史同樣不受起始日限制。
+  if (/importHistoryFor[\s\S]{0,1200}withAfter/.test(source)) {
+    throw new Error('importing one person history applies the since date; that rule governs what the system looks for, not what the user may fetch.');
+  }
+}
+requireText('src/admin/pages/PeoplePage.tsx', ['handleImportHistory', '匯入這個人的歷史往來']);
+requireText('src/admin/pages/RegistrationsOperationsPage.tsx', ['importGmailHistory', '匯入這個人的歷史往來']);
+requireText('src/admin/pages/IntegrationsPage.tsx', ['clearGmailQueue', 'window.confirm']);
+requireText('src/admin/pages/SettingsPage.tsx', ['saveSince', 'sinceDraft']);
 if (read('supabase/migrations/20260805000027_app_settings_subject_keywords.sql').includes('"add"')) {
   throw new Error('the default subject keywords include "add"; Gmail search is case-insensitive so it matches Add/Added/Address.');
 }

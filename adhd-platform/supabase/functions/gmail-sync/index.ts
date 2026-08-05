@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
   // 被擋下來也要留痕：不留的話「按了同步卻什麼都沒發生」在稽核上與「函式死掉」長得一模一樣。
   const [{ data: profile }, { data: member }] = await Promise.all([admin.from('profiles').select('is_system_owner').eq('id', auth.user.id).maybeSingle(), admin.from('project_members').select('id').eq('user_id', auth.user.id).in('role', ['owner', 'admin_collab']).limit(1)]);
   if (!profile?.is_system_owner && !member?.length) { await admin.from('audit_log').insert({ action: 'gmail_sync', actor_id: auth.user.id, result: 'error', detail: 'FORBIDDEN' }); return jsonResponse({ error: 'FORBIDDEN' }, 403); }
-  const { full = false, discoverOnly = false } = await req.json().catch(() => ({ full: false, discoverOnly: false }));
+  const { full = false, discoverOnly = false, clearQueue = false, importHistoryFor = '' } = await req.json().catch(() => ({ full: false, discoverOnly: false, clearQueue: false, importHistoryFor: '' }));
 
   /**
    * 一次呼叫＝一批。每批最多完整處理 BATCH_SIZE 封，剩下的留在佇列裡，回報 `remaining`，
@@ -87,11 +87,11 @@ Deno.serve(async (req) => {
    * 切小之後每批只要幾秒，當場回得了結果；這時再丟到背景反而把「這批做了什麼」藏起來，
    * 等於把分批的好處丟掉。要的效果（畫面不必空等、也不會說謊）由分批本身達成。
    */
-  const result = await runSync(admin, auth.user.id, Boolean(full), Boolean(discoverOnly));
+  const result = await runSync(admin, auth.user.id, Boolean(full), Boolean(discoverOnly), Boolean(clearQueue), String(importHistoryFor ?? ''));
   return jsonResponse(result.body, result.status);
 });
 
-async function runSync(admin: ReturnType<typeof createClient>, actorId: string, full: boolean, discoverOnly = false): Promise<{ body: unknown; status: number }> {
+async function runSync(admin: ReturnType<typeof createClient>, actorId: string, full: boolean, discoverOnly = false, clearQueue = false, importHistoryFor = ''): Promise<{ body: unknown; status: number }> {
   const deadline = Date.now() + TIME_BUDGET_MS;
   const auth = { user: { id: actorId } };
   try {
@@ -154,10 +154,64 @@ async function runSync(admin: ReturnType<typeof createClient>, actorId: string, 
     const subjectKeywords: string[] = Array.isArray(settings?.sync_subject_keywords)
       ? (settings!.sync_subject_keywords as string[]).map(String).map((word) => word.trim()).filter(Boolean)
       : [];
+
+    /* 起始日：**自動發現**只找這天之後的信。
+     * 沒有這條的話，規則一開就會把每個人從古至今的往來整批拉進來——舊信大多早就處理完了，
+     * 進來只是混淆視聽。Gmail 的 after: 用 YYYY/MM/DD。
+     * 不受限制的兩個例外都在下面各自標註：貼標籤、逐人匯入歷史，兩者都是「我要這封」的明確指定。 */
+    const sinceRaw = String(settings?.sync_since ?? '').trim();
+    const afterClause = sinceRaw ? `after:${sinceRaw.slice(0, 10).replaceAll('-', '/')}` : '';
+    const withAfter = (q: string) => (afterClause ? `${q} ${afterClause}` : q);
     /* 上一批沒做完的續傳佇列。有東西就直接接著做，完全跳過探索——探索本身也要花時間，
      * 而且會把同一批候選重算一次。清空之後才會再去問 Gmail 有什麼新東西。 */
     const queued: string[] = Array.isArray(state?.pending_message_ids) ? (state!.pending_message_ids as string[]).map(String) : [];
     const resuming = queued.length > 0;
+
+    /* 清空佇列。規則改了之後佇列裡的候選就不該收了，但那是同步狀態、不是信件內容——
+     * 清掉不會失去任何資料。做成明確動作並寫稽核：靜靜清掉的話，事後沒有人分得出
+     * 「佇列自己跑完了」與「有人把它倒掉了」。 */
+    if (clearQueue) {
+      const cleared = Array.isArray(state?.pending_message_ids) ? (state!.pending_message_ids as string[]).length : 0;
+      await admin.from('gmail_sync_state').upsert({ mailbox_email: mailbox.emailAddress, pending_message_ids: [], updated_at: new Date().toISOString() }, { onConflict: 'mailbox_email' });
+      await admin.from('audit_log').insert({ action: 'gmail_sync', actor_id: actorId, result: 'success', detail: `queue-cleared cleared:${cleared}` });
+      return { body: { ok: true, queueCleared: true, cleared }, status: 200 };
+    }
+
+    /* 匯入某個人的歷史往來。**不帶 after:**——這是使用者指著一個人說「我要他的全部」，
+     * 起始日管的是「系統自己去找什麼」，不是「使用者能拿什麼」。
+     * 直接排進佇列，不再過閘門：閘門是用來擋不請自來的信，這裡不是。 */
+    if (importHistoryFor) {
+      const target = importHistoryFor.trim().toLowerCase();
+      const found: string[] = [];
+      let pageToken = '';
+      for (let page = 0; page < SEARCH_PAGES; page += 1) {
+        const url = new URL('https://gmail.googleapis.com/gmail/v1/users/me/messages');
+        url.searchParams.set('maxResults', '100');
+        url.searchParams.set('q', `(from:${target} OR to:${target})`);
+        if (pageToken) url.searchParams.set('pageToken', pageToken);
+        const response = await fetch(url, { headers });
+        const list = await response.json();
+        if (!response.ok) break;
+        found.push(...(list.messages ?? []).map((item: { id: string }) => item.id));
+        pageToken = list.nextPageToken ?? '';
+        if (!pageToken) break;
+      }
+      const unique = [...new Set(found)];
+      const stored = new Set<string>();
+      for (let i = 0; i < unique.length; i += 200) {
+        const { data: rows } = await admin.from('email_messages').select('gmail_message_id').in('gmail_message_id', unique.slice(i, i + 200));
+        for (const row of rows ?? []) stored.add(String(row.gmail_message_id));
+      }
+      const existingQueue = Array.isArray(state?.pending_message_ids) ? (state!.pending_message_ids as string[]).map(String) : [];
+      const queueNext = [...new Set([...existingQueue, ...unique.filter((id) => !stored.has(id))])];
+      await admin.from('gmail_sync_state').upsert({ mailbox_email: mailbox.emailAddress, pending_message_ids: queueNext, updated_at: new Date().toISOString() }, { onConflict: 'mailbox_email' });
+      // 誰、什麼時候、匯入了誰的歷史——這是把一個人的完整往來拉進系統，必須留名。
+      await admin.from('audit_log').insert({
+        action: 'gmail_import_history', actor_id: actorId, target_type: 'contact_email', target_id: target, result: 'success',
+        detail: `found:${unique.length} already:${stored.size} queued:${queueNext.length - existingQueue.length}`,
+      });
+      return { body: { ok: true, importedFor: target, found: unique.length, alreadyStored: stored.size, queued: queueNext.length - existingQueue.length, queueLength: queueNext.length }, status: 200 };
+    }
 
     let messageIds: string[] = []; let historyId = String(mailbox.historyId ?? state?.history_id ?? ''); let useFull = Boolean(full || !state?.history_id);
     // 增量同步要同時看「新訊息」與「被加上標籤」。使用者貼標籤的那封信早就同步過、也早就被
@@ -194,7 +248,8 @@ async function runSync(admin: ReturnType<typeof createClient>, actorId: string, 
       const knownList = [...knownAddresses];
       for (let i = 0; i < knownList.length; i += ADDRESS_QUERY_CHUNK) {
         const chunk = knownList.slice(i, i + ADDRESS_QUERY_CHUNK);
-        await search({ q: `(${chunk.map((addr) => `from:${addr} OR to:${addr}`).join(' OR ')})` });
+        // 自動發現受起始日限制。要拿某個人的完整歷史請用「匯入這個人的歷史往來」，那條不帶 after:。
+        await search({ q: withAfter(`(${chunk.map((addr) => `from:${addr} OR to:${addr}`).join(' OR ')})`) });
       }
 
       /* ⚠ messages.list 的 labelIds 是 **AND**（同時具備全部標籤），不是 OR。
@@ -203,10 +258,12 @@ async function runSync(admin: ReturnType<typeof createClient>, actorId: string, 
        *
        * 這個查詢與時間無關，只問「現在有哪些信帶著這個標籤」，所以貼上去就一定收得到，
        * 即使那封信是兩個月前的、history 早就翻不到。 */
+      // ⚠ 標籤查詢**不帶 after:**。貼標籤就是使用者在說「我要這封」，不論它多舊；
+      // 加上時間條件會把這條規則原本的用途（把已經被略過的舊信補收回來）直接廢掉。
       for (const labelId of syncLabelIds) await search({ labelId });
 
-      // 主旨關鍵字。同樣是搜尋整個信箱，不受最新 N 封限制。
-      if (subjectKeywords.length) await search({ q: `subject:(${subjectKeywords.join(' OR ')})` });
+      // 主旨關鍵字屬於自動發現，同樣受起始日限制——否則信箱裡歷來所有標題含 ADHD 的信會一次湧入。
+      if (subjectKeywords.length) await search({ q: withAfter(`subject:(${subjectKeywords.join(' OR ')})`) });
     }
     // 完整同步改分頁。原本固定只看最新 25 封：家長昨天的回信只要被今天的幾封廣告信推出窗口，
     // 就永遠不會被收進來，而畫面上看起來一切正常。

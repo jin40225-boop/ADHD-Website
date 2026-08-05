@@ -96,6 +96,11 @@ export interface AppSettings {
   syncLabelId?: string;
   /** 第四條收信規則：主旨含其中任一關鍵字就收。空陣列＝不啟用。 */
   syncSubjectKeywords?: string[];
+  /**
+   * 自動發現的起始日（YYYY-MM-DD）：只自動收這天之後的信。
+   * 標籤查詢與「匯入這個人的歷史往來」不受此限制——那兩件都是使用者主動說「我要這封」。
+   */
+  syncSince?: string;
   updatedAt?: string;
 }
 
