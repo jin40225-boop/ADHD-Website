@@ -62,11 +62,14 @@ export function SessionTable({ sessions, handlers }: { sessions: SessionSlot[]; 
         const busy = busyId === session.id;
         const locked = LOCKED_STATUSES.includes(session.status);
         return <tr key={session.id} className={busy ? 'ops-row--busy' : undefined}>
+          {/* 同一個月可以有好幾場標題一模一樣的場次（親職 9:00／10:00／11:00 三場）。
+              時間必須跟著標題走，而不是躲在後面兩個淡色欄位裡——只靠那個，改名額就會改到別列。 */}
           <td><button type="button" className="ops-cell-name" onClick={() => onOpen(session)}>
-            <strong>{projectName(session.projectId)}</strong> ▸<br /><span className="ops-cell-muted">{session.title}</span>
+            <strong>{projectName(session.projectId)}</strong> ▸<br />
+            <span className="ops-cell-muted">{session.title}</span> <strong>{sessionTimeText(session.startsAt)}</strong>
           </button></td>
           <td><span className="ops-cell-muted">{sessionDateText(session.startsAt)}</span></td>
-          <td><span className="ops-cell-muted">{sessionTimeText(session.startsAt)}–{sessionTimeText(session.endsAt)}</span></td>
+          <td><strong>{sessionTimeText(session.startsAt)}–{sessionTimeText(session.endsAt)}</strong></td>
           <td><CapacityCell session={session} busy={busy} onCapacity={onCapacity} onReject={onReject} /></td>
           <td><span className="ops-cell-muted">{session.bookedCount}</span></td>
           <td><input

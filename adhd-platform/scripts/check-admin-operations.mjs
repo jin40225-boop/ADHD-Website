@@ -53,6 +53,12 @@ requireText('supabase/migrations/20260804000014_audit_registration_email.sql', [
 // 場次管理（03_v4）：名額／截止格內可改、上下架 toggle、主題與客座可編輯。
 // topic/guest 是「公布神秘驚喜」的唯一入口，adminSaveSession 少存一個欄位就等於公布不了。
 requireText('src/admin/operations/SessionTable.tsx', ['onCapacity(', 'onDeadline(', 'onPublish(', 'ops-switch']);
+// 同月同標題的多時段場次（親職 9:00／10:00／11:00）只靠淡色的時間欄分辨，改名額就會改到別列——
+// 已經發生過一次，還連帶把一筆真實報名指定到錯的場次。時間必須跟標題同排且不是淡色。
+requireText('src/admin/operations/SessionTable.tsx', ['<strong>{sessionTimeText(session.startsAt)}</strong>']);
+if (read('src/admin/operations/SessionTable.tsx').includes('ops-cell-muted">{sessionTimeText')) {
+  throw new Error('SessionTable.tsx greys out the time again; it is the only thing telling same-titled rows apart.');
+}
 requireText('src/admin/pages/SessionsPage.tsx', ['<SessionTable', 'topic:', 'guest:', '神秘驚喜']);
 requireText('src/lib/api.ts', ['topic: session.topic', 'guest: session.guest', 'registration_deadline: session.registrationDeadline', 'slot_options: session.slotOptions']);
 // 新增場次的 payload 不得把 `not null default` 欄位送成 null。明確的 NULL 不會讓 DB 預設值
