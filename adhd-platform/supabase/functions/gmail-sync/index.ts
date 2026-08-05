@@ -26,14 +26,31 @@ function listAddresses(value = '') { return value.split(',').map(address).filter
 function safeName(value: string) { return value.replace(/[\\/:*?"<>|]/g, '_').slice(0, 180) || 'attachment'; }
 /** 完整同步最多翻幾頁（每頁 100 封）。原本固定只看最新 25 封，回信被廣告信擠出窗口就再也收不到。 */
 const FULL_SYNC_PAGES = 3;
+/** 信頭比對的平行度。逐封循序取，300 封就是 300 次來回，掃完之前函式就先被掐掉了。 */
+const META_CONCURRENCY = 8;
+/**
+ * 這一輪最多花多久（毫秒）。超過就停下來，把剩幾封一起回報，再按一次接著掃。
+ *
+ * 平台上限（Supabase 官方文件）：wall clock 免費 150s／付費 400s，request idle timeout 150s
+ * 逾時回 504，CPU time 2s（不含 async I/O，我們幾乎全是 I/O 所以不是瓶頸）。
+ * 但實測客戶端約 30 秒就放棄了，所以真正的天花板是「使用者看得到結果」的那一段，
+ * 不是平台的 150s。抓 20 秒：做得完就做完，做不完也要在使用者還在看的時候把進度講出來。
+ *
+ * 被執行環境掐掉時 catch 不會執行，連一筆 error 稽核都留不下——那正是監督視窗看到的
+ * 「按了同步、email_messages 從 208 變 210、稽核卻什麼都沒有」。
+ */
+const TIME_BUDGET_MS = 20_000;
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return jsonResponse({ error: 'METHOD_NOT_ALLOWED' }, 405);
   const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+  const deadline = Date.now() + TIME_BUDGET_MS;
   try {
     const jwt = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, ''); const { data: auth } = await admin.auth.getUser(jwt); if (!auth.user) return jsonResponse({ error: 'UNAUTHORIZED' }, 401);
-    const [{ data: profile }, { data: member }] = await Promise.all([admin.from('profiles').select('is_system_owner').eq('id', auth.user.id).maybeSingle(), admin.from('project_members').select('id').eq('user_id', auth.user.id).in('role', ['owner', 'admin_collab']).limit(1)]); if (!profile?.is_system_owner && !member?.length) return jsonResponse({ error: 'FORBIDDEN' }, 403);
+    // 被擋下來也要留痕：不留的話「按了同步卻什麼都沒發生」在稽核上與「函式死掉」長得一模一樣。
+    const [{ data: profile }, { data: member }] = await Promise.all([admin.from('profiles').select('is_system_owner').eq('id', auth.user.id).maybeSingle(), admin.from('project_members').select('id').eq('user_id', auth.user.id).in('role', ['owner', 'admin_collab']).limit(1)]);
+    if (!profile?.is_system_owner && !member?.length) { await admin.from('audit_log').insert({ action: 'gmail_sync', actor_id: auth.user.id, result: 'error', detail: 'FORBIDDEN' }); return jsonResponse({ error: 'FORBIDDEN' }, 403); }
     const { full = false } = await req.json().catch(() => ({ full: false })); const accessToken = await getGoogleAccessToken(); const headers = { Authorization: `Bearer ${accessToken}` };
     const profileRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/profile', { headers }); const mailbox = await profileRes.json(); if (!profileRes.ok) { const detail = String(mailbox.error?.message ?? 'Gmail profile 讀取失敗'); throw new Error(isMissingGmailScope(detail) ? gmailScopeMessage : detail); }
     const { data: state } = await admin.from('gmail_sync_state').select('*').eq('mailbox_email', mailbox.emailAddress).maybeSingle();
@@ -111,26 +128,57 @@ Deno.serve(async (req) => {
         if (!pageToken) break;
       }
     }
-    let synced = 0; let skipped = 0;
-    for (const id of [...new Set(messageIds)]) {
-      const { data: existing } = await admin.from('email_messages').select('id').eq('gmail_message_id', id).maybeSingle();
-      if (existing) continue;
+    let synced = 0; let skipped = 0; let remaining = 0;
+    const candidates = [...new Set(messageIds)];
 
-      // 先只取信頭比對範圍。不符合的信**連內文都不讀取**，更不會存進資料庫。
-      const metaUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}?format=metadata&metadataHeaders=From&metadataHeaders=To`;
-      const metaRes = await fetch(metaUrl, { headers });
-      const meta = await metaRes.json();
-      if (!metaRes.ok) continue;
-      const metaHeaders = Object.fromEntries((meta.payload?.headers ?? []).map((item: { name: string; value: string }) => [item.name.toLowerCase(), item.value]));
-      const metaLabels = (meta.labelIds ?? []) as string[];
-      const metaOutbound = address(metaHeaders.from) === String(mailbox.emailAddress).toLowerCase() || metaLabels.includes('SENT');
-      const metaCounterpart = metaOutbound ? address(metaHeaders.to) : address(metaHeaders.from);
-      if (!metaCounterpart) { skipped += 1; continue; }
-      const inScope = knownAddresses.has(metaCounterpart)
-        || knownThreads.has(String(meta.threadId))
-        || (syncLabelId !== '' && metaLabels.includes(syncLabelId));
-      if (!inScope) { skipped += 1; continue; }
+    // 開工前先留一筆。這一段以後的任何一次中斷（時間到、被掐掉、逾時）都不會回到 catch，
+    // 所以完成時那一筆不能是唯一的紀錄——否則「跑到一半死掉」在稽核上看起來與「沒有人按過」
+    // 完全一樣，而 email_messages 其實已經多了兩筆。
+    await admin.from('audit_log').insert({
+      action: 'gmail_sync', actor_id: auth.user.id, result: 'success',
+      detail: `start ${useFull ? 'full' : 'incremental'} candidates:${candidates.length}`,
+    });
 
+    /* 一次問完哪些已經收過。
+     * 原本是每封一次 `eq(gmail_message_id)` 查詢——300 封候選就是 300 次資料庫來回，
+     * 光是「確認不用做事」就能把整支函式的時間耗光。而函式被執行環境掐掉時 catch 不會跑，
+     * 於是連一筆 error 稽核都留不下來，畫面上看起來像什麼都沒發生。 */
+    const alreadyStored = new Set<string>();
+    for (let i = 0; i < candidates.length; i += 200) {
+      const { data: rows } = await admin.from('email_messages').select('gmail_message_id').in('gmail_message_id', candidates.slice(i, i + 200));
+      for (const row of rows ?? []) alreadyStored.add(String(row.gmail_message_id));
+    }
+    const fresh = candidates.filter((id) => !alreadyStored.has(id));
+
+    /* 信頭平行取，一次 META_CONCURRENCY 封；並且設時間預算。
+     * 不符合的信**連內文都不讀取**，更不會存進資料庫。掃不完就停下來、把剩幾封回報出去，
+     * 下次同步再接著掃——寧可回報「這次只掃了一半」，也不要整支函式無聲死掉。 */
+    const inScopeIds: string[] = [];
+    for (let i = 0; i < fresh.length; i += META_CONCURRENCY) {
+      if (Date.now() > deadline) { remaining = fresh.length - i; break; }
+      const metas = await Promise.all(fresh.slice(i, i + META_CONCURRENCY).map(async (id) => {
+        const metaUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}?format=metadata&metadataHeaders=From&metadataHeaders=To`;
+        const metaRes = await fetch(metaUrl, { headers });
+        const meta = await metaRes.json();
+        if (!metaRes.ok) return { id, inScope: false };
+        const metaHeaders = Object.fromEntries((meta.payload?.headers ?? []).map((item: { name: string; value: string }) => [item.name.toLowerCase(), item.value]));
+        const metaLabels = (meta.labelIds ?? []) as string[];
+        const metaOutbound = address(metaHeaders.from) === String(mailbox.emailAddress).toLowerCase() || metaLabels.includes('SENT');
+        const metaCounterpart = metaOutbound ? address(metaHeaders.to) : address(metaHeaders.from);
+        if (!metaCounterpart) return { id, inScope: false };
+        const inScope = knownAddresses.has(metaCounterpart)
+          || knownThreads.has(String(meta.threadId))
+          || (syncLabelId !== '' && metaLabels.includes(syncLabelId));
+        return { id, inScope };
+      }));
+      for (const entry of metas) {
+        if (!entry.inScope) { skipped += 1; continue; }
+        inScopeIds.push(entry.id);
+      }
+    }
+
+    for (const id of inScopeIds) {
+      if (Date.now() > deadline) { remaining += 1; continue; }
       const response = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}?format=full`, { headers }); const message = await response.json(); if (!response.ok) continue; const h = Object.fromEntries((message.payload?.headers ?? []).map((item: { name: string; value: string }) => [item.name.toLowerCase(), item.value])); const parsed = collect(message.payload ?? {}); const from = address(h.from); const to = address(h.to); const outbound = from === String(mailbox.emailAddress).toLowerCase() || (message.labelIds ?? []).includes('SENT'); const counterpart = outbound ? to : from; if (!counterpart) continue;
       let { data: thread } = await admin.from('email_threads').select('id,registration_id,contact_id,subject').eq('gmail_thread_id', message.threadId).maybeSingle();
       if (!thread) {
@@ -183,9 +231,9 @@ Deno.serve(async (req) => {
     }
     await admin.from('gmail_sync_state').upsert({ mailbox_email: mailbox.emailAddress, history_id: historyId, last_full_sync_at: useFull ? new Date().toISOString() : state?.last_full_sync_at ?? null, last_incremental_sync_at: new Date().toISOString(), last_error: null, updated_at: new Date().toISOString() }, { onConflict: 'mailbox_email' });
     // 略過幾封也記進稽核：這個數字是「過濾有沒有在動」的唯一外顯訊號。
-    await admin.from('audit_log').insert({ action: 'gmail_sync', actor_id: auth.user.id, result: 'success', detail: `${useFull ? 'full' : 'incremental'}:${synced} skipped:${skipped}` });
+    await admin.from('audit_log').insert({ action: 'gmail_sync', actor_id: auth.user.id, result: 'success', detail: `${useFull ? 'full' : 'incremental'}:${synced} skipped:${skipped}${remaining ? ` remaining:${remaining}` : ''}` });
     // 移除標籤不做回溯刪除：同步端只該有「收進來」這個權限，誤收的清理由人決定。
-    return jsonResponse({ ok: true, synced, skipped, mailboxEmail: mailbox.emailAddress, syncLabelActive: syncLabelId !== '' });
+    return jsonResponse({ ok: true, synced, skipped, remaining, mailboxEmail: mailbox.emailAddress, syncLabelActive: syncLabelId !== '' });
   } catch (err) { const detail = errorMessage(err); const missingScope = isMissingGmailScope(detail) || detail === gmailScopeMessage; const message = missingScope ? gmailScopeMessage : detail; await admin.from('audit_log').insert({ action: 'gmail_sync', result: 'error', detail: message }); return jsonResponse({ error: message, code: missingScope ? 'GMAIL_SCOPE_MISSING' : 'GMAIL_SYNC_FAILED' }, 500); }
 });
 

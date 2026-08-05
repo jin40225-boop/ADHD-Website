@@ -144,12 +144,12 @@ requireText('supabase/functions/gmail-sync/index.ts', ['follow_up_due_at', 'foll
 // 指定標籤），不符合的信連內文都不讀。先前沒有任何過濾，使用者的私人信件被連內文存進資料庫，
 // 而 25 封的窗口還會讓家長的回信被廣告信擠掉。
 requireText('supabase/functions/gmail-sync/index.ts', [
-  'format=metadata', 'knownAddresses', 'knownThreads', 'syncLabelId', 'if (!inScope)', 'nextPageToken',
+  'format=metadata', 'knownAddresses', 'knownThreads', 'syncLabelId', 'if (!entry.inScope)', 'nextPageToken',
 ]);
 {
   const source = withoutComments(read('supabase/functions/gmail-sync/index.ts'));
   // 唯一一次抓完整內文必須排在範圍守門之後。
-  if (source.indexOf('format=full') < source.indexOf('if (!inScope)')) {
+  if (source.indexOf('format=full') < source.indexOf('if (!entry.inScope)')) {
     throw new Error('gmail-sync fetches the full message before the scope gate; unmatched mail must never be read.');
   }
   if (source.includes("maxResults', '25'")) {
@@ -174,6 +174,15 @@ if (withoutComments(read('supabase/functions/gmail-labels/index.ts')).match(/fro
   throw new Error('gmail-labels writes to the database; it is meant to be read-only.');
 }
 requireText('src/admin/pages/SettingsPage.tsx', ['saveSyncLabel', 'listGmailLabels', 'syncLabelId']);
+// 部署後仍開著的分頁：hashed chunk 消失，lazy import 404，畫面空白且沒有任何訊息。
+// 這個站一天部署數次，後台會被開著好幾天——已經害監督視窗把它誤判成「函式壞了」一次。
+requireText('src/router.tsx', ['StaleChunkBoundary', 'watchForStaleChunks', 'clearStaleChunkFlag']);
+requireText('src/lib/staleChunk.ts', ['vite:preloadError', 'RELOAD_FLAG', 'sessionStorage']);
+// 同步跑不完時必須留下紀錄：被執行環境掐掉的話 catch 不會執行，完成時那一筆稽核就不會寫。
+requireText('supabase/functions/gmail-sync/index.ts', ['TIME_BUDGET_MS', 'META_CONCURRENCY', "detail: `start ", 'remaining']);
+// 意願記在人身上，不從報名狀態推導——狀態一變，推導出來的意願就失效，然後信就寄出去了。
+requireText('src/admin/operations/emailCompose.ts', ['noBulkEmail', '不接收群發']);
+requireText('supabase/migrations/20260805000024_contacts_no_bulk.sql', ['add column if not exists no_bulk_email']);
 // F17：主旨在建串時決定後不再覆寫，否則轉寄一次整條串就改名成「Fwd: …」。
 requireText('supabase/functions/gmail-sync/index.ts', ['thread.subject ? {} : { subject:']);
 // F14：導航場次的起迄是「該月候選時段最早起到最晚迄」，會跨日。只印時鐘時間會變成

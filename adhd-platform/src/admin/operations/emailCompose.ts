@@ -189,7 +189,7 @@ export interface BulkRecipient { contactId: string; displayName: string; email: 
  */
 export function resolveBulkRecipients(
   groups: { id: string; name: string; members: { contactId: string }[] }[],
-  contacts: { id: string; displayName: string; primaryEmail?: string }[],
+  contacts: { id: string; displayName: string; primaryEmail?: string; noBulkEmail?: boolean }[],
   selection: { groupIds: string[]; includeIds: string[]; excludeIds: string[] },
 ): { recipients: BulkRecipient[]; skipped: { displayName: string; reason: string }[] } {
   const byId = new Map(contacts.map((contact) => [contact.id, contact]));
@@ -206,6 +206,9 @@ export function resolveBulkRecipients(
     if (excluded.has(contactId)) continue;
     const contact = byId.get(contactId);
     if (!contact) { skipped.push({ displayName: contactId, reason: '找不到這個聯絡人' }); continue; }
+    // 本人表示不收群發。列出來而不是靜靜消失——名單少一個人要看得見理由，
+    // 而且這個理由不會因為報名狀態變動而失效，它記在人身上。
+    if (contact.noBulkEmail) { skipped.push({ displayName: contact.displayName, reason: '不接收群發' }); continue; }
     if (!contact.primaryEmail) { skipped.push({ displayName: contact.displayName, reason: '沒有信箱' }); continue; }
     recipients.push({ contactId, displayName: contact.displayName, email: contact.primaryEmail, via: source });
   }

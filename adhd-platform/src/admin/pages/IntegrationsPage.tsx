@@ -18,7 +18,14 @@ export default function IntegrationsPage() {
     setError(undefined);
     try {
       const result = await triggerGmailSync(full);
-      setNotice(`Gmail 同步完成：${result.synced} 封信件。`);
+      // 略過幾封要講出來——那是「收信範圍過濾有沒有在動」的唯一外顯訊號。還有剩的也要講：
+      // 那代表這次是時間到了先停下，不是掃完了。
+      setNotice([
+        `Gmail 同步完成：收進 ${result.synced} 封`,
+        result.skipped ? `，範圍外略過 ${result.skipped} 封（未讀取內容）` : '',
+        result.remaining ? `，時間用完還剩 ${result.remaining} 封沒掃，再按一次會接著掃` : '',
+        '。',
+      ].join(''));
       await reload();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Gmail 同步失敗');

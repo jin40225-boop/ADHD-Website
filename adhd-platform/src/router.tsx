@@ -1,6 +1,8 @@
-import { Suspense, lazy, type ReactNode } from 'react';
+import { Suspense, lazy, useEffect, type ReactNode } from 'react';
 import { RouterProvider, createBrowserRouter, useParams } from 'react-router-dom';
 import { LoadingState } from '@/components/ui';
+import { StaleChunkBoundary } from '@/components/StaleChunkBoundary';
+import { clearStaleChunkFlag, watchForStaleChunks } from '@/lib/staleChunk';
 import PublicLayout from '@/routes/PublicLayout';
 import Placeholder from '@/routes/Placeholder';
 import RegisterPage from '@/routes/RegisterPage';
@@ -42,7 +44,11 @@ const DocumentsPage = lazy(() => import('@/admin/pages/DocumentsPage'));
 const AuditPage = lazy(() => import('@/admin/pages/AuditPage'));
 const UiGallery = lazy(() => import('@/components/ui/_gallery').then((module) => ({ default: module.UiGallery })));
 
-function withSuspense(node: ReactNode) { return <Suspense fallback={<LoadingState label="載入頁面中…" />}>{node}</Suspense>; }
+// 每個 lazy 路由都包一層：chunk 過期是「載入的那一刻」才會炸，而後台整頁都是 lazy 的。
+function withSuspense(node: ReactNode) {
+  return <StaleChunkBoundary><Suspense fallback={<LoadingState label="載入頁面中…" />}>{node}</Suspense></StaleChunkBoundary>;
+}
+watchForStaleChunks();
 function ArticleDetailRoute() { const { slug } = useParams(); return <ArticleDetailPage slug={slug} />; }
 const basename = import.meta.env.BASE_URL.replace(/\/$/, '') || '/';
 
@@ -92,4 +98,8 @@ const router = createBrowserRouter([
   { path: '*', element: <Placeholder title="404 找不到頁面" note="這個網址不存在，請從導覽列重新前往。" /> },
 ], { basename });
 
-export default function AppRouter() { return <RouterProvider router={router} future={{ v7_startTransition: true }} />; }
+export default function AppRouter() {
+  // 撐到這裡就代表這一版載入成功了，把「已自動重載過」的旗標清掉——下一次部署才有機會再救一次。
+  useEffect(() => { clearStaleChunkFlag(); }, []);
+  return <RouterProvider router={router} future={{ v7_startTransition: true }} />;
+}

@@ -54,6 +54,8 @@ export interface ContactRecord {
   tags: string[];
   /** 常用聯絡人（團隊四人）置頂用。 */
   isFavorite: boolean;
+  /** 本人表示不接收群發。一對一往來不受影響——退出群發不等於斷絕聯絡。 */
+  noBulkEmail?: boolean;
   createdAt: string;
   updatedAt?: string;
   registrations: OperationalRegistration[];
@@ -229,3 +231,4 @@ export interface GmailSyncState {
   lastError?: string;
   updatedAt: string;
 }
+

@@ -58,10 +58,10 @@ export default function PeoplePage() {
     });
   }, [contacts, query, statusFilter]);
 
-  async function handleContactSave(values: { displayName: string; primaryEmail: string; phone: string; status: ContactRecord['status']; tags: string }) {
+  async function handleContactSave(values: { displayName: string; primaryEmail: string; phone: string; status: ContactRecord['status']; tags: string; noBulkEmail: boolean }) {
     if (!selected) return;
     try {
-      await updateContact(selected.id, { displayName: values.displayName, primaryEmail: values.primaryEmail, phone: values.phone, status: values.status, tags: values.tags.split(/[、,，]/).map((item) => item.trim()).filter(Boolean) });
+      await updateContact(selected.id, { displayName: values.displayName, primaryEmail: values.primaryEmail, phone: values.phone, status: values.status, noBulkEmail: values.noBulkEmail, tags: values.tags.split(/[、,，]/).map((item) => item.trim()).filter(Boolean) });
       setEditOpen(false); setNotice('人員主檔已更新，跨活動關聯不受影響。'); await reload();
     } catch (err) { setError(err instanceof Error ? err.message : '更新失敗'); }
   }
@@ -119,10 +119,10 @@ export default function PeoplePage() {
   );
 }
 
-function ContactEditModal({ open, contact, onClose, onSave }: { open: boolean; contact: ContactRecord; onClose: () => void; onSave: (values: { displayName: string; primaryEmail: string; phone: string; status: ContactRecord['status']; tags: string }) => void }) {
-  const [displayName, setDisplayName] = useState(contact.displayName); const [primaryEmail, setPrimaryEmail] = useState(contact.primaryEmail ?? ''); const [phone, setPhone] = useState(contact.phone ?? ''); const [status, setStatus] = useState(contact.status); const [tags, setTags] = useState(contact.tags.join('、'));
-  useEffect(() => { setDisplayName(contact.displayName); setPrimaryEmail(contact.primaryEmail ?? ''); setPhone(contact.phone ?? ''); setStatus(contact.status); setTags(contact.tags.join('、')); }, [contact]);
-  return <Modal open={open} onClose={onClose} title="編輯人員主檔" footer={<><WarmButton variant="secondary" onClick={onClose}>取消</WarmButton><WarmButton onClick={() => onSave({ displayName, primaryEmail, phone, status, tags })} disabled={!displayName.trim()}>儲存主檔</WarmButton></>}><div className="ops-form-grid"><TextInput label="顯示姓名" name="contact-name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} /><TextInput label="主要 Email" type="email" name="contact-email" value={primaryEmail} onChange={(e) => setPrimaryEmail(e.target.value)} /><TextInput label="電話" name="contact-phone" value={phone} onChange={(e) => setPhone(e.target.value)} /><Select label="聯繫狀態" name="contact-status-edit" value={status} onChange={(e) => setStatus(e.target.value as ContactRecord['status'])} options={Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label }))} /><div className="ops-full"><TextInput label="標籤" name="contact-tags" value={tags} helpText="以逗號或頓號分隔，例如：家長、需回電" onChange={(e) => setTags(e.target.value)} /></div></div></Modal>;
+function ContactEditModal({ open, contact, onClose, onSave }: { open: boolean; contact: ContactRecord; onClose: () => void; onSave: (values: { displayName: string; primaryEmail: string; phone: string; status: ContactRecord['status']; tags: string; noBulkEmail: boolean }) => void }) {
+  const [displayName, setDisplayName] = useState(contact.displayName); const [primaryEmail, setPrimaryEmail] = useState(contact.primaryEmail ?? ''); const [phone, setPhone] = useState(contact.phone ?? ''); const [status, setStatus] = useState(contact.status); const [tags, setTags] = useState(contact.tags.join('、')); const [noBulkEmail, setNoBulkEmail] = useState(Boolean(contact.noBulkEmail));
+  useEffect(() => { setDisplayName(contact.displayName); setPrimaryEmail(contact.primaryEmail ?? ''); setPhone(contact.phone ?? ''); setStatus(contact.status); setTags(contact.tags.join('、')); setNoBulkEmail(Boolean(contact.noBulkEmail)); }, [contact]);
+  return <Modal open={open} onClose={onClose} title="編輯人員主檔" footer={<><WarmButton variant="secondary" onClick={onClose}>取消</WarmButton><WarmButton onClick={() => onSave({ displayName, primaryEmail, phone, status, tags, noBulkEmail })} disabled={!displayName.trim()}>儲存主檔</WarmButton></>}><div className="ops-form-grid"><TextInput label="顯示姓名" name="contact-name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} /><TextInput label="主要 Email" type="email" name="contact-email" value={primaryEmail} onChange={(e) => setPrimaryEmail(e.target.value)} /><TextInput label="電話" name="contact-phone" value={phone} onChange={(e) => setPhone(e.target.value)} /><Select label="聯繫狀態" name="contact-status-edit" value={status} onChange={(e) => setStatus(e.target.value as ContactRecord['status'])} options={Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label }))} /><div className="ops-full"><TextInput label="標籤" name="contact-tags" value={tags} helpText="以逗號或頓號分隔，例如：家長、需回電" onChange={(e) => setTags(e.target.value)} /></div><div className="ops-full"><label className="ops-inline-check"><input type="checkbox" checked={noBulkEmail} onChange={(e) => setNoBulkEmail(e.target.checked)} />不接收群發（一對一往來不受影響——退出群發不等於斷絕聯絡）</label></div></div></Modal>;
 }
 
 function NoteModal({ open, onClose, onSave }: { open: boolean; onClose: () => void; onSave: (type: NoteType, content: string) => void }) {

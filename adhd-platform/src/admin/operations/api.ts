@@ -220,13 +220,14 @@ export async function listContacts(): Promise<ContactRecord[]> {
     status: row.status,
     tags: row.tags ?? [],
     isFavorite: row.is_favorite ?? false,
+    noBulkEmail: row.no_bulk_email ?? false,
     createdAt: row.created_at,
     updatedAt: row.updated_at ?? undefined,
     registrations: (row.registrations ?? []).map((reg: Row) => mapRegistration(reg, projectNames.get(reg.project_id), projectSlugs.get(reg.project_id))),
   }));
 }
 
-export async function updateContact(id: string, patch: Partial<Pick<ContactRecord, 'displayName' | 'primaryEmail' | 'phone' | 'status' | 'tags' | 'isFavorite'>>) {
+export async function updateContact(id: string, patch: Partial<Pick<ContactRecord, 'displayName' | 'primaryEmail' | 'phone' | 'status' | 'tags' | 'isFavorite' | 'noBulkEmail'>>) {
   const payload: Row = {};
   if (patch.displayName !== undefined) payload.display_name = patch.displayName.trim();
   if (patch.primaryEmail !== undefined) payload.primary_email = patch.primaryEmail.trim().toLowerCase() || null;
@@ -234,6 +235,7 @@ export async function updateContact(id: string, patch: Partial<Pick<ContactRecor
   if (patch.status !== undefined) payload.status = patch.status;
   if (patch.tags !== undefined) payload.tags = patch.tags;
   if (patch.isFavorite !== undefined) payload.is_favorite = patch.isFavorite;
+  if (patch.noBulkEmail !== undefined) payload.no_bulk_email = patch.noBulkEmail;
   const { error } = await db().from('contacts').update(payload).eq('id', id);
   assert(error, '更新人員主檔失敗');
 }
@@ -623,8 +625,9 @@ export async function createEmailAttachmentUrl(storagePath: string) {
 export async function triggerGmailSync(full = false) {
   const { data, error } = await db().functions.invoke('gmail-sync', { body: { full } });
   await assertFunction(error, '啟動 Gmail 同步失敗');
-  return data as { ok: boolean; synced: number; mailboxEmail?: string };
+  return data as { ok: boolean; synced: number; skipped?: number; remaining?: number; mailboxEmail?: string; syncLabelActive?: boolean };
 }
+
 
 
 
