@@ -173,7 +173,25 @@ requireText('supabase/functions/gmail-labels/index.ts', ['users/me/labels', 'is_
 if (withoutComments(read('supabase/functions/gmail-labels/index.ts')).match(/from\('[a-z_]+'\)\.(insert|update|delete|upsert)/)) {
   throw new Error('gmail-labels writes to the database; it is meant to be read-only.');
 }
-requireText('src/admin/pages/SettingsPage.tsx', ['saveSyncLabel', 'listGmailLabels', 'syncLabelId']);
+// 標籤可複選：三條規則本來就是聯集，標籤那條沒有理由是單選——名字很像的標籤只能挑一個時，
+// 挑錯就是一整輪驗收白跑（ADHD相關資訊／ADHD重要訊息，已經發生過一次）。
+requireText('src/admin/pages/SettingsPage.tsx', ['saveSyncLabels', 'listGmailLabels', 'selectedLabelIds', 'marketing']);
+requireText('supabase/migrations/20260805000026_app_settings_sync_label_ids.sql', ['add column if not exists sync_label_ids']);
+// ⚠ messages.list 的 labelIds 是 AND（同時具備），不是 OR。要「任一符合」就必須每個標籤各查一次；
+// 塞多個進同一次查詢會變成「同時貼了這幾個標籤的信」，幾乎永遠是空的。
+requireText('supabase/functions/gmail-sync/index.ts', [
+  'sync_label_ids', 'for (const labelId of syncLabelIds)', 'syncLabelIds.some((labelId) => metaLabels.includes(labelId))',
+]);
+{
+  const source = withoutComments(read('supabase/functions/gmail-sync/index.ts'));
+  if (/labelIds',\s*syncLabelIds/.test(source) || source.includes("labelIds', syncLabelIds.join")) {
+    throw new Error('gmail-sync passes several labels to one messages.list call; labelIds is AND, so that asks for mail carrying all of them.');
+  }
+  // 舊欄位是「還沒重新勾選時的退路」，被覆寫掉的話那條退路會在使用者沒察覺時消失。
+  if (withoutComments(read('src/admin/operations/api.ts')).includes('sync_label_id:')) {
+    throw new Error('updateAppSettings writes the legacy single-label column; it is the fallback for settings not yet re-picked.');
+  }
+}
 // 部署後仍開著的分頁：hashed chunk 消失，lazy import 404，畫面空白且沒有任何訊息。
 // 這個站一天部署數次，後台會被開著好幾天——已經害監督視窗把它誤判成「函式壞了」一次。
 requireText('src/router.tsx', ['StaleChunkBoundary', 'watchForStaleChunks', 'clearStaleChunkFlag']);

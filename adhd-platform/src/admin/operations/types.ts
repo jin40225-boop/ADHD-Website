@@ -88,9 +88,11 @@ export interface AppSettings {
   /** 寄出後幾天未回覆算逾期。Phase 4 的信件狀態機接線後才會真的依它判斷。 */
   followUpDays: number;
   /**
-   * gmail-sync 第三條收信規則：帶著這個 Gmail 標籤 id 的信一律收進來。留空＝不啟用。
+   * gmail-sync 第三條收信規則：帶著其中**任一個** Gmail 標籤的信就收進來。空陣列＝不啟用。
    * 存 id 不存名稱——標籤改名時 id 不變，比對名稱會在改名的那一刻安靜失效。
    */
+  syncLabelIds?: string[];
+  /** 舊的單選欄位。`syncLabelIds` 為空時才會被讀到；保留是為了讓還沒重新勾選的設定行為不變。 */
   syncLabelId?: string;
   updatedAt?: string;
 }

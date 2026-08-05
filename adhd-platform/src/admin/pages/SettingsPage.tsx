@@ -32,6 +32,12 @@ export default function SettingsPage() {
   // 標籤清單讀不到不該讓整頁失敗——它只是下拉的選項來源，其餘設定照樣要能改。
   useEffect(() => { listGmailLabels().then(setLabels).catch((e: unknown) => setLabelError(e instanceof Error ? e.message : '未知錯誤')); }, []);
 
+  // 新清單為空時退回舊的單選欄位——與 gmail-sync 的讀取邏輯一致，
+  // 否則畫面會顯示「一個都沒勾」而後端其實還在用舊設定收信。
+  const selectedLabelIds = useMemo(
+    () => (settings.syncLabelIds?.length ? settings.syncLabelIds : [settings.syncLabelId].filter(Boolean) as string[]),
+    [settings.syncLabelIds, settings.syncLabelId],
+  );
   const favorites = useMemo(() => contacts.filter((contact) => contact.isFavorite), [contacts]);
   const searched = useMemo(() => {
     const keyword = search.trim().toLowerCase();
@@ -67,10 +73,12 @@ export default function SettingsPage() {
     if (!Number.isInteger(value) || value < 0 || value > 60) { setError('逾期門檻請填 0–60 的整數天數。'); return; }
     await run('settings', () => updateAppSettings({ followUpDays: value }), `逾期門檻已存為 ${value} 天（Phase 4 狀態機接線後生效）。`);
   };
-  const saveSyncLabel = async (labelId: string) => {
-    const name = labels.find((label) => label.id === labelId)?.name;
-    await run('sync-label', () => updateAppSettings({ syncLabelId: labelId }),
-      labelId ? `同步標籤已設為「${name ?? labelId}」，下次同步會把帶這個標籤的信收進來。` : '同步標籤已取消；已收的信不受影響。');
+  const saveSyncLabels = async (ids: string[]) => {
+    const names = ids.map((id) => labels.find((label) => label.id === id)?.name ?? id);
+    await run('sync-label', () => updateAppSettings({ syncLabelIds: ids }),
+      ids.length
+        ? `同步標籤已設為「${names.join('」「')}」，下次同步會把帶其中任一個標籤的信收進來。`
+        : '同步標籤已全部取消；已收的信不受影響。');
   };
 
   const drafts = templates.filter((template) => template.reviewStatus === 'draft');
@@ -115,22 +123,36 @@ export default function SettingsPage() {
         這個門檻<b>現在只是存起來</b>：信件狀態機要到 <b>Phase 4</b> 才會依它判定「逾期未回覆」。在那之前改這個數字，後台顯示的信件狀態不會有任何變化——不是壞了，是還沒接線。
       </OpsNotice>
       <div className="ops-button-row"><WarmButton onClick={() => void saveDays()}>儲存門檻</WarmButton></div>
-      {/* 第三條收信規則。存的是 label id，畫面上顯示名稱——標籤改名時 id 不變，
-          比對名稱會在你改名的那一刻安靜失效，而且畫面上完全看不出來。 */}
-      <div className="ops-form-grid">
-        <Select label="同步標籤（Gmail）" value={settings.syncLabelId ?? ''} disabled={busyId === 'sync-label'} onChange={(e) => void saveSyncLabel(e.target.value)}>
-          <option value="">不啟用（只收名冊內信箱與已知信件串）</option>
-          {labels.map((label) => <option key={label.id} value={label.id}>{label.name}</option>)}
-          {/* 已存的 id 不在清單裡（標籤被刪掉了）時，補一個選項，才不會被下拉悄悄改成「不啟用」。 */}
-          {settings.syncLabelId && !labels.some((label) => label.id === settings.syncLabelId)
-            ? <option value={settings.syncLabelId}>（找不到這個標籤：{settings.syncLabelId}）</option> : null}
-        </Select>
+      {/* 第三條收信規則，可複選。存的是 label id、畫面上顯示名稱——標籤改名時 id 不變，
+          比對名稱會在你改名的那一刻安靜失效，而且畫面上完全看不出來。
+          複選是因為三條規則本來就是聯集：名字很像的標籤（ADHD相關資訊／ADHD重要訊息）
+          只能挑一個時，挑錯就是整輪驗收白跑。 */}
+      <p className="ops-cell-muted" style={{ marginTop: '.8rem' }}>同步標籤（Gmail，可複選；勾選的<b>任一個</b>符合就收）</p>
+      <div className="ops-chip-row">
+        {labels.map((label) => <label className="ops-member-chip" key={label.id}>
+          <input
+            type="checkbox" checked={selectedLabelIds.includes(label.id)} disabled={busyId === 'sync-label'}
+            onChange={(e) => void saveSyncLabels(e.target.checked ? [...selectedLabelIds, label.id] : selectedLabelIds.filter((id) => id !== label.id))}
+          />
+          {label.name}
+        </label>)}
+        {/* 已存的 id 不在清單裡（標籤被刪掉了）也要顯示，否則它會無聲留在設定裡繼續生效。 */}
+        {selectedLabelIds.filter((id) => !labels.some((label) => label.id === id)).map((id) => <label className="ops-member-chip" key={id}>
+          <input type="checkbox" checked disabled={busyId === 'sync-label'} onChange={() => void saveSyncLabels(selectedLabelIds.filter((item) => item !== id))} />
+          （找不到這個標籤：{id}）
+        </label>)}
       </div>
+      {!selectedLabelIds.length ? <p className="ops-cell-muted">目前一個都沒勾＝第三條規則不啟用，只收名冊內信箱與已知信件串。</p> : null}
       <OpsNotice tone="info">
         收信範圍是三條規則的<b>聯集</b>：①對方信箱在報名或常用聯絡人名冊裡 ②信件串已經在系統裡（對方換信箱回同一封信也接得住）
-        ③這封信帶著上面選的標籤。第三條是給「用系統不認得的信箱寄來」的家長信或邀約信留的人工救援管道——
+        ③這封信帶著上面勾選的<b>任一個</b>標籤。第三條是給「用系統不認得的信箱寄來」的家長信或邀約信留的人工救援管道——
         在 Gmail 貼上標籤，下次同步就會收進來，<b>即使那封信之前已經被略過</b>。
         取消標籤<b>不會</b>回頭刪除已收的信；誤收的清理請走人工，同步端沒有刪除權。
+      </OpsNotice>
+      <OpsNotice tone="warning">
+        勾選前先想一下那個標籤的範圍。像 <b>marketing</b>、<b>notification</b> 這類涵蓋很廣的標籤，
+        會把大量與本系統無關的信件<b>連同內文</b>收進資料庫——你的信箱裡就有這種標籤。
+        建議只勾為了這件事另外建立的標籤。
       </OpsNotice>
       {labelError ? <OpsNotice tone="warning">讀不到 Gmail 標籤清單（{labelError}）。標籤設定這一區暫時只能維持現狀。</OpsNotice> : null}
       {settings.updatedAt ? <p className="ops-cell-muted">上次更新：{new Date(settings.updatedAt).toLocaleString('zh-TW')}</p> : null}

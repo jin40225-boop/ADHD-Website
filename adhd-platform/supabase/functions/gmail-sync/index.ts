@@ -121,8 +121,13 @@ async function runSync(admin: ReturnType<typeof createClient>, actorId: string, 
     for (const row of contactEmails ?? []) if (row.primary_email) knownAddresses.add(String(row.primary_email).trim().toLowerCase());
     const knownThreads = new Set((knownThreadRows ?? []).map((row) => String(row.gmail_thread_id)));
 
-    // 存的是 label id 不是名稱：標籤改名時 id 不變，比對名稱會在使用者改名的那一刻安靜失效。
-    const syncLabelId = String(settings?.sync_label_id ?? '').trim();
+    /* 同步標籤（可複選）。存的是 label id 不是名稱：標籤改名時 id 不變，
+     * 比對名稱會在使用者改名的那一刻安靜失效。
+     * 新的清單為空時退回舊的單選欄位——套用 migration 之後、使用者重新勾選之前，行為不變。 */
+    const manyLabels = settings?.sync_label_ids;
+    const syncLabelIds: string[] = Array.isArray(manyLabels) && manyLabels.length
+      ? manyLabels.map(String).map((id) => id.trim()).filter(Boolean)
+      : [String(settings?.sync_label_id ?? '').trim()].filter(Boolean);
     /* 上一批沒做完的續傳佇列。有東西就直接接著做，完全跳過探索——探索本身也要花時間，
      * 而且會把同一批候選重算一次。清空之後才會再去問 Gmail 有什麼新東西。 */
     const queued: string[] = Array.isArray(state?.pending_message_ids) ? (state!.pending_message_ids as string[]).map(String) : [];
@@ -139,19 +144,24 @@ async function runSync(admin: ReturnType<typeof createClient>, actorId: string, 
      * 而完整同步只看最新幾頁——使用者要是給一封兩個月前的舊信貼標籤，兩條路都撈不到它。
      * 這個查詢與時間無關，只問「現在有哪些信帶著這個標籤」，所以貼上去就一定收得到。
      * 已經收過的會在下面被 email_messages 的既存檢查擋掉，不會重複。 */
-    if (!resuming && syncLabelId) {
-      let labelPage = '';
-      for (let page = 0; page < FULL_SYNC_PAGES; page += 1) {
-        const url = new URL('https://gmail.googleapis.com/gmail/v1/users/me/messages');
-        url.searchParams.set('maxResults', '100');
-        url.searchParams.set('labelIds', syncLabelId);
-        if (labelPage) url.searchParams.set('pageToken', labelPage);
-        const response = await fetch(url, { headers });
-        const list = await response.json();
-        if (!response.ok) break;
-        messageIds.push(...(list.messages ?? []).map((item: { id: string }) => item.id));
-        labelPage = list.nextPageToken ?? '';
-        if (!labelPage) break;
+    /* ⚠ messages.list 的 labelIds 是 **AND**（同時具備全部標籤），不是 OR。
+     * 要的是「任一標籤符合就收」，所以每個標籤各查一次再把 id 聯集起來；
+     * 塞多個 labelIds 進同一次查詢會變成「同時貼了這幾個標籤的信」，幾乎永遠是空的。 */
+    if (!resuming) {
+      for (const labelId of syncLabelIds) {
+        let labelPage = '';
+        for (let page = 0; page < FULL_SYNC_PAGES; page += 1) {
+          const url = new URL('https://gmail.googleapis.com/gmail/v1/users/me/messages');
+          url.searchParams.set('maxResults', '100');
+          url.searchParams.set('labelIds', labelId);
+          if (labelPage) url.searchParams.set('pageToken', labelPage);
+          const response = await fetch(url, { headers });
+          const list = await response.json();
+          if (!response.ok) break;
+          messageIds.push(...(list.messages ?? []).map((item: { id: string }) => item.id));
+          labelPage = list.nextPageToken ?? '';
+          if (!labelPage) break;
+        }
       }
     }
     // 完整同步改分頁。原本固定只看最新 25 封：家長昨天的回信只要被今天的幾封廣告信推出窗口，
@@ -209,9 +219,10 @@ async function runSync(admin: ReturnType<typeof createClient>, actorId: string, 
         const metaOutbound = address(metaHeaders.from) === String(mailbox.emailAddress).toLowerCase() || metaLabels.includes('SENT');
         const metaCounterpart = metaOutbound ? address(metaHeaders.to) : address(metaHeaders.from);
         if (!metaCounterpart) return { id, inScope: false };
+        // 標籤那條是交集判斷：訊息帶著設定裡的**任何一個**標籤就算數。
         const inScope = knownAddresses.has(metaCounterpart)
           || knownThreads.has(String(meta.threadId))
-          || (syncLabelId !== '' && metaLabels.includes(syncLabelId));
+          || syncLabelIds.some((labelId) => metaLabels.includes(labelId));
         return { id, inScope };
       }));
       for (const entry of metas) {
@@ -302,7 +313,7 @@ async function runSync(admin: ReturnType<typeof createClient>, actorId: string, 
       detail: `${resuming ? 'batch' : useFull ? 'full' : 'incremental'}:${synced} skipped:${skipped}${failed ? ` failed:${failed}` : ''}${remaining ? ` remaining:${remaining}` : ' done'}`,
     });
     // 移除標籤不做回溯刪除：同步端只該有「收進來」這個權限，誤收的清理由人決定。
-    return { body: { ok: true, synced, skipped, failed, remaining, mailboxEmail: mailbox.emailAddress, syncLabelActive: syncLabelId !== '' }, status: 200 };
+    return { body: { ok: true, synced, skipped, failed, remaining, mailboxEmail: mailbox.emailAddress, syncLabelCount: syncLabelIds.length }, status: 200 };
   } catch (err) { const detail = errorMessage(err); const missingScope = isMissingGmailScope(detail) || detail === gmailScopeMessage; const message = missingScope ? gmailScopeMessage : detail; await admin.from('audit_log').insert({ action: 'gmail_sync', actor_id: actorId, result: 'error', detail: message }); return { body: { error: message, code: missingScope ? 'GMAIL_SCOPE_MISSING' : 'GMAIL_SYNC_FAILED' }, status: 500 }; }
 }
 
