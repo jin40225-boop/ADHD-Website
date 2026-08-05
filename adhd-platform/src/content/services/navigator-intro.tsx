@@ -1,3 +1,4 @@
+import { NavigatorSlotSummary } from '@/components/NavigatorSlotSummary';
 
 export default function NavigatorIntroContent() {
   return (
@@ -12,14 +13,7 @@ export default function NavigatorIntroContent() {
     <li className="leading-relaxed">服務內容：單次免費線上諮詢（使用 Google Meet 進行）</li>
     <li className="leading-relaxed">適合對象：想釐清自身狀態與連結相關心理健康資源的 ADHD 族群</li>
     </ul>
-    <h2 className="text-2xl font-bold text-brown mt-8 mb-4">開放預約時段</h2>
-    <p className="text-brown leading-relaxed my-4">為了確保最高品質的專注與陪伴，本計畫每月僅開放 1 位專屬名額。每月將提供以下時段供你彈性勾選（可複選，配合度越高越有利於安排）：</p>
-    <ul className="list-disc pl-6 my-4 space-y-2 text-brown">
-    <li className="leading-relaxed">平日晚間：第二週 週一 20:00 - 21:00</li>
-    <li className="leading-relaxed">週末晚間：第二、三週 週六 20:00 - 21:00</li>
-    <li className="leading-relaxed">週末早晨：第二、三週 週日 09:00 - 10:00</li>
-    </ul>
-    <p className="text-brown leading-relaxed my-4">(註：實際確切日期將於報名表單中列出)</p>
+    <div className="my-6"><NavigatorSlotSummary /></div>
     <h2 className="text-2xl font-bold text-brown mt-8 mb-4">報名三步驟與重要規則</h2>
     <ol className="list-decimal pl-6 my-4 space-y-2 text-brown">
     <li className="leading-relaxed">填寫表單：本服務採「提前一個月」預約。每月 20 日為下個月諮詢的報名截止日（例：欲報名 5月諮詢，須於 4/20 前填寫完畢）。超過 20 日送出之表單將視為無效。</li>

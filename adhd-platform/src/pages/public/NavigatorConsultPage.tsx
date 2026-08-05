@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, Clock, Edit3, Info, Mail, PlayCircle, Sparkles } from 'lucide-react';
 import { UpcomingSessions } from '@/components/UpcomingSessions';
+import { NavigatorSlotSummary } from '@/components/NavigatorSlotSummary';
 import { SessionHistory } from '@/components/SessionHistory';
 import { CopyButton } from '@/components/CopyButton';
 import { LineContact } from '@/components/LineContact';
@@ -45,18 +46,7 @@ export default function NavigatorConsultPage() {
 <li><strong>適合對象：</strong> 想釐清自身狀態與連結相關心理健康資源的 ADHD 族群</li>
 </ul>
 </div>
-<div className="bg-[#FFF9C4] border-l-8 border-accent-orange p-6 rounded-r-2xl">
-<h4 className="font-bold text-brown text-xl mb-3 flex items-center gap-2">
-<Clock className="w-6 h-6"></Clock> 開放預約時段
-                        </h4>
-<p className="text-sm font-bold text-brown mb-2">每月僅開放 1 位專屬名額，請彈性勾選（可複選）：</p>
-<ul className="text-brown space-y-1 font-bold list-disc list-inside text-sm">
-<li>平日晚間：第二週 週一 20:00 - 21:00</li>
-<li>週末晚間：第二、三週 週六 20:00 - 21:00</li>
-<li>週末早晨：第二、三週 週日 09:00 - 10:00</li>
-</ul>
-<p className="text-xs text-brown mt-2">(註：每月的確切日期由上述規則換算，在報名頁逐一列出供勾選)</p>
-</div>
+<NavigatorSlotSummary />
 </div>
 <div className="mt-8">
 <h4 className="font-bold text-brown text-xl mb-3 flex items-center gap-2">

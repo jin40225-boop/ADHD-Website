@@ -1,3 +1,4 @@
+import { UpcomingSessions } from '@/components/UpcomingSessions';
 
 export default function ParentConsultIntroContent() {
   return (
@@ -18,14 +19,9 @@ export default function ParentConsultIntroContent() {
     </ul>
     <p className="text-brown leading-relaxed my-4">為求可以完善回應問題，請家長填寫下方資料表，讓我們可以提前了解孩子狀況。</p>
     <p className="text-brown leading-relaxed my-4">彥宇不是樣樣都懂，但大A臥虎藏龍！我會做好準備，盡力回應前來的家長。</p>
-    <h2 className="text-2xl font-bold text-brown mt-8 mb-4">上半年度開放場次（每月限定２個名額）</h2>
+    <h2 className="text-2xl font-bold text-brown mt-8 mb-4">開放場次（每月限定２個名額）</h2>
     <p className="text-brown leading-relaxed my-4">為了確保我們有充裕的時間為您進行適性評估與準備（如：邀請最合適的專業夥伴），報名截止時間為該場次活動前一週的晚上 12 點（23:59）。</p>
-    <p className="text-brown leading-relaxed my-4">這半年度我們在 4、5、6 月的指定日期，每次提供「上午 10:00 - 11:00」與「上午 11:00 - 12:00」兩個獨立時段：</p>
-    <ul className="list-disc pl-6 my-4 space-y-2 text-brown">
-    <li className="leading-relaxed">【四月場次】4/18（六）10:00-11:00、11:00-12:00 各一場次（報名截止日：4/11 晚上 23:59）</li>
-    <li className="leading-relaxed">【五月場次】5/23（六）10:00-11:00、11:00-12:00（報名截止日：5/16 晚上 23:59）</li>
-    <li className="leading-relaxed">【六月場次】6/6（六）10:00-11:00、11:00-12:00（報名截止日：5/30 晚上 23:59）</li>
-    </ul>
+    <div className="my-6"><UpcomingSessions projectSlug="parent" registerPath="/parent/register" /></div>
     <h2 className="text-2xl font-bold text-brown mt-8 mb-4">報名三步驟與重要規則</h2>
     <ol className="list-decimal pl-6 my-4 space-y-2 text-brown">
     <li className="leading-relaxed">填寫表單：請於各場次的截止期限前完成表單填寫，逾期送出將視為無效。</li>
