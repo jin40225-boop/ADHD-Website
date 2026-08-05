@@ -140,6 +140,34 @@ requireText('supabase/migrations/20260805000019_email_template_audit.sql', [
 ]);
 // 直接從 Gmail 寄出的信重設等待計時，催覆期限要一起重算，否則舊期限已過會立刻顯示逾期。
 requireText('supabase/functions/gmail-sync/index.ts', ['follow_up_due_at', 'follow_up_days']);
+// 收信範圍：不得有無條件儲存的路徑。先取信頭比對三條規則（報名／聯絡人信箱、已知 threadId、
+// 指定標籤），不符合的信連內文都不讀。先前沒有任何過濾，使用者的私人信件被連內文存進資料庫，
+// 而 25 封的窗口還會讓家長的回信被廣告信擠掉。
+requireText('supabase/functions/gmail-sync/index.ts', [
+  'format=metadata', 'knownAddresses', 'knownThreads', 'syncLabelId', 'if (!inScope)', 'nextPageToken',
+]);
+{
+  const source = withoutComments(read('supabase/functions/gmail-sync/index.ts'));
+  // 唯一一次抓完整內文必須排在範圍守門之後。
+  if (source.indexOf('format=full') < source.indexOf('if (!inScope)')) {
+    throw new Error('gmail-sync fetches the full message before the scope gate; unmatched mail must never be read.');
+  }
+  if (source.includes("maxResults', '25'")) {
+    throw new Error('gmail-sync is back to a fixed 25-message window; a reply can be pushed out of it by newer mail.');
+  }
+  if (source.includes('needs_reply: !outbound,')) {
+    throw new Error('gmail-sync marks needs_reply without checking the thread is linked to a registration or contact.');
+  }
+}
+requireText('supabase/migrations/20260805000022_app_settings_sync_label.sql', ['add column if not exists sync_label']);
+// F17：主旨在建串時決定後不再覆寫，否則轉寄一次整條串就改名成「Fwd: …」。
+requireText('supabase/functions/gmail-sync/index.ts', ['thread.subject ? {} : { subject:']);
+// F14：導航場次的起迄是「該月候選時段最早起到最晚迄」，會跨日。只印時鐘時間會變成
+// 「20:00–10:00」，看起來像結束早於開始——資料是對的，顯示是錯的。
+requireText('src/admin/operations/SessionTable.tsx', ['sessionSpanText', 'sameDay(startsAt, endsAt)']);
+if (withoutComments(read('src/admin/operations/SessionTable.tsx')).includes('{sessionTimeText(session.startsAt)}–{sessionTimeText(session.endsAt)}')) {
+  throw new Error('SessionTable.tsx prints a bare clock range again; a cross-day session reads as ending before it starts.');
+}
 requireText('supabase/migrations/20260804000017_settings_and_contact_audit.sql', [
   'create table if not exists public.app_settings', 'trg_contacts_admin_audit',
   'trg_contact_group_members_audit', 'review_status',
