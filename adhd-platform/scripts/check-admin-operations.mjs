@@ -71,7 +71,12 @@ requireText('src/admin/pages/DocumentsPage.tsx', ['<WarmButton disabled', 'Phase
 // Phase 4 信件系統。
 // 信中確認按鈕是「對方點開信件」偵測不可靠之後的替代方案（裁決 12），端點必須公開才點得到。
 requireText('supabase/config.toml', ['[functions.confirm-attendance]', 'verify_jwt = false']);
-requireText('supabase/functions/confirm-attendance/index.ts', ['attendance_confirmations', 'attend_confirmed', 'reschedule_requested', '.is(\'responded_at\', null)']);
+// 兩道守門都是「不改狀態」的保證，拿掉任何一道都看不出來：白名單擋掉已結案的報名，
+// `.select('id')` 讓函式知道自己有沒有真的搶到那一列（兩個請求可能都讀到 responded_at 是 null）。
+requireText('supabase/functions/confirm-attendance/index.ts', [
+  'attendance_confirmations', 'attend_confirmed', 'reschedule_requested',
+  '.is(\'responded_at\', null)', 'ACTIVE_STATUSES', '.select(\'id\')',
+]);
 // 寄出這個動作本身要推進狀態機並勾起已寄信提醒，不能再靠人手動記得。
 requireText('supabase/functions/send-email-v2/index.ts', ['reminder_sent_at', 'follow_up_due_at', 'attendance_confirmations', 'gmail_bulk_send']);
 // 收到回信＝待處理；這是紅點與催覆判斷的來源。

@@ -10,6 +10,11 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const ACTIONS = new Set(['attend', 'reschedule']);
+/**
+ * 只有還在安排中的報名才受理信裡的按鈕。白名單而非黑名單：認不得的狀態一律當作不可動，
+ * 與 propose／executor 的動作白名單同一個原則——不確定的時候寧可請對方回信。
+ */
+const ACTIVE_STATUSES = new Set(['pending', 'reviewing', 'confirmed', 'success', 'waitlist', 'reschedule']);
 
 function page(title: string, message: string, tone: 'ok' | 'warn' = 'ok') {
   const accent = tone === 'ok' ? '#2E7D32' : '#B75F43';
@@ -55,24 +60,40 @@ Deno.serve(async (req) => {
       return page('連結已過期', '這個確認連結已經過期。請直接回覆信件告訴我們你的決定，我們會協助處理。', 'warn');
     }
 
+    // 這筆報名還在安排中嗎？退回／已取消／中途放棄是後台或本人已經下過的決定，
+    // 一封舊信裡的按鈕不能把它翻回來。查在消耗 token 之前，這種點擊什麼都不會動到。
+    const { data: registration } = await admin
+      .from('registrations').select('id, status, thread_id').eq('id', record.registration_id).maybeSingle();
+    if (!registration || !ACTIVE_STATUSES.has(registration.status)) {
+      return page(
+        '這筆報名已經結案',
+        '這筆報名目前不在安排中，信裡的按鈕不會再更動它。如果你想重新安排，請直接回覆這封信告訴我們，我們會協助處理。',
+        'warn',
+      );
+    }
+
     const respondedAt = new Date().toISOString();
-    const { error: updateError } = await admin
+    const { data: consumed, error: updateError } = await admin
       .from('attendance_confirmations')
       .update({ action, responded_at: respondedAt, responded_ip: req.headers.get('x-forwarded-for') ?? null })
       // 只有還沒回覆過的那一列會被更新：同時點兩次也只有一次會成立。
       .eq('id', record.id)
-      .is('responded_at', null);
+      .is('responded_at', null)
+      // 真的更新到才算數。上面那個 responded_at 檢查擋不住併發——兩個請求可能都讀到 null，
+      // 然後一起往下寫狀態。回筆數才知道自己是不是搶到的那一個。
+      .select('id');
     if (updateError) throw updateError;
+    if (!consumed?.length) {
+      return page('已經收到了', '你的回覆已經記錄下來了，不需要再操作一次。');
+    }
 
     const mailState = action === 'attend' ? 'attend_confirmed' : 'reschedule_requested';
-    const { data: registration } = await admin
-      .from('registrations').select('id, status, thread_id').eq('id', record.registration_id).maybeSingle();
-    if (registration?.thread_id) {
+    if (registration.thread_id) {
       await admin.from('email_threads')
         .update({ mail_state: mailState, last_inbound_at: respondedAt, needs_reply: action === 'reschedule', updated_at: respondedAt })
         .eq('id', registration.thread_id);
     }
-    if (action === 'reschedule' && registration && registration.status !== 'reschedule') {
+    if (action === 'reschedule' && registration.status !== 'reschedule') {
       // 進「待改訂時間」流程（計畫第七節）。這個狀態不釋額，位子先保留著等改期。
       await admin.from('registrations').update({ status: 'reschedule' }).eq('id', registration.id);
       await admin.from('audit_log').insert({
