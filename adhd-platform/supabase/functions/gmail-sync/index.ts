@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
   // 被擋下來也要留痕：不留的話「按了同步卻什麼都沒發生」在稽核上與「函式死掉」長得一模一樣。
   const [{ data: profile }, { data: member }] = await Promise.all([admin.from('profiles').select('is_system_owner').eq('id', auth.user.id).maybeSingle(), admin.from('project_members').select('id').eq('user_id', auth.user.id).in('role', ['owner', 'admin_collab']).limit(1)]);
   if (!profile?.is_system_owner && !member?.length) { await admin.from('audit_log').insert({ action: 'gmail_sync', actor_id: auth.user.id, result: 'error', detail: 'FORBIDDEN' }); return jsonResponse({ error: 'FORBIDDEN' }, 403); }
-  const { full = false } = await req.json().catch(() => ({ full: false }));
+  const { full = false, discoverOnly = false } = await req.json().catch(() => ({ full: false, discoverOnly: false }));
 
   /**
    * 一次呼叫＝一批。每批最多完整處理 BATCH_SIZE 封，剩下的留在佇列裡，回報 `remaining`，
@@ -87,11 +87,11 @@ Deno.serve(async (req) => {
    * 切小之後每批只要幾秒，當場回得了結果；這時再丟到背景反而把「這批做了什麼」藏起來，
    * 等於把分批的好處丟掉。要的效果（畫面不必空等、也不會說謊）由分批本身達成。
    */
-  const result = await runSync(admin, auth.user.id, Boolean(full));
+  const result = await runSync(admin, auth.user.id, Boolean(full), Boolean(discoverOnly));
   return jsonResponse(result.body, result.status);
 });
 
-async function runSync(admin: ReturnType<typeof createClient>, actorId: string, full: boolean): Promise<{ body: unknown; status: number }> {
+async function runSync(admin: ReturnType<typeof createClient>, actorId: string, full: boolean, discoverOnly = false): Promise<{ body: unknown; status: number }> {
   const deadline = Date.now() + TIME_BUDGET_MS;
   const auth = { user: { id: actorId } };
   try {
@@ -125,10 +125,21 @@ async function runSync(admin: ReturnType<typeof createClient>, actorId: string, 
       admin.from('contacts').select('primary_email'),
       admin.from('email_threads').select('gmail_thread_id').not('gmail_thread_id', 'is', null),
     ]);
-    // ⚠ 不正規化 +alias：jin40225+test@ 與 jin40225@ 必須是兩個不同的比對對象，測試錨點靠它區分。
+    /* ⚠ 不正規化 +alias：jin40225+test@ 與 jin40225@ 必須是兩個不同的比對對象，測試錨點靠它區分。
+     *
+     * ⚠ 排除信箱自己。jin40225@gmail.com 是聯絡人「大A彥宇」，不排除的話搜尋會組出
+     * `from:jin40225@gmail.com OR to:jin40225@gmail.com`——那命中這個信箱的每一封信，
+     * 等於把「主動搜尋家長往來」變成「把整個信箱撈一遍」。閘門仍然擋得住，所以不是資料問題，
+     * 是白工：每一封都要取一次信頭，其中約 95% 註定被丟棄。
+     * 只比對完全相同的位址，+alias 那個報名信箱要留著。 */
+    const mailboxAddress = String(mailbox.emailAddress ?? '').trim().toLowerCase();
     const knownAddresses = new Set<string>();
-    for (const row of regEmails ?? []) if (row.email) knownAddresses.add(String(row.email).trim().toLowerCase());
-    for (const row of contactEmails ?? []) if (row.primary_email) knownAddresses.add(String(row.primary_email).trim().toLowerCase());
+    const addKnown = (value: unknown) => {
+      const addr = String(value ?? '').trim().toLowerCase();
+      if (addr && addr !== mailboxAddress) knownAddresses.add(addr);
+    };
+    for (const row of regEmails ?? []) addKnown(row.email);
+    for (const row of contactEmails ?? []) addKnown(row.primary_email);
     const knownThreads = new Set((knownThreadRows ?? []).map((row) => String(row.gmail_thread_id)));
 
     /* 同步標籤（可複選）。存的是 label id 不是名稱：標籤改名時 id 不變，
@@ -217,6 +228,29 @@ async function runSync(admin: ReturnType<typeof createClient>, actorId: string, 
     let synced = 0; let skipped = 0; let failed = 0;
     const candidates = [...new Set(messageIds)];
 
+    /* 一次問完哪些已經收過。
+     * 原本是每封一次 `eq(gmail_message_id)` 查詢——300 封候選就是 300 次資料庫來回，
+     * 光是「確認不用做事」就能把整支函式的時間耗光。 */
+    const alreadyStored = new Set<string>();
+    for (let i = 0; i < candidates.length; i += 200) {
+      const { data: rows } = await admin.from('email_messages').select('gmail_message_id').in('gmail_message_id', candidates.slice(i, i + 200));
+      for (const row of rows ?? []) alreadyStored.add(String(row.gmail_message_id));
+    }
+    const notStored = candidates.filter((id) => !alreadyStored.has(id));
+
+    /* 只量體、不動任何東西。
+     *
+     * 「修完重新量一次真實數字」只有實際對 Gmail 搜尋一次才量得到，而那需要函式已部署。
+     * 這個模式讓你在真的開始長時間同步之前先看到數字：跑搜尋、去重、回報，
+     * 不取信頭、不寫佇列、不推進游標、不存任何信件。 */
+    if (discoverOnly) {
+      await admin.from('audit_log').insert({
+        action: 'gmail_sync', actor_id: auth.user.id, result: 'success',
+        detail: `discover-only found:${discovered} candidates:${candidates.length} new:${notStored.length} addresses:${knownAddresses.size}`,
+      });
+      return { body: { ok: true, discoverOnly: true, found: discovered, candidates: candidates.length, newMessages: notStored.length, knownAddresses: knownAddresses.size, mailboxEmail: mailbox.emailAddress }, status: 200 };
+    }
+
     // 每一批開工前先留一筆。中斷（時間到、記憶體不足被砍、逾時）不會回到 catch，
     // 所以完成時那一筆不能是唯一的紀錄——否則「死在第幾批」看不出來。上一次崩潰就是靠
     // 這一筆才知道它是撈到 16 封候選之後才死的。
@@ -229,16 +263,8 @@ async function runSync(admin: ReturnType<typeof createClient>, actorId: string, 
         : `start ${useFull ? 'full' : 'incremental'} found:${discovered} candidates:${candidates.length}`,
     });
 
-    /* 一次問完哪些已經收過。
-     * 原本是每封一次 `eq(gmail_message_id)` 查詢——300 封候選就是 300 次資料庫來回，
-     * 光是「確認不用做事」就能把整支函式的時間耗光。 */
-    const alreadyStored = new Set<string>();
-    for (let i = 0; i < candidates.length; i += 200) {
-      const { data: rows } = await admin.from('email_messages').select('gmail_message_id').in('gmail_message_id', candidates.slice(i, i + 200));
-      for (const row of rows ?? []) alreadyStored.add(String(row.gmail_message_id));
-    }
     // 一次最多掃這麼多封信頭。信頭很輕，但也不該一次掃三百封。
-    const fresh = candidates.filter((id) => !alreadyStored.has(id)).slice(0, SCAN_LIMIT);
+    const fresh = notStored.slice(0, SCAN_LIMIT);
 
     /* 信頭平行取，一次 META_CONCURRENCY 封。不符合的信**連內文都不讀取**，更不會存進資料庫。
      * 續傳時整段跳過：佇列裡的 id 早就通過比對了。 */

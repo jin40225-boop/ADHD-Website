@@ -627,10 +627,14 @@ export async function createEmailAttachmentUrl(storagePath: string) {
   return data.signedUrl;
 }
 
-export async function triggerGmailSync(full = false) {
-  const { data, error } = await db().functions.invoke('gmail-sync', { body: { full } });
+export async function triggerGmailSync(full = false, discoverOnly = false) {
+  const { data, error } = await db().functions.invoke('gmail-sync', { body: { full, discoverOnly } });
   await assertFunction(error, '啟動 Gmail 同步失敗');
-  return data as { ok: boolean; started?: boolean; background?: boolean; synced?: number; skipped?: number; remaining?: number; mailboxEmail?: string; syncLabelActive?: boolean };
+  return data as {
+    ok: boolean; synced?: number; skipped?: number; failed?: number; remaining?: number; mailboxEmail?: string; syncLabelCount?: number;
+    /** 只量體、不收信的模式回傳的數字。 */
+    discoverOnly?: boolean; found?: number; candidates?: number; newMessages?: number; knownAddresses?: number;
+  };
 }
 
 

@@ -19,6 +19,16 @@ export default function IntegrationsPage() {
   useEffect(() => {
     reload().catch((e: unknown) => setError(e instanceof Error ? e.message : '讀取整合狀態失敗'));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  /** 先量體、不收信：跑一次搜尋看看會撈到多少，不取信頭、不寫佇列、不推游標、不存任何信件。 */
+  const measure = async () => {
+    setBusy(true); setError(undefined);
+    try {
+      const result = await triggerGmailSync(true, true);
+      setNotice(`量體結果：搜尋 ${result.knownAddresses ?? 0} 個已知信箱（不含信箱本身）共撈到 ${result.found ?? 0} 筆，去重後 ${result.candidates ?? 0} 封，其中 ${result.newMessages ?? 0} 封還沒收過。沒有動任何資料。`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '量體失敗');
+    } finally { setBusy(false); }
+  };
   const sync = async (full: boolean) => {
     setBusy(true);
     setError(undefined);
@@ -96,7 +106,14 @@ export default function IntegrationsPage() {
           <WarmButton variant="secondary" disabled={busy} onClick={() => void sync(true)}>
             完整重建同步
           </WarmButton>
+          {/* 第一次完整同步會撈出好幾個月的歷史往來。先量一次，知道量體再決定要不要開始。 */}
+          <WarmButton variant="secondary" disabled={busy} onClick={() => void measure()}>
+            先量體（不收信）
+          </WarmButton>
         </div>
+        <p className="ops-cell-muted">
+          「先量體」只跑一次搜尋回報數量，不取信件內容、不寫入任何資料，隨時可按。
+        </p>
       </article>
     </section>
   );

@@ -183,6 +183,10 @@ requireText('supabase/functions/gmail-sync/index.ts', [
   'ADDRESS_QUERY_CHUNK', 'from:${addr} OR to:${addr}', 'subject:(${subjectKeywords.join', 'metadataHeaders=Subject',
   'subjectKeywords.some((word) => metaSubject.includes(word.toLowerCase()))',
 ]);
+// 搜尋名單不得包含信箱自己。信箱本人是聯絡人之一，不排除的話 from:me OR to:me 命中整個信箱，
+// 每一封都要取一次信頭而其中約 95% 註定被丟棄——閘門擋得住，但那是純白工。
+// 只排除完全相同的位址：+alias 的報名信箱是測試錨點，必須留著。
+requireText('supabase/functions/gmail-sync/index.ts', ['const mailboxAddress', "addr !== mailboxAddress"]);
 requireText('supabase/migrations/20260805000027_app_settings_subject_keywords.sql', ['add column if not exists sync_subject_keywords']);
 if (read('supabase/migrations/20260805000027_app_settings_subject_keywords.sql').includes('"add"')) {
   throw new Error('the default subject keywords include "add"; Gmail search is case-insensitive so it matches Add/Added/Address.');
