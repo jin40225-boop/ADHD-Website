@@ -697,3 +697,46 @@ UPDATE，同一個 bug 就回來了；(b) 讓這個事實**不存在於任何人
   - `/navigator/register`：4 個月份場次各「剩 1 名」（每月 1 位模型正確）、20 個確切候選時段全部列出。
   - `/peer-group/register`：只出現 8 月與 9 月（open），10–12 月未上架不顯示。
   - `/parent/register`：15 場全部可選，12/20 11:00 已回復「剩 1 名」。
+
+## 19. 2026-08-05 Phase 5 內容收尾
+
+基準：`main` @ `afc6ce3`，CI run `30999977215` success，正式站主資源 `index-sTM687_G.js`（本機重建 hash 相同，版本對齊已實證）。
+
+### 收尾清單的實際狀態
+
+九之一那八項裡，只有第 1 項需要決定，第 6 項已裁決延後，其餘在前幾個 Phase 已順手完成——清單看起來比實際長。查證結果：第 2 項 `TODO_LINKS` 已更名為 `LINKS`；第 3 項 `/articles/:slug` 已由 `page-metadata.ts` 查 `articles-index.json` 帶出文章名（線上實測 `/articles/recommendation-db/` 標題為「ADHD就醫家長推薦資料庫｜大A彥宇」）；第 4 項確定場次下拉已濾掉 `done`／`cancelled` 且保留目前掛著那一場；第 5 項首頁與 `/navigator` 已改用 `NavigatorSlotSummary`；第 7 項查正式 `sessions_public` 43 筆場次，無任何一筆殘留「確切時段另行確認」。
+
+### 兩個死檔移除，掃描改遞迴（`e99c8e1`）
+
+`src/content/services/` 兩檔全 repo 無引用，其內容從未在站上。刪除後該目錄消失——**git 不收空目錄，所以寫死 `src/content/services` 的掃描會讓全新 clone 在 `readdirSync` 就 ENOENT**，因此同一支 commit 把 `CONTENT_DIRS` 改成遞迴走 `src/content`。已用「注入 → 紅燈 → 還原 → 綠燈」實證：把過期場次字樣注入 `src/content/guide/newbie-guide.tsx`（舊列舉式掃描從未造訪的巢狀路徑），檢查以檔名點名失敗，還原後通過。CI 在全新 clone 上通過 `check:operations`，即上述 ENOENT 情境的線上實證。
+
+### 內容重複清理（`afc6ce3`）
+
+Notion 匯出造成同一張圖重複：`02-recommendation-db.tsx` 的 `map-guide-search.jpg` ×3、`map-guide-filter.jpg` ×2，`01-knowledge-meetup.tsx` 的 `meetup-schedule.jpg` ×2，`newbie-guide.tsx` 的 `newbie-guide-sessions.jpg` ×2。一律保留第一次出現。署名 `114413 林彥宇` 改為 `114/4/13 林彥宇`。**文字未動一字。**
+
+⚠ 兩件留在檯面上的事：一是 `地圖部分則直接點擊按紐…(如圖)` 後面原本接的是第二張重複截圖，移除後這句「如圖」沒有圖可指——補救要嘛改文字要嘛補新截圖，兩者都是內容決定，未擅自處理。二是這批 Notion 匯出檔**元素之間夾著裸 CR 字元**（U+000D，非換行），所以逐字比對會在「字串明明在那裡卻匹配不到」的方式下失敗，行號也會與一般工具不一致（PowerShell 算 76 行、實際 69 行）。要改這些檔請用正規式，不要用字面比對。
+
+### 舊副本清點：一個推翻先前結論的發現
+
+⚠ **只比對 `src` 會得到錯誤結論。** 監督視窗與執行視窗都曾以 `src` 逐檔比對，得出「OneDrive 副本只有 2 個獨有檔案、可安全刪除」。改以**全樹比對**（排除 `node_modules`／`.git`／`dist`）後，實際有 16 個獨有檔案，其中五個是**依設計不進 Git 的個資檔**，且 git 歷史中完全不存在：
+
+| 檔案 | 大小 | 性質 |
+|---|---|---|
+| `supabase/migrations/20260713000001_k4_notion_registrations.sql` | 25,775 B | Notion 匯入報名者（真實個資） |
+| `supabase/migrations/20260717000002_peer_group_google_form_registrations.sql` | 37,479 B | 同儕聚會表單報名（真實個資） |
+| `scripts/peer-group-responses.private.csv` | 13,273 B | 上者的來源 CSV |
+| `scripts/mig2-compact.private.json` | 7,769 B | 中間產物 |
+| `scripts/gen-compact-payload.private.mjs` | 2,138 B | 產生腳本 |
+
+四份 `交付紀錄/*.md`（含 38 KB 的 `CLAUDE交付紀錄.md`）同樣只存在於該副本。
+
+2026-08-04 遷出 OneDrive 時搬的是 468 個**受版控**檔案，gitignore 排除的私有檔沒有跟著走，因此 D 槽 checkout 一直缺這些檔。MOC 寫的「歷史資料只能由受控私人備份還原」，那個備份實際上就是這個原本要被刪掉的資料夾。
+
+**處置（已執行，非破壞性）**：五個私有檔複製回 D 槽 checkout 的正規路徑，四份交付紀錄複製到文件區 `交付紀錄/`。已逐檔 `git check-ignore` 確認全部被排除、`git status` 維持乾淨——私有檔的正確歸宿本來就是「在工作目錄裡、但永不進版控」，這正是 `.gitignore` 那幾條精確規則的用意。
+
+**再生性**：`gen-k4-migration.mjs` 讀 `../Notion完整備份_2026-07-11`（該資料夾仍在文件區），故 K4 那支可重新產生——但只在能看到該備份的位置才行，D 槽的 `adhd-platform/..` 是 repo 根目錄，沒有這份備份。`gen-peer-group-registrations.mjs` 讀的 `peer-group-responses.private.csv` 則**只存在於該 OneDrive 副本**，刪掉就再也產不出來。
+
+**已刪除**：`_codex_maintenance/`（13,399 檔，HEAD `339ae4d` 經 `merge-base --is-ancestor` 確認為 `main` 祖先、工作樹 clean、無 stash、無額外分支；全樹比對的 15 個獨有檔全是 playwright 測試產物或 git 歷史可取回的原始碼，無任何私有檔）、空殼 `ADHD-Website-release/`。
+**保留待裁決**：`adhd-platform/`（OneDrive 副本）——刪除前提已因上述發現失效，需重新決定。
+**未動**：`antigravity-staging/`、`components/`、`foundations/`（無 package.json、無 .git，屬文件非程式碼副本）。
+
