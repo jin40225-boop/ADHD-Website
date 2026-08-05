@@ -593,6 +593,36 @@ Phase 6 之前是**佔位頁**，比照設定頁的 Claude API 區：三段選�
 **測法**：欄位對映抽成可匯出的純函式（`sessionRowFor`），用「畫面上那顆新增鈕實際送出的草稿物件」
 逐欄斷言，而不是用手寫的完整假資料——後者會自己把缺的欄位補齊，正好繞過這個 bug。
 
+### 18-7 F13：人的決定不得被信件往來覆寫
+
+**實測**：`mail_state = attend_confirmed` → 使用者按一次手動同步 → 變成 `waiting_reply`。
+`attendance_confirmations` 的 `action=attend`／`responded_at` 都還在、稽核也還在，**被抹掉的只有
+工作台上顯示的那一格**——後台於是顯示「還在等回覆」，接著就會對早就答應要來的人再催一次。
+
+觸發的是 gmail-sync 的 **outbound** 分支（同步到一封後續寄出的信），但 inbound 分支同源：
+`mail_state` 是「這條信件串走到哪」，任何一封後續信件都會重設它。
+
+**修法採路線 (b)：推導，不在同步端加例外。** 工作台的信件狀態改由 `attendance_confirmations`
+推導——有 `responded_at` 就顯示該次 `action` 的結果（多張取最後一次回覆），`mail_state` 只負責
+往來狀態。與「逾期未回覆在讀取時推導」同一個做法。
+
+選 (b) 而非 (a) 的理由：(a) 只擋得住今天想得到的那一個寫入者，明天多一支函式、或誰手動下一句
+UPDATE，同一個 bug 就回來了；(b) 讓這個事實**不存在於任何人可以覆寫的地方**。代價是 `listContacts`
+多帶一層 `attendance_confirmations(action, responded_at)`，兩個非個資欄位。
+
+其餘不變：人工覆寫（`mail_state_override`）仍然最大，那也是人的決定且更晚更具體；「有未讀回信」
+的紅點與收件匣的待處理清單走各自的欄位，確認出席不會把新的回信藏起來。
+`confirm-attendance` 仍照舊寫 `mail_state`——顯示已經不依賴它，而它記的是「最後發生的事」，屬實。
+
+### 18-8 新紀律：inbound 的驗收不能用同一信箱的 +alias
+
+用 `jin40225+test@gmail.com` 當測試收件人，**永遠測不到 inbound 路徑**：所有信件的 from 都是信箱
+本人，Gmail 一律標成 `SENT`，gmail-sync 每一封都走 outbound 分支。F13 之所以是由 outbound 分支
+觸發、而不是原先預測的 inbound 分支，正是這個測試設計的直接結果。
+
+**inbound 的驗收必須用「不同信箱」寄入才算數。** +alias 只適合驗寄出、變數帶入、狀態機的寄出側；
+凡是「收到回信之後會怎樣」的行為，用 alias 測出來的綠燈不成立。
+
 ## Phase 3 收官（2026-08-05）
 
 六個分頁全部完成並經監督視窗以真實登入代驗通過：
