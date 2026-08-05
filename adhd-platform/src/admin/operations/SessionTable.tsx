@@ -9,6 +9,18 @@ export const LOCKED_STATUSES: SessionStatus[] = ['done', 'cancelled'];
 
 export const sessionDateText = (iso: string) => new Date(iso).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric', weekday: 'short' });
 export const sessionTimeText = (iso: string) => new Date(iso).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false });
+const sameDay = (a: string, b: string) => new Date(a).toDateString() === new Date(b).toDateString();
+const shortDate = (iso: string) => { const d = new Date(iso); return `${d.getMonth() + 1}/${d.getDate()}`; };
+
+/**
+ * 時段欄。導航場次的 starts_at／ends_at 是「該月候選時段最早起到最晚迄」，會跨日——
+ * 9 月場實際是 9/12 20:00 到 9/20 10:00，只印時鐘時間就變成「20:00–10:00」，看起來像結束早於開始。
+ * 資料是對的，錯的是顯示，所以跨日時把日期一起印出來。
+ */
+export const sessionSpanText = (startsAt: string, endsAt: string) =>
+  sameDay(startsAt, endsAt)
+    ? `${sessionTimeText(startsAt)}–${sessionTimeText(endsAt)}`
+    : `${shortDate(startsAt)} ${sessionTimeText(startsAt)} → ${shortDate(endsAt)} ${sessionTimeText(endsAt)}`;
 
 export interface SessionTableHandlers {
   projectName: (projectId: string) => string;
@@ -69,7 +81,7 @@ export function SessionTable({ sessions, handlers }: { sessions: SessionSlot[]; 
             <span className="ops-cell-muted">{session.title}</span> <strong>{sessionTimeText(session.startsAt)}</strong>
           </button></td>
           <td><span className="ops-cell-muted">{sessionDateText(session.startsAt)}</span></td>
-          <td><strong>{sessionTimeText(session.startsAt)}–{sessionTimeText(session.endsAt)}</strong></td>
+          <td><strong>{sessionSpanText(session.startsAt, session.endsAt)}</strong>{session.slotOptions?.length ? <span className="ops-cell-muted">（候選窗口．{session.slotOptions.length} 個時段）</span> : null}</td>
           <td><CapacityCell session={session} busy={busy} onCapacity={onCapacity} onReject={onReject} /></td>
           <td><span className="ops-cell-muted">{session.bookedCount}</span></td>
           <td><input

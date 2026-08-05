@@ -62,7 +62,9 @@ export default function DocumentsPage() {
       setConfirming(false);
       setBulk({ groupIds: [], includeIds: [], excludeIds: [], templateId: '', subject: '', body: '' });
       setError(undefined);
-      setNotice(result.failed.length
+      // 0 封不是成功。名單空掉（例如類群裡一個人也沒有）時，「全部成功」會讓人以為通知過了。
+      if (!result.sent) setError(`一封也沒有寄出——最終名單上沒有任何收得到信的人${result.failed.length ? `，${result.failed.length} 封失敗` : ''}。`);
+      else setNotice(result.failed.length
         ? `已寄出 ${result.sent} 封，${result.failed.length} 封失敗（失敗原因已記入稽核）。`
         : `已寄出 ${result.sent} 封，全部成功。`);
     } catch (e) { setError(e instanceof Error ? e.message : '群發失敗'); }
