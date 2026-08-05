@@ -315,14 +315,19 @@ for (const page of ['HomePage', 'PeerGroupPage', 'ParentConsultPage', 'Navigator
 const STALE_SCHEDULE = ['上半年度開放場次', '【四月場次】', '【五月場次】', '【六月場次】', '截止日：', '第二週 週一'];
 // src/content 也要掃：那裡放的是同一份文案的另一版，先前不在檢查範圍內，
 // 於是 4／5／6 月那張過期場次表就一直留在 parent-consult-intro.tsx 裡沒被抓到。
-const CONTENT_DIRS = ['src/pages/public', 'src/content/services'];
+// 掃整個 src/content 而不是列舉子目錄：`services/` 兩檔刪除後該目錄不存在（git 不收空目錄），
+// 寫死路徑會讓 clone 出來的 repo 在 readdirSync 就 ENOENT；遞迴也讓日後新增的 content 子目錄
+// 自動納入守門，不必記得回來改這一行。
+const CONTENT_DIRS = ['src/pages/public', 'src/content'];
+const collectTsx = (dir) => readdirSync(resolve(root, dir), { withFileTypes: true }).flatMap((entry) =>
+  entry.isDirectory() ? collectTsx(`${dir}/${entry.name}`) : entry.name.endsWith('.tsx') ? [`${dir}/${entry.name}`] : [],
+);
 for (const dir of CONTENT_DIRS) {
-  for (const page of readdirSync(resolve(root, dir))) {
-    if (!page.endsWith('.tsx')) continue;
-    const source = read(`${dir}/${page}`);
+  for (const file of collectTsx(dir)) {
+    const source = read(file);
     const found = STALE_SCHEDULE.filter((needle) => source.includes(needle));
     if (found.length) {
-      throw new Error(`${dir}/${page} hard-codes a session schedule (${found.join(', ')}); read sessions_public instead.`);
+      throw new Error(`${file} hard-codes a session schedule (${found.join(', ')}); read sessions_public instead.`);
     }
   }
 }
