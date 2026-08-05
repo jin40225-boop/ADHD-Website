@@ -170,7 +170,7 @@ async function runSync(admin: ReturnType<typeof createClient>, actorId: string, 
         if (!pageToken) break;
       }
     }
-    let synced = 0; let skipped = 0;
+    let synced = 0; let skipped = 0; let failed = 0;
     const candidates = [...new Set(messageIds)];
 
     // 每一批開工前先留一筆。中斷（時間到、記憶體不足被砍、逾時）不會回到 catch，
@@ -225,7 +225,9 @@ async function runSync(admin: ReturnType<typeof createClient>, actorId: string, 
     const batch = inScopeIds.slice(0, BATCH_SIZE);
     const leftover = inScopeIds.slice(BATCH_SIZE);
     for (const id of batch) {
-      const response = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}?format=full`, { headers }); const message = await response.json(); if (!response.ok) continue; const h = Object.fromEntries((message.payload?.headers ?? []).map((item: { name: string; value: string }) => [item.name.toLowerCase(), item.value])); const parsed = collect(message.payload ?? {}); const from = address(h.from); const to = address(h.to); const outbound = from === String(mailbox.emailAddress).toLowerCase() || (message.labelIds ?? []).includes('SENT'); const counterpart = outbound ? to : from; if (!counterpart) continue;
+      // 抓不到就從佇列消失、不重試——壞掉的 id 不該把整個佇列卡住永遠清不空。但那等於一封信
+      // 無聲不見了，而且 history_id 一旦推進就再也不會被發現，所以失敗筆數一定要留在稽核裡。
+      const response = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}?format=full`, { headers }); const message = await response.json(); if (!response.ok) { failed += 1; continue; } const h = Object.fromEntries((message.payload?.headers ?? []).map((item: { name: string; value: string }) => [item.name.toLowerCase(), item.value])); const parsed = collect(message.payload ?? {}); const from = address(h.from); const to = address(h.to); const outbound = from === String(mailbox.emailAddress).toLowerCase() || (message.labelIds ?? []).includes('SENT'); const counterpart = outbound ? to : from; if (!counterpart) continue;
       let { data: thread } = await admin.from('email_threads').select('id,registration_id,contact_id,subject').eq('gmail_thread_id', message.threadId).maybeSingle();
       if (!thread) {
         const { data: registration } = await admin.from('registrations').select('id,contact_id').ilike('email', counterpart).order('created_at', { ascending: false }).limit(1).maybeSingle();
@@ -295,9 +297,12 @@ async function runSync(admin: ReturnType<typeof createClient>, actorId: string, 
       last_error: null, updated_at: new Date().toISOString(),
     }, { onConflict: 'mailbox_email' });
     // 略過幾封也記進稽核：這個數字是「過濾有沒有在動」的唯一外顯訊號。
-    await admin.from('audit_log').insert({ action: 'gmail_sync', actor_id: auth.user.id, result: 'success', detail: `${resuming ? 'batch' : useFull ? 'full' : 'incremental'}:${synced} skipped:${skipped}${remaining ? ` remaining:${remaining}` : ' done'}` });
+    await admin.from('audit_log').insert({
+      action: 'gmail_sync', actor_id: auth.user.id, result: failed ? 'error' : 'success',
+      detail: `${resuming ? 'batch' : useFull ? 'full' : 'incremental'}:${synced} skipped:${skipped}${failed ? ` failed:${failed}` : ''}${remaining ? ` remaining:${remaining}` : ' done'}`,
+    });
     // 移除標籤不做回溯刪除：同步端只該有「收進來」這個權限，誤收的清理由人決定。
-    return { body: { ok: true, synced, skipped, remaining, mailboxEmail: mailbox.emailAddress, syncLabelActive: syncLabelId !== '' }, status: 200 };
+    return { body: { ok: true, synced, skipped, failed, remaining, mailboxEmail: mailbox.emailAddress, syncLabelActive: syncLabelId !== '' }, status: 200 };
   } catch (err) { const detail = errorMessage(err); const missingScope = isMissingGmailScope(detail) || detail === gmailScopeMessage; const message = missingScope ? gmailScopeMessage : detail; await admin.from('audit_log').insert({ action: 'gmail_sync', actor_id: actorId, result: 'error', detail: message }); return { body: { error: message, code: missingScope ? 'GMAIL_SCOPE_MISSING' : 'GMAIL_SYNC_FAILED' }, status: 500 }; }
 }
 
