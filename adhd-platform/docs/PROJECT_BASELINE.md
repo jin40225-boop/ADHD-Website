@@ -533,7 +533,7 @@ Phase 6 之前是**佔位頁**，比照設定頁的 Claude API 區：三段選�
 
 實測（四種路徑，測後完整還原、僅保留稽核為證）：第一次點確認 → 記錄並回感謝頁；重複點 → 「已經收到了」且不覆寫；已確認後改點請假 → 同樣不覆寫；過期 token → 提示過期且**不被消耗**。另以 anon key 驗證兩支受保護函式皆回 403，**且授權發生在任何寄出動作之前**。
 
-⚠ 已知邊界：對「已釋額」的報名（退回／取消）點請假改期，狀態會轉為 `reschedule` 但**不會重新佔用名額**。實務上不會寄確認信給已退回的人，且這是比較安全的一邊；記錄在此以免日後誤判為 bug。
+~~⚠ 已知邊界：對「已釋額」的報名（退回／取消）點請假改期，狀態會轉為 `reschedule` 但**不會重新佔用名額**。~~ → **已於第 18 節修掉**：已結案的報名不再受理信裡的按鈕。
 
 ### 撰寫與群發
 
@@ -543,6 +543,36 @@ Phase 6 之前是**佔位頁**，比照設定頁的 Claude API 區：三段選�
 ### 尚待（需後台登入，AI 無帳號）
 
 計畫九之三的六個步驟：實際寄測試信、回信同步、點確認按鈕、催覆、群發、六封草稿逐封審定。測試收件人一律 `jin40225+test@gmail.com`。
+
+## 18. 2026-08-05 監督複查後的四項修正
+
+複查通過界線遵守、部署狀態、安全探測、正式站與 postcss 升級，另開出四項必修。四支獨立 commit，`confirm-attendance` 重新部署。
+
+### 18-1 已結案的報名不受理信裡的按鈕（`confirm-attendance`）
+
+`reschedule` 原本從任何狀態都能把報名轉進「待改訂時間」，包含 `rejected`／`cancelled`／`withdrawn`——那些是後台或本人已經下過的決定，一封舊信裡的按鈕不該翻案。改為**來源狀態白名單**：只受理 `pending`／`reviewing`／`confirmed`／`success`／`waitlist`／`reschedule` 六個仍在流程中的狀態，其餘（含認不得的狀態值）一律回「這筆報名已經結案，請直接回信」頁。
+
+查詢移到**消耗 token 之前**：被擋下的點擊不消耗 token、不寫狀態、不寫信件串。白名單而非黑名單，與 propose／executor 的動作白名單同一個 fail-closed 方向。
+
+### 18-2 token 消耗改看筆數，不看先前的讀值（`confirm-attendance`）
+
+先讀 `responded_at` 再更新是兩個語句，併發的兩次點擊可能都讀到 `null`，然後**都往下寫**信件串與狀態。更新本身早就有 `.is('responded_at', null)` 過濾（真正改到列的只有一個），缺的是讓函式知道自己有沒有搶到——現在 `.select('id')` 取回筆數，0 列就停在「已經收到了」頁。
+
+### 18-3 回覆期限改讀設定（撰寫面板）
+
+`loadTemplate` 的註解寫著期限＝設定裡的逾期門檻，程式卻寫死 3 天。設定自 Phase 3 起可改、`send-email-v2` 自 Phase 4 起就依 `app_settings.follow_up_days` 計算 `follow_up_due_at`，兩邊因此會無聲分歧：信上承諾一個日期，系統按另一個日期判定逾期。改為載入 `app_settings` 後以該值計算；設定尚未載入時**不寫期限**，而不是猜一個——信寄出去的日期收不回來。
+
+### 18-4 最後兩處寫死時段規則（前台）
+
+`NavigatorConsultPage.tsx` 與 `src/content/services/navigator-intro.tsx` 改用 `NavigatorSlotSummary`（讀 `slot_options`）。「第二週 週一」列入 `check:operations` 禁用字串，且掃描範圍從 `src/pages/public` 擴到 `src/content/services`。
+
+擴掃當場抓到 `parent-consult-intro.tsx` 仍留著四／五／六月場次表與其報名截止日（`上半年度開放場次` 這個字樣自檢查建立起就是禁用字，只是那個目錄從沒被掃過），已改讀 `UpcomingSessions`。**`src/content/services/` 兩檔目前沒有任何地方 import**，因此以上都不在正式站上；是否刪除待決，未擅自刪。
+
+驗證：注入 → 兩個目錄各自紅燈（`exit=1`，錯誤訊息指名檔案與字串）→ 還原 → 綠燈。dev server 實測 `/navigator` 顯示 9 月五個確切候選時段，與首頁、報名表單一致。
+
+### 18-5 新紀律：測試造成的資料變動，還原要走正規入口
+
+**測試後的還原一律走 `admin_transition_registration`，或在還原後補一筆稽核註記說明。** 本輪 `reschedule` 分支測完是用 raw update 把狀態改回 `rejected`，資料是對的，但稽核軌跡上只看得到「轉入 reschedule」而看不到轉回去——留下一條與現況矛盾的歷程。稽核的用途正是在事後回答「這筆為什麼是現在這樣」，還原若不留痕，等於在證據裡挖一個洞。
 
 ## Phase 3 收官（2026-08-05）
 
