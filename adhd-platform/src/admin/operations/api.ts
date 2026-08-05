@@ -108,8 +108,32 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  * 一筆報名理論上只有一條 thread；真的有多條時取最近有往來的那條，避免舊 thread
  * 蓋掉現況。尚未寄過信的報名沒有 thread，回傳 undefined 讓呼叫端顯示「未寄信」。
  */
-function mapMailStatus(threads: Row[]): RegistrationMailStatus | undefined {
-  if (!threads.length) return undefined;
+/**
+ * 出席確認是**對方按下按鈕的決定**，不是往來狀態，所以由 attendance_confirmations 推導，
+ * 不從 `mail_state` 讀。
+ *
+ * `mail_state` 是「這條信件串現在走到哪」，任何一封後續信件都會重設它——gmail-sync 同步到
+ * 一封寄出的信就寫回 `waiting_reply`，於是工作台上「已確認出席」變回「還在等回覆」，
+ * 接著就是一封多餘的催覆信寄給早就答應要來的人。確認本身沒有不見（token 的 action 與
+ * responded_at 都還在），不見的只有畫面上那一格。
+ *
+ * 推導而非在同步端加例外：同步端的例外只擋得住今天想得到的那一個寫入者，推導則讓這個事實
+ * 不存在於任何人可以覆寫的地方。與「逾期未回覆」同一個做法。
+ */
+function confirmedState(confirmations: Row[]): MailState | undefined {
+  const responded = confirmations
+    .filter((row) => row.responded_at)
+    .sort((a, b) => String(b.responded_at).localeCompare(String(a.responded_at)))[0];
+  if (!responded) return undefined;
+  return responded.action === 'attend' ? 'attend_confirmed' : 'reschedule_requested';
+}
+
+export function mapMailStatus(threads: Row[], confirmations: Row[] = []): RegistrationMailStatus | undefined {
+  const confirmed = confirmedState(confirmations);
+  // 回覆了但信件串不在（例如串被併掉）——那個決定還是要看得到，不能退回「未寄信」。
+  if (!threads.length) {
+    return confirmed ? { threadId: '', auto: confirmed, effective: confirmed, overdueDays: 0 } : undefined;
+  }
   const latest = [...threads].sort((a, b) =>
     String(b.last_outbound_at ?? b.last_inbound_at ?? '').localeCompare(
       String(a.last_outbound_at ?? a.last_inbound_at ?? ''),
@@ -121,8 +145,9 @@ function mapMailStatus(threads: Row[]): RegistrationMailStatus | undefined {
   const dueMs = followUpDueAt ? Date.parse(followUpDueAt) : NaN;
   // 「逾期未回覆」在讀取時推導，而不是存一個會過期的值：等待回覆的信一旦過了催覆期限就是逾期。
   // 這樣不需要排程去把狀態翻面，也不會出現「資料庫說等待回覆、畫面上其實早就逾期」的落差。
-  const overdue = stored === 'waiting_reply' && !Number.isNaN(dueMs) && Date.now() > dueMs;
-  const auto = (overdue ? 'overdue' : stored) as MailState;
+  const overdue = !confirmed && stored === 'waiting_reply' && !Number.isNaN(dueMs) && Date.now() > dueMs;
+  // 確認結果勝過往來狀態；已經答應要來的人不該再被算成逾期未回覆。
+  const auto = (confirmed ?? (overdue ? 'overdue' : stored)) as MailState;
   return {
     threadId: latest.id,
     auto,
@@ -139,7 +164,7 @@ function mapMailStatus(threads: Row[]): RegistrationMailStatus | undefined {
 function mapRegistration(row: Row, projectName?: string, projectSlug?: string): OperationalRegistration {
   return {
     projectSlug,
-    mailStatus: mapMailStatus(row.email_threads ?? []),
+    mailStatus: mapMailStatus(row.email_threads ?? [], row.attendance_confirmations ?? []),
     id: row.id,
     projectId: row.project_id,
     contactId: row.contact_id ?? undefined,
@@ -176,7 +201,8 @@ export async function listContacts(): Promise<ContactRecord[]> {
           id, mail_state, mail_state_override, mail_state_override_reason,
           last_outbound_at, last_inbound_at, follow_up_due_at,
           email_messages(*, email_attachments(*))
-        )
+        ),
+        attendance_confirmations(action, responded_at)
       )
     `).is('archived_at', null).order('created_at', { ascending: false }),
     db().from('projects').select('id,name,slug'),

@@ -144,6 +144,16 @@ requireText('supabase/functions/gmail-sync/index.ts', [
 requireText('DEPLOY.md', ['https://www.googleapis.com/auth/gmail.readonly']);
 requireText('src/admin/pages/IntegrationsPage.tsx', ['尚未建置 users.watch／Pub/Sub；目前由管理員手動同步']);
 requireText('src/admin/operations/api.ts', ['function cleanEmailBody', 'htmlToPlainText(bodyHtml)']);
+// F13：「已確認出席／請假改期」是對方按下按鈕的決定，不得被後續信件往來覆寫。工作台的信件狀態
+// 因此從 attendance_confirmations 推導，不從 mail_state 讀——gmail-sync 同步任何一封後續信件都會
+// 把 mail_state 寫回 waiting_reply，後台就會對早就答應要來的人再催一次。
+requireText('src/admin/operations/api.ts', [
+  'function confirmedState', 'attendance_confirmations(action, responded_at)',
+  'mapMailStatus(row.email_threads ?? [], row.attendance_confirmations ?? [])',
+]);
+if (read('src/admin/operations/api.ts').includes('mapMailStatus(row.email_threads ?? [])')) {
+  throw new Error('mapMailStatus reads the thread state alone again; the attendance decision would be overwritten by the next letter.');
+}
 requireText('src/admin/AdminShell.tsx', ['applyPageMetadata(location.pathname)']);
 requireText('src/routes/PublicLayout.tsx', ['overflow-x-hidden']);
 // 四個公開頁的場次一律讀 sessions_public：即將場次走 UpcomingSessions，
