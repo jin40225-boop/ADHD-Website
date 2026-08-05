@@ -55,6 +55,18 @@ requireText('supabase/migrations/20260804000014_audit_registration_email.sql', [
 requireText('src/admin/operations/SessionTable.tsx', ['onCapacity(', 'onDeadline(', 'onPublish(', 'ops-switch']);
 requireText('src/admin/pages/SessionsPage.tsx', ['<SessionTable', 'topic:', 'guest:', '神秘驚喜']);
 requireText('src/lib/api.ts', ['topic: session.topic', 'guest: session.guest', 'registration_deadline: session.registrationDeadline', 'slot_options: session.slotOptions']);
+// 新增場次的 payload 不得把 `not null default` 欄位送成 null。明確的 NULL 不會讓 DB 預設值
+// 生效，只會踩 not-null constraint——而既有場次讀回來就是 `[]`，所以更新看起來一直是好的。
+requireText('src/lib/api.ts', [
+  'export function sessionRowFor',
+  'slot_options: session.slotOptions ?? []',
+  'instructor_ids: session.instructorIds ?? []',
+]);
+for (const bad of ['slot_options: session.slotOptions ?? null', 'instructor_ids: session.instructorIds ?? null']) {
+  if (read('src/lib/api.ts').includes(bad)) {
+    throw new Error(`api.ts sends an explicit NULL to a not-null default column (${bad}); send [] or omit the key.`);
+  }
+}
 // 場次的名額、上下架、主題與客座都可直接改，同樣必須留歷程。
 requireText('supabase/migrations/20260804000016_session_admin_audit.sql', ['trg_sessions_admin_audit', 'log_session_admin_edit']);
 // 名額被格子端擋下時必須說明理由，否則數字無聲跳回、使用者只會以為壞了。

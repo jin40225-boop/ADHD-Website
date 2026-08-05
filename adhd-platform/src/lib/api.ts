@@ -450,9 +450,16 @@ export async function adminListSessions(): Promise<SessionSlot[]> {
   return (data ?? []).map(mapSession);
 }
 
-/** 新增或更新場次（id 以 draft- 開頭視為新增）。回傳儲存後的列。 */
-export async function adminSaveSession(session: SessionSlot): Promise<SessionSlot> {
-  const payload = {
+/**
+ * 場次列的欄位對映。獨立匯出是為了測得到——新增場次曾經整整壞了一段時間沒人發現，
+ * 因為驗收只點過「改既有場次」，而這個 payload 只在新增時才會踩到（見下）。
+ *
+ * ⚠ `slot_options` 與 `instructor_ids` 在 DB 是 `not null default`。明確送 null **不會**
+ * 讓預設值生效，只會踩 not-null constraint；欄位整個不送才會用預設。既有場次讀回來是
+ * `[]` 所以更新一直正常，新場次沒有這兩個值，於是每一次新增都失敗。空陣列，不是 null。
+ */
+export function sessionRowFor(session: SessionSlot) {
+  return {
     project_id: session.projectId,
     activity_id: session.activityId ?? null,
     title: session.title,
@@ -464,10 +471,15 @@ export async function adminSaveSession(session: SessionSlot): Promise<SessionSlo
     topic: session.topic?.trim() || null,
     guest: session.guest?.trim() || null,
     registration_deadline: session.registrationDeadline ?? null,
-    slot_options: session.slotOptions ?? null,
+    slot_options: session.slotOptions ?? [],
     meet_url: session.meetUrl ?? null,
-    instructor_ids: session.instructorIds,
+    instructor_ids: session.instructorIds ?? [],
   };
+}
+
+/** 新增或更新場次（id 以 draft- 開頭視為新增）。回傳儲存後的列。 */
+export async function adminSaveSession(session: SessionSlot): Promise<SessionSlot> {
+  const payload = sessionRowFor(session);
   const isNew = session.id.startsWith('draft-');
   const query = isNew
     ? db().from('sessions').insert(payload).select().single()
