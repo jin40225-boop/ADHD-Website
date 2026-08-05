@@ -4,6 +4,12 @@ import type { GmailSyncState } from '../operations/types';
 import { WarmButton } from '@/components/ui/WarmButton/WarmButton';
 import { MetricCard, OpsNotice, PageHeader, StatusPill } from '../operations/components';
 
+/**
+ * 一次「按下同步」最多連續跑幾批。上限不是為了省，是為了不要在對方信箱異常時無限打下去；
+ * 沒跑完會明說還剩幾封，再按一次接著做——進度存在資料庫，不會白費。
+ */
+const MAX_BATCHES = 40;
+
 export default function IntegrationsPage() {
   const [gmail, setGmail] = useState<GmailSyncState | null>(null);
   const [busy, setBusy] = useState(false);
@@ -13,46 +19,28 @@ export default function IntegrationsPage() {
   useEffect(() => {
     reload().catch((e: unknown) => setError(e instanceof Error ? e.message : '讀取整合狀態失敗'));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  /**
-   * 背景完整同步的完成訊號：`gmail_sync_state.last_full_sync_at` 會在跑完的最後一步被寫上。
-   * 每 10 秒問一次，最多等 5 分鐘；等不到不是失敗，只是還沒跑完——所以回 false 而不是丟錯。
-   */
-  const waitForFullSync = async () => {
-    const before = gmail?.lastFullSyncAt ?? '';
-    for (let i = 0; i < 30; i += 1) {
-      await new Promise((done) => setTimeout(done, 10_000));
-      const next = await getGmailSyncState().catch(() => null);
-      if (next) setGmail(next);
-      if (next && (next.lastFullSyncAt ?? '') !== before) return true;
-    }
-    return false;
-  };
   const sync = async (full: boolean) => {
     setBusy(true);
     setError(undefined);
     try {
-      const result = await triggerGmailSync(full);
-      if (result.background) {
-        // 完整同步要掃幾百封、跑好幾分鐘，早就超過瀏覽器等得住的時間。它在背景跑，
-        // 這裡改成等結果出現——絕不能讓畫面說失敗而其實成功了，那會讓人一按再按。
-        setNotice('完整同步已在背景開始（要掃幾百封信，可能需要幾分鐘）。這裡會自己更新，也可以稍後回來看稽核紀錄。');
-        void waitForFullSync().then((done) => {
-          setNotice(done
-            ? '完整同步已完成，結果請見下方狀態與稽核紀錄。'
-            : '完整同步仍在背景進行中。它不會因為你離開這一頁而中斷，完成後會出現在稽核紀錄裡。');
-          void reload();
-        });
-        return;
-      }
-      // 略過幾封要講出來——那是「收信範圍過濾有沒有在動」的唯一外顯訊號。還有剩的也要講：
-      // 那代表這次是時間到了先停下，不是掃完了。
+      /* 一次呼叫＝一批（每批最多 5 封）。這裡把批次接連叫完，中間持續回報進度。
+       * 分批是因為單次做太多會把函式的記憶體與 CPU 撐爆；接連叫是因為使用者要的是
+       * 「按一次就同步完」，不是「按十次」。中途離開這一頁也不會壞：進度存在
+       * gmail_sync_state 的佇列裡，下次再按會從剩下的接著做。 */
+      let synced = 0; let skipped = 0; let rounds = 0; let remaining = 0;
+      do {
+        const result = await triggerGmailSync(rounds === 0 ? full : false);
+        synced += result.synced ?? 0; skipped += result.skipped ?? 0; remaining = result.remaining ?? 0;
+        rounds += 1;
+        setNotice(`Gmail 同步中…已收進 ${synced} 封、範圍外略過 ${skipped} 封${remaining ? `，還有 ${remaining} 封排隊中` : ''}。`);
+        await reload();
+      } while (remaining > 0 && rounds < MAX_BATCHES);
+      // 略過幾封要講出來——那是「收信範圍過濾有沒有在動」的唯一外顯訊號。
       setNotice([
-        `Gmail 同步完成：收進 ${result.synced ?? 0} 封`,
-        result.skipped ? `，範圍外略過 ${result.skipped} 封（未讀取內容）` : '',
-        result.remaining ? `，時間用完還剩 ${result.remaining} 封沒掃，再按一次會接著掃` : '',
-        '。',
+        `Gmail 同步完成：收進 ${synced} 封`,
+        skipped ? `，範圍外略過 ${skipped} 封（未讀取內容）` : '',
+        remaining ? `。還有 ${remaining} 封排隊中——再按一次會接著處理` : '。',
       ].join(''));
-      await reload();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Gmail 同步失敗');
     } finally {

@@ -179,7 +179,14 @@ requireText('src/admin/pages/SettingsPage.tsx', ['saveSyncLabel', 'listGmailLabe
 requireText('src/router.tsx', ['StaleChunkBoundary', 'watchForStaleChunks', 'clearStaleChunkFlag']);
 requireText('src/lib/staleChunk.ts', ['vite:preloadError', 'RELOAD_FLAG', 'sessionStorage']);
 // 同步跑不完時必須留下紀錄：被執行環境掐掉的話 catch 不會執行，完成時那一筆稽核就不會寫。
-requireText('supabase/functions/gmail-sync/index.ts', ['TIME_BUDGET_MS', 'META_CONCURRENCY', "detail: `start ", 'remaining']);
+// 單次工作量必須有上限：16 封一次做完（format=full＋解析＋附件下載上傳）會把 worker 撐爆，
+// 回 "not having enough compute resources"。每批固定筆數、剩下的寫回佇列續傳，
+// 每批各自寫稽核——中途死掉才知道死在第幾批。附件是最耗資源的一段，過大就不下載。
+requireText('supabase/functions/gmail-sync/index.ts', [
+  'TIME_BUDGET_MS', 'META_CONCURRENCY', 'BATCH_SIZE', 'ATTACHMENT_MAX_BYTES',
+  'pending_message_ids', 'start batch queued:', 'remaining',
+]);
+requireText('supabase/migrations/20260805000025_gmail_sync_pending_queue.sql', ['add column if not exists pending_message_ids']);
 // 意願記在人身上，不從報名狀態推導——狀態一變，推導出來的意願就失效，然後信就寄出去了。
 requireText('src/admin/operations/emailCompose.ts', ['noBulkEmail', '不接收群發']);
 requireText('supabase/migrations/20260805000024_contacts_no_bulk.sql', ['add column if not exists no_bulk_email']);

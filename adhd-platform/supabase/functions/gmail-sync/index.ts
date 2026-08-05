@@ -26,8 +26,26 @@ function listAddresses(value = '') { return value.split(',').map(address).filter
 function safeName(value: string) { return value.replace(/[\\/:*?"<>|]/g, '_').slice(0, 180) || 'attachment'; }
 /** 完整同步最多翻幾頁（每頁 100 封）。原本固定只看最新 25 封，回信被廣告信擠出窗口就再也收不到。 */
 const FULL_SYNC_PAGES = 3;
-/** 信頭比對的平行度。逐封循序取，300 封就是 300 次來回，掃完之前函式就先被掐掉了。 */
-const META_CONCURRENCY = 8;
+/**
+ * 信頭比對的平行度。逐封循序取太慢，但也不能開太大——8 封時只是同時持有 metadata 還算輕，
+ * 一旦有人把它套到 format=full 上就會同時握著好幾份完整信件內容，記憶體是這支函式的主要瓶頸。
+ * 抓 3：夠快，而且離「同時持有大量內容」很遠。
+ */
+const META_CONCURRENCY = 3;
+/**
+ * 每次執行最多**完整處理**幾封。這是把 worker 撐爆的那一段：抓 format=full、解析、
+ * 附件下載再上傳。剩下的寫回 gmail_sync_state.pending_message_ids，下一批接著做。
+ */
+const BATCH_SIZE = 5;
+/** 每次執行最多比對幾封信頭。信頭很輕，但也不該一次掃三百封。 */
+const SCAN_LIMIT = 120;
+/**
+ * 附件超過這個大小就不下載。下載是 base64 字串→binary 字串→Uint8Array 三份副本，
+ * 一個 10MB 的附件在記憶體裡會膨脹成三十幾 MB，而且逐字元轉換是純 CPU。
+ * 超過的仍然記一列（檔名、大小都留著），只是 storage_path 是 null——看得到有這個檔，
+ * 只是沒有存進來，而不是整封信因此同步失敗。
+ */
+const ATTACHMENT_MAX_BYTES = 2 * 1024 * 1024;
 /**
  * 這一輪最多花多久（毫秒）。超過就停下來，把剩幾封一起回報，再按一次接著掃。
  *
@@ -54,19 +72,15 @@ Deno.serve(async (req) => {
   const { full = false } = await req.json().catch(() => ({ full: false }));
 
   /**
-   * 完整同步在背景跑。
+   * 一次呼叫＝一批。每批最多完整處理 BATCH_SIZE 封，剩下的留在佇列裡，回報 `remaining`，
+   * 由呼叫端接著叫下一批。
    *
-   * 它要掃幾百封信，實測要兩到四分鐘，而客戶端大約 30 秒就放棄——結果是畫面說失敗、
-   * 背景其實成功了。那比壞掉更糟：使用者會再按一次，或以為同步從來沒成功過。
-   * 所以立刻回「已開始」，剩下的交給 waitUntil，完成與否看稽核與 gmail_sync_state。
-   * 增量同步很快，照舊當場回結果——那才是使用者想立刻看到數字的情境。
+   * 為什麼不再用 waitUntil 把整件事丟到背景：背景執行解決的是「客戶端等不了」，
+   * 而把 worker 撐爆的是「單次工作量太大」——那是兩件事，背景跑並不會讓一次 16 封變輕。
+   * 切小之後每批只要幾秒，當場回得了結果；這時再丟到背景反而把「這批做了什麼」藏起來，
+   * 等於把分批的好處丟掉。要的效果（畫面不必空等、也不會說謊）由分批本身達成。
    */
-  const work = runSync(admin, auth.user.id, Boolean(full));
-  if (full && typeof EdgeRuntime !== 'undefined') {
-    EdgeRuntime.waitUntil(work);
-    return jsonResponse({ ok: true, started: true, background: true }, 202);
-  }
-  const result = await work;
+  const result = await runSync(admin, auth.user.id, Boolean(full));
   return jsonResponse(result.body, result.status);
 });
 
@@ -109,10 +123,15 @@ async function runSync(admin: ReturnType<typeof createClient>, actorId: string, 
 
     // 存的是 label id 不是名稱：標籤改名時 id 不變，比對名稱會在使用者改名的那一刻安靜失效。
     const syncLabelId = String(settings?.sync_label_id ?? '').trim();
+    /* 上一批沒做完的續傳佇列。有東西就直接接著做，完全跳過探索——探索本身也要花時間，
+     * 而且會把同一批候選重算一次。清空之後才會再去問 Gmail 有什麼新東西。 */
+    const queued: string[] = Array.isArray(state?.pending_message_ids) ? (state!.pending_message_ids as string[]).map(String) : [];
+    const resuming = queued.length > 0;
+
     let messageIds: string[] = []; let historyId = String(mailbox.historyId ?? state?.history_id ?? ''); let useFull = Boolean(full || !state?.history_id);
     // 增量同步要同時看「新訊息」與「被加上標籤」。使用者貼標籤的那封信早就同步過、也早就被
     // 規則 1、2 篩掉了——只看 messageAdded 的話，貼標籤不會有任何反應。
-    if (!useFull) { const historyRes = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/history?startHistoryId=${encodeURIComponent(state.history_id)}&historyTypes=messageAdded&historyTypes=labelAdded&maxResults=500`, { headers }); if (historyRes.status === 404) useFull = true; else { const history = await historyRes.json(); if (!historyRes.ok) throw new Error(history.error?.message ?? 'Gmail history 讀取失敗'); const additions = (history.history ?? []) as { messagesAdded?: { message: { id: string } }[]; labelsAdded?: { message: { id: string } }[] }[]; messageIds = [...new Set<string>(additions.flatMap((item) => [...(item.messagesAdded ?? []), ...(item.labelsAdded ?? [])].map((entry) => entry.message.id)))]; historyId = String(history.historyId ?? historyId); } }
+    if (!resuming && !useFull) { const historyRes = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/history?startHistoryId=${encodeURIComponent(state.history_id)}&historyTypes=messageAdded&historyTypes=labelAdded&maxResults=500`, { headers }); if (historyRes.status === 404) useFull = true; else { const history = await historyRes.json(); if (!historyRes.ok) throw new Error(history.error?.message ?? 'Gmail history 讀取失敗'); const additions = (history.history ?? []) as { messagesAdded?: { message: { id: string } }[]; labelsAdded?: { message: { id: string } }[] }[]; messageIds = [...new Set<string>(additions.flatMap((item) => [...(item.messagesAdded ?? []), ...(item.labelsAdded ?? [])].map((entry) => entry.message.id)))]; historyId = String(history.historyId ?? historyId); } }
 
     /* 直接把「帶著同步標籤的信」全部撈進候選名單。
      *
@@ -120,7 +139,7 @@ async function runSync(admin: ReturnType<typeof createClient>, actorId: string, 
      * 而完整同步只看最新幾頁——使用者要是給一封兩個月前的舊信貼標籤，兩條路都撈不到它。
      * 這個查詢與時間無關，只問「現在有哪些信帶著這個標籤」，所以貼上去就一定收得到。
      * 已經收過的會在下面被 email_messages 的既存檢查擋掉，不會重複。 */
-    if (syncLabelId) {
+    if (!resuming && syncLabelId) {
       let labelPage = '';
       for (let page = 0; page < FULL_SYNC_PAGES; page += 1) {
         const url = new URL('https://gmail.googleapis.com/gmail/v1/users/me/messages');
@@ -137,7 +156,7 @@ async function runSync(admin: ReturnType<typeof createClient>, actorId: string, 
     }
     // 完整同步改分頁。原本固定只看最新 25 封：家長昨天的回信只要被今天的幾封廣告信推出窗口，
     // 就永遠不會被收進來，而畫面上看起來一切正常。
-    if (useFull) {
+    if (!resuming && useFull) {
       let pageToken = '';
       for (let page = 0; page < FULL_SYNC_PAGES; page += 1) {
         const url = new URL('https://gmail.googleapis.com/gmail/v1/users/me/messages');
@@ -151,34 +170,35 @@ async function runSync(admin: ReturnType<typeof createClient>, actorId: string, 
         if (!pageToken) break;
       }
     }
-    let synced = 0; let skipped = 0; let remaining = 0;
+    let synced = 0; let skipped = 0;
     const candidates = [...new Set(messageIds)];
 
-    // 開工前先留一筆。這一段以後的任何一次中斷（時間到、被掐掉、逾時）都不會回到 catch，
-    // 所以完成時那一筆不能是唯一的紀錄——否則「跑到一半死掉」在稽核上看起來與「沒有人按過」
-    // 完全一樣，而 email_messages 其實已經多了兩筆。
+    // 每一批開工前先留一筆。中斷（時間到、記憶體不足被砍、逾時）不會回到 catch，
+    // 所以完成時那一筆不能是唯一的紀錄——否則「死在第幾批」看不出來。上一次崩潰就是靠
+    // 這一筆才知道它是撈到 16 封候選之後才死的。
     await admin.from('audit_log').insert({
       action: 'gmail_sync', actor_id: auth.user.id, result: 'success',
-      detail: `start ${useFull ? 'full' : 'incremental'} candidates:${candidates.length}`,
+      detail: resuming
+        ? `start batch queued:${queued.length}`
+        : `start ${useFull ? 'full' : 'incremental'} candidates:${candidates.length}`,
     });
 
     /* 一次問完哪些已經收過。
      * 原本是每封一次 `eq(gmail_message_id)` 查詢——300 封候選就是 300 次資料庫來回，
-     * 光是「確認不用做事」就能把整支函式的時間耗光。而函式被執行環境掐掉時 catch 不會跑，
-     * 於是連一筆 error 稽核都留不下來，畫面上看起來像什麼都沒發生。 */
+     * 光是「確認不用做事」就能把整支函式的時間耗光。 */
     const alreadyStored = new Set<string>();
     for (let i = 0; i < candidates.length; i += 200) {
       const { data: rows } = await admin.from('email_messages').select('gmail_message_id').in('gmail_message_id', candidates.slice(i, i + 200));
       for (const row of rows ?? []) alreadyStored.add(String(row.gmail_message_id));
     }
-    const fresh = candidates.filter((id) => !alreadyStored.has(id));
+    // 一次最多掃這麼多封信頭。信頭很輕，但也不該一次掃三百封。
+    const fresh = candidates.filter((id) => !alreadyStored.has(id)).slice(0, SCAN_LIMIT);
 
-    /* 信頭平行取，一次 META_CONCURRENCY 封；並且設時間預算。
-     * 不符合的信**連內文都不讀取**，更不會存進資料庫。掃不完就停下來、把剩幾封回報出去，
-     * 下次同步再接著掃——寧可回報「這次只掃了一半」，也不要整支函式無聲死掉。 */
-    const inScopeIds: string[] = [];
-    for (let i = 0; i < fresh.length; i += META_CONCURRENCY) {
-      if (Date.now() > deadline) { remaining = fresh.length - i; break; }
+    /* 信頭平行取，一次 META_CONCURRENCY 封。不符合的信**連內文都不讀取**，更不會存進資料庫。
+     * 續傳時整段跳過：佇列裡的 id 早就通過比對了。 */
+    const inScopeIds: string[] = [...queued];
+    for (let i = 0; !resuming && i < fresh.length; i += META_CONCURRENCY) {
+      if (Date.now() > deadline) break;
       const metas = await Promise.all(fresh.slice(i, i + META_CONCURRENCY).map(async (id) => {
         const metaUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}?format=metadata&metadataHeaders=From&metadataHeaders=To`;
         const metaRes = await fetch(metaUrl, { headers });
@@ -200,8 +220,11 @@ async function runSync(admin: ReturnType<typeof createClient>, actorId: string, 
       }
     }
 
-    for (const id of inScopeIds) {
-      if (Date.now() > deadline) { remaining += 1; continue; }
+    /* 這一批只做 BATCH_SIZE 封。撐爆 worker 的就是這一段——抓 format=full、解析、
+     * 附件下載再上傳；16 封一次做完就是上次那個 not enough compute resources。 */
+    const batch = inScopeIds.slice(0, BATCH_SIZE);
+    const leftover = inScopeIds.slice(BATCH_SIZE);
+    for (const id of batch) {
       const response = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}?format=full`, { headers }); const message = await response.json(); if (!response.ok) continue; const h = Object.fromEntries((message.payload?.headers ?? []).map((item: { name: string; value: string }) => [item.name.toLowerCase(), item.value])); const parsed = collect(message.payload ?? {}); const from = address(h.from); const to = address(h.to); const outbound = from === String(mailbox.emailAddress).toLowerCase() || (message.labelIds ?? []).includes('SENT'); const counterpart = outbound ? to : from; if (!counterpart) continue;
       let { data: thread } = await admin.from('email_threads').select('id,registration_id,contact_id,subject').eq('gmail_thread_id', message.threadId).maybeSingle();
       if (!thread) {
@@ -219,6 +242,13 @@ async function runSync(admin: ReturnType<typeof createClient>, actorId: string, 
       const { data: saved, error } = await admin.from('email_messages').upsert({ thread_id: thread.id, direction: outbound ? 'outbound' : 'inbound', from_email: from || h.from || '', to_email: to || h.to || '', cc_email: listAddresses(h.cc), bcc_email: listAddresses(h.bcc), subject: h.subject ?? '', body: parsed.text || htmlToText(parsed.html), body_html: parsed.html || null, snippet: message.snippet ?? null, gmail_message_id: message.id, is_read: outbound || !(message.labelIds ?? []).includes('UNREAD'), label_ids: message.labelIds ?? [], delivery_status: outbound ? 'sent' : 'received', raw_headers: h, sent_at: new Date(Number(message.internalDate)).toISOString() }, { onConflict: 'gmail_message_id' }).select('id').single(); if (error) throw error;
       for (const item of parsed.attachments) {
         let storagePath: string | null = null;
+        // 大附件不下載。base64 字串 → binary 字串 → Uint8Array 是三份副本，而且逐字元轉換
+        // 是純 CPU；一個十幾 MB 的附件足以自己一個人把這支函式的記憶體與 CPU 都吃掉。
+        // 仍然記一列（檔名、大小都在），只是沒有檔案——看得到有這個附件，而不是整封信同步失敗。
+        if (item.id && item.size > ATTACHMENT_MAX_BYTES) {
+          await admin.from('email_attachments').upsert({ message_id: saved.id, gmail_attachment_id: item.id, filename: item.filename, mime_type: item.mimeType, size_bytes: item.size, storage_path: null }, { onConflict: 'message_id,gmail_attachment_id' });
+          continue;
+        }
         if (item.id) {
           const attachmentRes = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${message.id}/attachments/${item.id}`, { headers });
           const attachment = await attachmentRes.json();
@@ -252,9 +282,20 @@ async function runSync(admin: ReturnType<typeof createClient>, actorId: string, 
         last_message_at: messageAt, updated_at: new Date().toISOString(),
       }).eq('id', thread.id); synced += 1;
     }
-    await admin.from('gmail_sync_state').upsert({ mailbox_email: mailbox.emailAddress, history_id: historyId, last_full_sync_at: useFull ? new Date().toISOString() : state?.last_full_sync_at ?? null, last_incremental_sync_at: new Date().toISOString(), last_error: null, updated_at: new Date().toISOString() }, { onConflict: 'mailbox_email' });
+    const remaining = leftover.length;
+    /* 剩下的寫回佇列，下一批接著做。
+     * `last_full_sync_at` 與 `history_id` 只在真的清空時才推進——中途就推進的話，
+     * 還沒處理的信會連同游標一起被跳過，而且從外面完全看不出來。 */
+    await admin.from('gmail_sync_state').upsert({
+      mailbox_email: mailbox.emailAddress,
+      history_id: remaining ? (state?.history_id ?? historyId) : historyId,
+      last_full_sync_at: !remaining && useFull ? new Date().toISOString() : state?.last_full_sync_at ?? null,
+      last_incremental_sync_at: new Date().toISOString(),
+      pending_message_ids: leftover,
+      last_error: null, updated_at: new Date().toISOString(),
+    }, { onConflict: 'mailbox_email' });
     // 略過幾封也記進稽核：這個數字是「過濾有沒有在動」的唯一外顯訊號。
-    await admin.from('audit_log').insert({ action: 'gmail_sync', actor_id: auth.user.id, result: 'success', detail: `${useFull ? 'full' : 'incremental'}:${synced} skipped:${skipped}${remaining ? ` remaining:${remaining}` : ''}` });
+    await admin.from('audit_log').insert({ action: 'gmail_sync', actor_id: auth.user.id, result: 'success', detail: `${resuming ? 'batch' : useFull ? 'full' : 'incremental'}:${synced} skipped:${skipped}${remaining ? ` remaining:${remaining}` : ' done'}` });
     // 移除標籤不做回溯刪除：同步端只該有「收進來」這個權限，誤收的清理由人決定。
     return { body: { ok: true, synced, skipped, remaining, mailboxEmail: mailbox.emailAddress, syncLabelActive: syncLabelId !== '' }, status: 200 };
   } catch (err) { const detail = errorMessage(err); const missingScope = isMissingGmailScope(detail) || detail === gmailScopeMessage; const message = missingScope ? gmailScopeMessage : detail; await admin.from('audit_log').insert({ action: 'gmail_sync', actor_id: actorId, result: 'error', detail: message }); return { body: { error: message, code: missingScope ? 'GMAIL_SCOPE_MISSING' : 'GMAIL_SYNC_FAILED' }, status: 500 }; }
