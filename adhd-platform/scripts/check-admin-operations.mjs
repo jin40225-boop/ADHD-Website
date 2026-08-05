@@ -205,7 +205,23 @@ requireText('supabase/functions/gmail-sync/index.ts', ['const withAfter', 'withA
 }
 requireText('src/admin/pages/PeoplePage.tsx', ['handleImportHistory', '匯入這個人的歷史往來']);
 requireText('src/admin/pages/RegistrationsOperationsPage.tsx', ['importGmailHistory', '匯入這個人的歷史往來']);
-requireText('src/admin/pages/IntegrationsPage.tsx', ['clearGmailQueue', 'window.confirm']);
+requireText('src/admin/pages/IntegrationsPage.tsx', ['clearGmailQueue', 'confirmingClear']);
+// 破壞性動作要確認，但確認不能用 window.confirm：原生對話框在自動化瀏覽器裡會被自動取消，
+// 等於把所有代驗擋在門外。這三處都是這一輪新增的動作，一律做成站內確認。
+for (const page of ['IntegrationsPage', 'PeoplePage', 'RegistrationsOperationsPage']) {
+  if (withoutComments(read(`src/admin/pages/${page}.tsx`)).includes('window.confirm')) {
+    throw new Error(`${page}.tsx uses window.confirm; an automated browser cancels it, so the action can never be verified.`);
+  }
+}
+// 同步鈕有兩顆——收件匣一顆、整合設定一顆。分批上線時迴圈只加在其中一顆，於是另一顆
+// 每按一次只前進 5 封，佇列 113 封要按 23 次。兩顆走同一段程式，不要再各寫一套。
+requireText('src/admin/operations/gmailSync.ts', ['syncGmailUntilDone', 'MAX_BATCHES', 'shouldStop']);
+for (const page of ['InboxPage', 'IntegrationsPage']) {
+  requireText(`src/admin/pages/${page}.tsx`, ['syncGmailUntilDone']);
+  if (withoutComments(read(`src/admin/pages/${page}.tsx`)).includes('await triggerGmailSync(full)')) {
+    throw new Error(`${page}.tsx fires a single sync request again; one press must drain the queue, not advance one batch.`);
+  }
+}
 requireText('src/admin/pages/SettingsPage.tsx', ['saveSince', 'sinceDraft']);
 if (read('supabase/migrations/20260805000027_app_settings_subject_keywords.sql').includes('"add"')) {
   throw new Error('the default subject keywords include "add"; Gmail search is case-insensitive so it matches Add/Added/Address.');

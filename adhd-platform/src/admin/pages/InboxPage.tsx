@@ -4,7 +4,8 @@ import { useSearchParams } from 'react-router-dom';
 import { TextInput, Textarea, Select } from '@/components/ui/FormField/FormField';
 import { WarmButton } from '@/components/ui/WarmButton/WarmButton';
 import { adminListEmailTemplates, invokeSendEmail } from '@/lib/api';
-import { createEmailAttachmentUrl, getGmailSyncState, listInbox, markThreadRead, saveDraft, triggerGmailSync } from '../operations/api';
+import { createEmailAttachmentUrl, getGmailSyncState, listInbox, markThreadRead, saveDraft } from '../operations/api';
+import { syncGmailUntilDone, syncSummary } from '../operations/gmailSync';
 import type { GmailSyncState, OperationalThread } from '../operations/types';
 import { EmptyPanel, InlineSpinner, OpsNotice, PageHeader, StatusPill } from '../operations/components';
 
@@ -29,6 +30,9 @@ export default function InboxPage() {
     } catch (err) { setError(err instanceof Error ? err.message : '讀取收件匣失敗'); }
     finally { setLoading(false); }
   }, []);
+  // 離開頁面就讓同步迴圈停在這一批，不要在背景繼續打。
+  const left = useRef(false);
+  useEffect(() => () => { left.current = true; }, []);
   useEffect(() => { void reload(); }, [reload]);
   useEffect(() => {
     const threadId = searchParams.get('thread');
@@ -47,7 +51,17 @@ export default function InboxPage() {
 
   async function handleSync(full = false) {
     setSyncing(true); setNotice(undefined); setError(undefined);
-    try { const result = await triggerGmailSync(full); setNotice(`Gmail 同步完成，共處理 ${result.synced} 封信件。`); await reload(); }
+    /* 這顆按鈕先前只送一次請求，所以每按一次只前進一批（5 封）——佇列 113 封要按 23 次，
+     * 而分批之後「按一次就同步完」的迴圈當時只加在整合設定那顆。兩顆按鈕做同一件事，
+     * 現在走同一段程式。 */
+    try {
+      const outcome = await syncGmailUntilDone(full, (progress) => {
+        setNotice(`Gmail 同步中…第 ${progress.rounds} 批，已收進 ${progress.synced} 封${progress.remaining ? `，還有 ${progress.remaining} 封排隊中` : ''}。`);
+      }, () => left.current);
+      await reload();
+      if (outcome.stopped) setError(`${syncSummary(outcome)}（第 ${outcome.rounds + 1} 批中止：${outcome.stopped}。已完成的部分都已存檔，再按一次會從剩下的接著做。）`);
+      else setNotice(syncSummary(outcome));
+    }
     catch (err) { setError(err instanceof Error ? err.message : 'Gmail 同步失敗'); }
     finally { setSyncing(false); }
   }

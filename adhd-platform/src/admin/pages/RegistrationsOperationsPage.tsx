@@ -37,7 +37,7 @@ export default function RegistrationsOperationsPage() {
   // attachButtons 預設 false：沒有選範本就無從判斷這是不是要對方回覆出席的信，
   // 而多附兩個確認連結是寄出去才會發現的錯，少附則當場看得到那個沒勾的框。
   const [compose, setCompose] = useState({ templateId: '', subject: '', body: '', attachButtons: false, isFollowUp: false, cc: [] as string[] });
-  const [missingVars, setMissingVars] = useState<string[]>([]); const [sending, setSending] = useState(false);
+  const [missingVars, setMissingVars] = useState<string[]>([]); const [sending, setSending] = useState(false); const [confirmingImport, setConfirmingImport] = useState(false);
 
   const registrations = useMemo(() => contacts.flatMap((contact) => contact.registrations.map((registration) => ({ registration, contact }))), [contacts]);
   const current = registrations.find(({ registration }) => registration.id === selectedId);
@@ -119,7 +119,7 @@ export default function RegistrationsOperationsPage() {
   const importHistory = async () => {
     const email = current?.registration.email || current?.contact.primaryEmail;
     if (!email) { setError('這筆報名沒有信箱，無法匯入往來。'); return; }
-    if (!window.confirm(`匯入 ${email} 的完整歷史往來？\n\n會把你與這個信箱之間的所有信件排進同步佇列，不受「自動收信起始日」限制。\n接著到整合設定按一次同步，內容才會真的被抓進來。`)) return;
+    setConfirmingImport(false);
     try {
       const result = await importGmailHistory(email);
       setNotice(`找到 ${result.found} 封往來，其中 ${result.alreadyStored} 封已經收過；新排入佇列 ${result.queued} 封。請到整合設定按同步把內容抓進來。`);
@@ -197,7 +197,7 @@ export default function RegistrationsOperationsPage() {
         </header>
         <div className="ops-drawer-body">
           <article className="ops-panel">
-            <div className="ops-button-row"><Link className="ops-link-button" to={`/admin/inbox?registration=${current.registration.id}`}>查看信件往來</Link><Link className="ops-link-button" to={`/admin/people?contact=${current.contact.id}`}>人物主檔</Link><WarmButton variant="secondary" onClick={() => void importHistory()}>匯入這個人的歷史往來</WarmButton></div>
+            <div className="ops-button-row"><Link className="ops-link-button" to={`/admin/inbox?registration=${current.registration.id}`}>查看信件往來</Link><Link className="ops-link-button" to={`/admin/people?contact=${current.contact.id}`}>人物主檔</Link>{confirmingImport ? <><WarmButton onClick={() => void importHistory()}>確認匯入 {current.registration.email} 的全部往來</WarmButton><WarmButton variant="secondary" onClick={() => setConfirmingImport(false)}>取消</WarmButton></> : <WarmButton variant="secondary" onClick={() => setConfirmingImport(true)}>匯入這個人的歷史往來</WarmButton>}</div>
             <div className="ops-form-grid">
               <Select label="報名狀態" value={current.registration.status} onChange={(e) => void changeStatus(current.registration.id, e.target.value)}>{(STATUS_OPTIONS.includes(current.registration.status) ? STATUS_OPTIONS : [current.registration.status, ...STATUS_OPTIONS]).map((status) => <option value={status} key={status}>{STATUS_LABEL[status] ?? status}</option>)}</Select>
               <Select label="優先度" value={draft.priority ?? 'normal'} onChange={(e) => setDraft({ ...draft, priority: e.target.value as WorkPriority })}><option value="low">低</option><option value="normal">一般</option><option value="high">高</option><option value="urgent">緊急</option></Select>

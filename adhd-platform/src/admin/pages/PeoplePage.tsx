@@ -26,6 +26,9 @@ export default function PeoplePage() {
   const [editOpen, setEditOpen] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
   const [taskOpen, setTaskOpen] = useState(false);
+  // 確認做在頁面裡而不是 window.confirm：原生對話框在自動化瀏覽器裡會被自動取消，
+  // 等於把所有代驗擋在門外。破壞性動作仍然要確認，只是確認要驗得到。
+  const [confirmingImport, setConfirmingImport] = useState(false);
 
   const reload = useCallback(async () => {
     if (!isSupabaseReady) { setLoading(false); return; }
@@ -72,10 +75,7 @@ export default function PeoplePage() {
    */
   async function handleImportHistory() {
     if (!selected?.primaryEmail) { setError('這個人沒有信箱，無法匯入往來。'); return; }
-    if (!window.confirm(`匯入「${selected.displayName}」（${selected.primaryEmail}）的完整歷史往來？
-
-會把你與這個信箱之間的所有信件排進同步佇列，不受「自動收信起始日」限制。
-接著到整合設定按一次同步，內容才會真的被抓進來。`)) return;
+    setConfirmingImport(false);
     try {
       const result = await importGmailHistory(selected.primaryEmail);
       setNotice(`找到 ${result.found} 封往來，其中 ${result.alreadyStored} 封已經收過；新排入佇列 ${result.queued} 封。請到整合設定按同步把內容抓進來。`);
@@ -121,7 +121,7 @@ export default function PeoplePage() {
           <section className="ops-panel">
             {selected ? <>
               <div className="ops-detail-header"><div><h2>{selected.displayName}</h2><p>{selected.primaryEmail || '未提供 Email'}{selected.phone ? `　·　${selected.phone}` : ''}</p></div><StatusPill tone={selected.status === 'active' ? 'green' : 'gray'}>{STATUS_LABELS[selected.status]}</StatusPill></div>
-              <div className="ops-button-row"><WarmButton size="sm" icon={Mail} onClick={() => { const reg = selected.registrations[0]; if (reg) navigate(`/admin/inbox?registration=${reg.id}`); }} disabled={!selected.registrations.length}>撰寫信件</WarmButton><WarmButton size="sm" variant="secondary" icon={NotebookPen} onClick={() => setNoteOpen(true)}>新增註記</WarmButton><WarmButton size="sm" variant="secondary" icon={ListPlus} onClick={() => setTaskOpen(true)} disabled={!selected.registrations.length}>建立任務</WarmButton><WarmButton size="sm" variant="secondary" icon={Pencil} onClick={() => setEditOpen(true)}>編輯主檔</WarmButton><WarmButton size="sm" variant="secondary" icon={Mail} onClick={() => void handleImportHistory()} disabled={!selected.primaryEmail}>匯入這個人的歷史往來</WarmButton></div>
+              <div className="ops-button-row"><WarmButton size="sm" icon={Mail} onClick={() => { const reg = selected.registrations[0]; if (reg) navigate(`/admin/inbox?registration=${reg.id}`); }} disabled={!selected.registrations.length}>撰寫信件</WarmButton><WarmButton size="sm" variant="secondary" icon={NotebookPen} onClick={() => setNoteOpen(true)}>新增註記</WarmButton><WarmButton size="sm" variant="secondary" icon={ListPlus} onClick={() => setTaskOpen(true)} disabled={!selected.registrations.length}>建立任務</WarmButton><WarmButton size="sm" variant="secondary" icon={Pencil} onClick={() => setEditOpen(true)}>編輯主檔</WarmButton>{confirmingImport ? <><WarmButton size="sm" onClick={() => void handleImportHistory()}>確認匯入 {selected.primaryEmail} 的全部往來</WarmButton><WarmButton size="sm" variant="secondary" onClick={() => setConfirmingImport(false)}>取消</WarmButton></> : <WarmButton size="sm" variant="secondary" icon={Mail} onClick={() => setConfirmingImport(true)} disabled={!selected.primaryEmail}>匯入這個人的歷史往來</WarmButton>}</div>
               <section className="ops-section"><h3>跨活動服務歷程</h3>{selected.registrations.length ? <div className="ops-table-wrap"><table className="ops-table"><thead><tr><th>服務／活動</th><th>報名時間</th><th>狀態</th><th>下一步</th></tr></thead><tbody>{selected.registrations.map((reg) => <tr key={reg.id}><td><Link to={`/admin/registrations?registration=${reg.id}`}>{reg.projectName || reg.projectId}</Link></td><td>{formatDate(reg.createdAt)}</td><td><StatusPill tone={reg.hasUnreadReply ? 'coral' : 'blue'}>{reg.status}</StatusPill></td><td>{reg.nextActionAt ? formatDate(reg.nextActionAt) : '尚未設定'}</td></tr>)}</tbody></table></div> : <EmptyPanel title="尚無報名紀錄" />}</section>
               <section className="ops-section"><div className="ops-panel-header"><div><h3>內部註記</h3><p>與對外信件分開，所有修改保留版本。</p></div><WarmButton size="sm" variant="secondary" onClick={() => setNoteOpen(true)}>新增</WarmButton></div>{notes.length ? notes.map((note) => <article className="ops-note" key={note.id}><header><StatusPill tone={note.noteType === 'risk' ? 'red' : 'yellow'}>{NOTE_LABELS[note.noteType]}</StatusPill><small>第 {note.revision} 版 · {formatDate(note.updatedAt || note.createdAt)}</small></header><p>{note.content}</p></article>) : <EmptyPanel title="尚無內部註記" description="聯繫摘要、資格判斷與交接事項都可留在這裡。" />}</section>
             </> : <EmptyPanel title="請選擇一位人員" />}
