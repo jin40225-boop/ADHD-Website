@@ -35,6 +35,11 @@ Deno.serve(async (req) => {
     const { full = false } = await req.json().catch(() => ({ full: false })); const accessToken = await getGoogleAccessToken(); const headers = { Authorization: `Bearer ${accessToken}` };
     const profileRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/profile', { headers }); const mailbox = await profileRes.json(); if (!profileRes.ok) { const detail = String(mailbox.error?.message ?? 'Gmail profile 讀取失敗'); throw new Error(isMissingGmailScope(detail) ? gmailScopeMessage : detail); }
     const { data: state } = await admin.from('gmail_sync_state').select('*').eq('mailbox_email', mailbox.emailAddress).maybeSingle();
+    // 直接從 Gmail 寄出的信會把「等待回覆」的計時重新起算，催覆期限就必須跟著重算。
+    // 留著上一封信的舊期限，這一封才剛寄出就會被判成「逾期未回覆」——逾期是讀取時比對
+    // follow_up_due_at 推導的，期限沒動，狀態就會立刻翻面。
+    const { data: settings } = await admin.from('app_settings').select('follow_up_days').maybeSingle();
+    const followUpDays = Number(settings?.follow_up_days ?? 3);
     let messageIds: string[] = []; let historyId = String(mailbox.historyId ?? state?.history_id ?? ''); let useFull = Boolean(full || !state?.history_id);
     if (!useFull) { const historyRes = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/history?startHistoryId=${encodeURIComponent(state.history_id)}&historyTypes=messageAdded&maxResults=500`, { headers }); if (historyRes.status === 404) useFull = true; else { const history = await historyRes.json(); if (!historyRes.ok) throw new Error(history.error?.message ?? 'Gmail history 讀取失敗'); const additions = (history.history ?? []) as { messagesAdded?: { message: { id: string } }[] }[]; messageIds = [...new Set<string>(additions.flatMap((item) => (item.messagesAdded ?? []).map((entry) => entry.message.id)))]; historyId = String(history.historyId ?? historyId); } }
     if (useFull) { const url = new URL('https://gmail.googleapis.com/gmail/v1/users/me/messages'); url.searchParams.set('maxResults', '25'); const response = await fetch(url, { headers }); const list = await response.json(); if (!response.ok) throw new Error(list.error?.message ?? 'Gmail message list 讀取失敗'); messageIds.push(...(list.messages ?? []).map((item: { id: string }) => item.id)); }
@@ -68,7 +73,9 @@ Deno.serve(async (req) => {
         has_unread: !outbound && (message.labelIds ?? []).includes('UNREAD'),
         needs_reply: !outbound, status: outbound ? 'waiting' : 'open',
         mail_state: outbound ? 'waiting_reply' : 'replied_pending',
-        ...(outbound ? { last_outbound_at: messageAt } : { last_inbound_at: messageAt }),
+        ...(outbound
+          ? { last_outbound_at: messageAt, follow_up_due_at: new Date(new Date(messageAt).getTime() + followUpDays * 86400000).toISOString() }
+          : { last_inbound_at: messageAt }),
         last_message_at: messageAt, updated_at: new Date().toISOString(),
       }).eq('id', thread.id); synced += 1;
     }
