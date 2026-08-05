@@ -625,7 +625,7 @@ export async function createEmailAttachmentUrl(storagePath: string) {
 export async function triggerGmailSync(full = false) {
   const { data, error } = await db().functions.invoke('gmail-sync', { body: { full } });
   await assertFunction(error, '啟動 Gmail 同步失敗');
-  return data as { ok: boolean; synced: number; skipped?: number; remaining?: number; mailboxEmail?: string; syncLabelActive?: boolean };
+  return data as { ok: boolean; started?: boolean; background?: boolean; synced?: number; skipped?: number; remaining?: number; mailboxEmail?: string; syncLabelActive?: boolean };
 }
 
 

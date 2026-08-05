@@ -13,15 +13,41 @@ export default function IntegrationsPage() {
   useEffect(() => {
     reload().catch((e: unknown) => setError(e instanceof Error ? e.message : '讀取整合狀態失敗'));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  /**
+   * 背景完整同步的完成訊號：`gmail_sync_state.last_full_sync_at` 會在跑完的最後一步被寫上。
+   * 每 10 秒問一次，最多等 5 分鐘；等不到不是失敗，只是還沒跑完——所以回 false 而不是丟錯。
+   */
+  const waitForFullSync = async () => {
+    const before = gmail?.lastFullSyncAt ?? '';
+    for (let i = 0; i < 30; i += 1) {
+      await new Promise((done) => setTimeout(done, 10_000));
+      const next = await getGmailSyncState().catch(() => null);
+      if (next) setGmail(next);
+      if (next && (next.lastFullSyncAt ?? '') !== before) return true;
+    }
+    return false;
+  };
   const sync = async (full: boolean) => {
     setBusy(true);
     setError(undefined);
     try {
       const result = await triggerGmailSync(full);
+      if (result.background) {
+        // 完整同步要掃幾百封、跑好幾分鐘，早就超過瀏覽器等得住的時間。它在背景跑，
+        // 這裡改成等結果出現——絕不能讓畫面說失敗而其實成功了，那會讓人一按再按。
+        setNotice('完整同步已在背景開始（要掃幾百封信，可能需要幾分鐘）。這裡會自己更新，也可以稍後回來看稽核紀錄。');
+        void waitForFullSync().then((done) => {
+          setNotice(done
+            ? '完整同步已完成，結果請見下方狀態與稽核紀錄。'
+            : '完整同步仍在背景進行中。它不會因為你離開這一頁而中斷，完成後會出現在稽核紀錄裡。');
+          void reload();
+        });
+        return;
+      }
       // 略過幾封要講出來——那是「收信範圍過濾有沒有在動」的唯一外顯訊號。還有剩的也要講：
       // 那代表這次是時間到了先停下，不是掃完了。
       setNotice([
-        `Gmail 同步完成：收進 ${result.synced} 封`,
+        `Gmail 同步完成：收進 ${result.synced ?? 0} 封`,
         result.skipped ? `，範圍外略過 ${result.skipped} 封（未讀取內容）` : '',
         result.remaining ? `，時間用完還剩 ${result.remaining} 封沒掃，再按一次會接著掃` : '',
         '。',

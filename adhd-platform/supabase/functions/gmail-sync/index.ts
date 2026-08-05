@@ -32,26 +32,49 @@ const META_CONCURRENCY = 8;
  * 這一輪最多花多久（毫秒）。超過就停下來，把剩幾封一起回報，再按一次接著掃。
  *
  * 平台上限（Supabase 官方文件）：wall clock 免費 150s／付費 400s，request idle timeout 150s
- * 逾時回 504，CPU time 2s（不含 async I/O，我們幾乎全是 I/O 所以不是瓶頸）。
- * 但實測客戶端約 30 秒就放棄了，所以真正的天花板是「使用者看得到結果」的那一段，
- * 不是平台的 150s。抓 20 秒：做得完就做完，做不完也要在使用者還在看的時候把進度講出來。
+ * 逾時回 504，CPU time 2s（不含 async I/O，我們幾乎全是 I/O 所以不是瓶頸）。抓 120 秒，
+ * 留餘裕給免費方案的 150s，而且完整同步已經改成背景執行，不必再遷就客戶端的耐心。
  *
- * 被執行環境掐掉時 catch 不會執行，連一筆 error 稽核都留不下——那正是監督視窗看到的
- * 「按了同步、email_messages 從 208 變 210、稽核卻什麼都沒有」。
+ * 超過就停下來，把剩幾封一併回報，再按一次接著掃——被執行環境掐掉時 catch 不會執行，
+ * 連一筆 error 稽核都留不下，那種「做了事卻沒有紀錄」的狀態最難查。
  */
-const TIME_BUDGET_MS = 20_000;
+const TIME_BUDGET_MS = 120_000;
+
+/** Supabase Edge Runtime 的背景工作 API：回應送出之後還能繼續跑完手上的事。 */
+declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void } | undefined;
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return jsonResponse({ error: 'METHOD_NOT_ALLOWED' }, 405);
   const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+  const jwt = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, ''); const { data: auth } = await admin.auth.getUser(jwt); if (!auth.user) return jsonResponse({ error: 'UNAUTHORIZED' }, 401);
+  // 被擋下來也要留痕：不留的話「按了同步卻什麼都沒發生」在稽核上與「函式死掉」長得一模一樣。
+  const [{ data: profile }, { data: member }] = await Promise.all([admin.from('profiles').select('is_system_owner').eq('id', auth.user.id).maybeSingle(), admin.from('project_members').select('id').eq('user_id', auth.user.id).in('role', ['owner', 'admin_collab']).limit(1)]);
+  if (!profile?.is_system_owner && !member?.length) { await admin.from('audit_log').insert({ action: 'gmail_sync', actor_id: auth.user.id, result: 'error', detail: 'FORBIDDEN' }); return jsonResponse({ error: 'FORBIDDEN' }, 403); }
+  const { full = false } = await req.json().catch(() => ({ full: false }));
+
+  /**
+   * 完整同步在背景跑。
+   *
+   * 它要掃幾百封信，實測要兩到四分鐘，而客戶端大約 30 秒就放棄——結果是畫面說失敗、
+   * 背景其實成功了。那比壞掉更糟：使用者會再按一次，或以為同步從來沒成功過。
+   * 所以立刻回「已開始」，剩下的交給 waitUntil，完成與否看稽核與 gmail_sync_state。
+   * 增量同步很快，照舊當場回結果——那才是使用者想立刻看到數字的情境。
+   */
+  const work = runSync(admin, auth.user.id, Boolean(full));
+  if (full && typeof EdgeRuntime !== 'undefined') {
+    EdgeRuntime.waitUntil(work);
+    return jsonResponse({ ok: true, started: true, background: true }, 202);
+  }
+  const result = await work;
+  return jsonResponse(result.body, result.status);
+});
+
+async function runSync(admin: ReturnType<typeof createClient>, actorId: string, full: boolean): Promise<{ body: unknown; status: number }> {
   const deadline = Date.now() + TIME_BUDGET_MS;
+  const auth = { user: { id: actorId } };
   try {
-    const jwt = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, ''); const { data: auth } = await admin.auth.getUser(jwt); if (!auth.user) return jsonResponse({ error: 'UNAUTHORIZED' }, 401);
-    // 被擋下來也要留痕：不留的話「按了同步卻什麼都沒發生」在稽核上與「函式死掉」長得一模一樣。
-    const [{ data: profile }, { data: member }] = await Promise.all([admin.from('profiles').select('is_system_owner').eq('id', auth.user.id).maybeSingle(), admin.from('project_members').select('id').eq('user_id', auth.user.id).in('role', ['owner', 'admin_collab']).limit(1)]);
-    if (!profile?.is_system_owner && !member?.length) { await admin.from('audit_log').insert({ action: 'gmail_sync', actor_id: auth.user.id, result: 'error', detail: 'FORBIDDEN' }); return jsonResponse({ error: 'FORBIDDEN' }, 403); }
-    const { full = false } = await req.json().catch(() => ({ full: false })); const accessToken = await getGoogleAccessToken(); const headers = { Authorization: `Bearer ${accessToken}` };
+    const accessToken = await getGoogleAccessToken(); const headers = { Authorization: `Bearer ${accessToken}` };
     const profileRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/profile', { headers }); const mailbox = await profileRes.json(); if (!profileRes.ok) { const detail = String(mailbox.error?.message ?? 'Gmail profile 讀取失敗'); throw new Error(isMissingGmailScope(detail) ? gmailScopeMessage : detail); }
     const { data: state } = await admin.from('gmail_sync_state').select('*').eq('mailbox_email', mailbox.emailAddress).maybeSingle();
     // 直接從 Gmail 寄出的信會把「等待回覆」的計時重新起算，催覆期限就必須跟著重算。
@@ -233,9 +256,9 @@ Deno.serve(async (req) => {
     // 略過幾封也記進稽核：這個數字是「過濾有沒有在動」的唯一外顯訊號。
     await admin.from('audit_log').insert({ action: 'gmail_sync', actor_id: auth.user.id, result: 'success', detail: `${useFull ? 'full' : 'incremental'}:${synced} skipped:${skipped}${remaining ? ` remaining:${remaining}` : ''}` });
     // 移除標籤不做回溯刪除：同步端只該有「收進來」這個權限，誤收的清理由人決定。
-    return jsonResponse({ ok: true, synced, skipped, remaining, mailboxEmail: mailbox.emailAddress, syncLabelActive: syncLabelId !== '' });
-  } catch (err) { const detail = errorMessage(err); const missingScope = isMissingGmailScope(detail) || detail === gmailScopeMessage; const message = missingScope ? gmailScopeMessage : detail; await admin.from('audit_log').insert({ action: 'gmail_sync', result: 'error', detail: message }); return jsonResponse({ error: message, code: missingScope ? 'GMAIL_SCOPE_MISSING' : 'GMAIL_SYNC_FAILED' }, 500); }
-});
+    return { body: { ok: true, synced, skipped, remaining, mailboxEmail: mailbox.emailAddress, syncLabelActive: syncLabelId !== '' }, status: 200 };
+  } catch (err) { const detail = errorMessage(err); const missingScope = isMissingGmailScope(detail) || detail === gmailScopeMessage; const message = missingScope ? gmailScopeMessage : detail; await admin.from('audit_log').insert({ action: 'gmail_sync', actor_id: actorId, result: 'error', detail: message }); return { body: { error: message, code: missingScope ? 'GMAIL_SCOPE_MISSING' : 'GMAIL_SYNC_FAILED' }, status: 500 }; }
+}
 
 
 
