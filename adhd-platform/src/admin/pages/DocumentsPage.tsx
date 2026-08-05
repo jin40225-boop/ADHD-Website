@@ -10,7 +10,7 @@ import { WarmButton } from '@/components/ui/WarmButton/WarmButton';
 import { adminListEmailTemplates, adminListProjects, adminListSessions, invokeBulkEmail } from '@/lib/api';
 import { listContactGroups, listContacts, listGeneratedDocuments } from '../operations/api';
 import type { ContactGroupRecord, ContactRecord, GeneratedDocumentRecord } from '../operations/types';
-import { resolveBulkRecipients } from '../operations/emailCompose';
+import { applyTemplate, buildBulkContext, residualVariables, resolveBulkRecipients } from '../operations/emailCompose';
 import { EmptyPanel, InlineSpinner, OpsNotice, PageHeader } from '../operations/components';
 import { sessionDateText, sessionTimeText } from '../operations/SessionTable';
 
@@ -52,6 +52,8 @@ export default function DocumentsPage() {
     () => resolveBulkRecipients(groups, contacts, bulk),
     [groups, contacts, bulk],
   );
+  // 主旨與內文都要看：主旨裡漏一個 {{月份}} 同樣是寄給所有人。
+  const residual = useMemo(() => residualVariables(bulk.subject, bulk.body), [bulk.subject, bulk.body]);
   const sendBulk = async () => {
     setSending(true);
     try {
@@ -122,7 +124,14 @@ export default function DocumentsPage() {
         <Select label="範本" value={bulk.templateId} onChange={(e) => {
           const template = templates.find((item) => item.id === e.target.value);
           setConfirming(false);
-          setBulk({ ...bulk, templateId: e.target.value, subject: template?.subject ?? bulk.subject, body: template?.body ?? bulk.body });
+          // 非個人變數在載入範本時就帶入——月度宣傳信整封都靠 {{月份}}{{場次清單}}{{報名連結}}，
+          // 不帶就會把大括號原樣寄給所有人。個人變數不帶（群發沒有單一對象），留著讓下面的守門擋。
+          const context = buildBulkContext(sessions, `${location.origin}${import.meta.env.BASE_URL}`);
+          setBulk({
+            ...bulk, templateId: e.target.value,
+            subject: template ? applyTemplate(template.subject, context).text : bulk.subject,
+            body: template ? applyTemplate(template.body, context).text : bulk.body,
+          });
         }}>
           <option value="">不套範本，自己寫</option>
           {templates.map((template) => <option key={template.id} value={template.id}>{template.name}{template.reviewStatus === 'draft' ? '（待審閱）' : ''}</option>)}
@@ -132,8 +141,13 @@ export default function DocumentsPage() {
       </div>
       <OpsNotice tone="info">
         群發不附「確認出席／請假改期」按鈕，也不會改動任何人的報名狀態——那兩件事屬於一對一的往來，在報名工作台的詳情裡做。
-        群發信件會各自建立以聯絡人為主的信件串。<b>變數不會帶入</b>（{'{{姓名}}'} 這類在群發沒有單一對象可代入），請寫成人人都讀得通的內容。
+        群發信件會各自建立以聯絡人為主的信件串。載入範本時只帶入<b>非個人變數</b>（{'{{月份}}{{場次清單}}{{報名連結}}'}）；
+        {'{{姓名}}'} 這類在群發沒有單一對象可代入，請自己改寫成人人都讀得通的說法。
       </OpsNotice>
+      {residual.length ? <OpsNotice tone="warning">
+        內容裡還有沒帶入的變數：<b>{residual.map((name) => `{{${name}}}`).join('、')}</b>。
+        群發一次就寄給所有人，沒有逐封補的機會，所以寄出鈕會停用到這些大括號被處理掉為止。
+      </OpsNotice> : null}
       <div className="ops-panel-header" style={{ marginTop: '.8rem' }}><div><h2>最終名單（{recipients.length} 人）</h2><p>去重後的實際收件人。點 ✕ 可把某人從這次群發排除。</p></div></div>
       {recipients.length ? <div className="ops-chip-row">{recipients.map((recipient) => <span className="ops-member-chip" key={recipient.contactId}>
         {recipient.displayName}<span className="ops-cell-legacy">{recipient.via}</span>
@@ -149,7 +163,7 @@ export default function DocumentsPage() {
             <WarmButton disabled={sending} onClick={() => void sendBulk()}>{sending ? '寄送中…' : `確認寄給這 ${recipients.length} 人`}</WarmButton>
             <WarmButton variant="secondary" onClick={() => setConfirming(false)}>取消</WarmButton>
           </>
-          : <WarmButton disabled={!recipients.length || !bulk.subject.trim() || !bulk.body.trim()} onClick={() => setConfirming(true)}>預覽名單並寄出</WarmButton>}
+          : <WarmButton disabled={!recipients.length || !bulk.subject.trim() || !bulk.body.trim() || residual.length > 0} onClick={() => setConfirming(true)}>預覽名單並寄出</WarmButton>}
       </div>
     </article>
 

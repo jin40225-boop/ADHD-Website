@@ -97,6 +97,13 @@ requireText('supabase/functions/gmail-sync/index.ts', ["mail_state: outbound ? '
 requireText('src/admin/operations/emailCompose.ts', ['applyTemplate', 'missing', 'resolveBulkRecipients']);
 // 群發一定要先看到最終名單才寄得出去；寄不到的人要單獨列出，不能混進「已寄出 N 封」。
 requireText('src/admin/pages/DocumentsPage.tsx', ['範本群發', '最終名單', 'setConfirming(true)']);
+// 群發只有一次機會——按下去就同時寄給所有人，沒有「寄出前逐封補」那一步。所以載入範本時要帶入
+// 非個人變數，而任何殘留的 {{...}} 必須把寄出鈕擋掉。月度宣傳信整封都靠那三個變數撐起來。
+requireText('src/admin/pages/DocumentsPage.tsx', ['buildBulkContext', 'residualVariables', 'residual.length > 0']);
+if (read('src/admin/pages/DocumentsPage.tsx').includes('body: template?.body')) {
+  throw new Error('DocumentsPage.tsx drops the raw template body into the box again; run it through applyTemplate.');
+}
+requireText('src/admin/operations/emailCompose.ts', ['buildBulkContext', 'residualVariables', 'BLANK_IS_VALID']);
 // 催覆信的回覆期限要跟著設定走。寫死的天數與設定不符時畫面上看不出來——信寄出去才知道。
 requireText('src/admin/pages/RegistrationsOperationsPage.tsx', ['loadTemplate(', 'attachConfirmButtons', 'isFollowUp', 'followUpDays']);
 // 寄信行為由 letter_kind 決定，不由範本名稱決定：範本改名不該改變信怎麼寄。名稱判斷只留在

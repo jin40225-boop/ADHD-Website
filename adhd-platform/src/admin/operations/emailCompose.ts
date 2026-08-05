@@ -68,12 +68,48 @@ function answerText(registration: OperationalRegistration, key: string) {
   return typeof value === 'string' ? value.trim() : '';
 }
 
+/** 開放報名的場次：與前台「即將場次」同一個定義（`open`／`full` 且尚未結束）。 */
+function openSessions(sessions: SessionSlot[], now: Date) {
+  return sessions
+    .filter((item) => (item.status === 'open' || item.status === 'full') && new Date(item.endsAt).getTime() >= now.getTime())
+    .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+}
+
+/**
+ * 該月開放報名的場次，一行一個，**跨服務線**。群發信不對應任何單一場次，月度宣傳信本來
+ * 就是列整個月有哪些場次；一對一的信沿用同一份，兩邊講的月份內容才會一致。
+ */
+function sessionList(sessions: SessionSlot[], month: number | undefined, now: Date) {
+  if (month === undefined) return '';
+  return openSessions(sessions, now)
+    .filter((item) => new Date(item.startsAt).getMonth() === month)
+    .map((item) => `・${item.title}｜${dateLabel(item.startsAt)} ${timeLabel(item.startsAt)}–${timeLabel(item.endsAt)}`)
+    .join('\n');
+}
+
+/**
+ * 群發可用的「非個人」變數。裁決 4 擋的是報名者個人變數與出席確認按鈕，這三個都不是個人資料。
+ * 其餘變數刻意不給：群發沒有單一對象，`{{姓名}}` 之類留在原地會被寄出前的守門擋下。
+ */
+export function buildBulkContext(sessions: SessionSlot[], siteBase = '', now = new Date()): Partial<ComposeContext> {
+  // 最近一個還有開放場次的月份就是「這封信在講的那個月」。
+  const next = openSessions(sessions, now)[0];
+  const month = next ? new Date(next.startsAt).getMonth() : undefined;
+  return {
+    月份: month === undefined ? '' : `${month + 1} 月`,
+    場次清單: sessionList(sessions, month, now),
+    // 群發跨服務線，沒有單一報名頁可指；首頁本來就列著所有開放中的月份。
+    報名連結: siteBase,
+  };
+}
+
 export function buildContext(
   registration: OperationalRegistration,
   contact: ContactRecord | undefined,
   sessions: SessionSlot[],
   /** 站台根網址（結尾帶 /），用來組報名連結。由呼叫端傳入，這個函式才留得住純函式的可測性。 */
   siteBase = '',
+  now = new Date(),
 ): ComposeContext {
   // 稱呼優先用報名者自己填的（親職填「希望如何被稱呼」、同儕填暱稱），沒有才退回人物主檔。
   const 姓名 = answerText(registration, 'preferredName')
@@ -98,23 +134,50 @@ export function buildContext(
     計畫名: registration.projectName ?? '',
     團隊署名: TEAM_SIGNATURE[slug] ?? '',
     月份: monthSource ? `${new Date(monthSource).getMonth() + 1} 月` : '',
-    // 該月的候選時段，一行一個——就是報名表單上會出現的那幾個，不是另外抄一份。
-    場次清單: (session?.slotOptions ?? [])
-      .map((option) => `・${option.label}${option.note ? `（${option.note}）` : ''}`)
-      .join('\n'),
+    場次清單: sessionList(sessions, monthSource ? new Date(monthSource).getMonth() : undefined, now),
     報名連結: slug && siteBase ? `${siteBase}${slug}/register` : '',
   };
 }
 
-export function applyTemplate(text: string, context: ComposeContext): { text: string; missing: string[] } {
+/**
+ * 空值是合法值的變數：同儕聚會沒有定義團隊署名，那是刻意留白，不是漏填。
+ * 這種變數為空時整個拿掉（連同左右多餘的空白），也不列進缺值警告——否則每封同儕的信
+ * 都會掛一個永遠補不掉的提示，久了就沒有人會看那個提示。
+ */
+const BLANK_IS_VALID: (keyof ComposeContext)[] = ['團隊署名'];
+
+/** 拿掉留白的變數，順便收掉它留下的空白：「大A彥宇  敬上」不該有兩個空格，行首也不該多一個。 */
+function dropBlank(text: string, key: string) {
+  return text.replace(new RegExp(`[ \\t]*\\{\\{\\s*${key}\\s*\\}\\}[ \\t]*`, 'g'), (whole, offset: number) => {
+    const before = text[offset - 1];
+    const after = text[offset + whole.length];
+    // 前後都還有字才留一個空格；在行首或行尾就整段收掉。
+    return before && after && before !== '\n' && after !== '\n' ? ' ' : '';
+  });
+}
+
+export function applyTemplate(text: string, context: Partial<ComposeContext>): { text: string; missing: string[] } {
   const missing: string[] = [];
-  const filled = text.replace(/\{\{([^}]+)\}\}/g, (whole, rawKey: string) => {
+  let source = text;
+  for (const key of BLANK_IS_VALID) {
+    if (key in context && !context[key]) source = dropBlank(source, key);
+  }
+  const filled = source.replace(/\{\{([^}]+)\}\}/g, (whole, rawKey: string) => {
     const key = rawKey.trim() as keyof ComposeContext;
     const value = context[key];
     if (typeof value !== 'string' || !value) { missing.push(rawKey.trim()); return whole; }
     return value;
   });
   return { text: filled, missing: [...new Set(missing)] };
+}
+
+/**
+ * 還有沒有沒帶進去的變數？群發只有這一次機會——一按下去就同時寄給所有人，
+ * 沒有「寄出前逐封補」那一步，所以殘留的 {{...}} 必須擋在寄出之前。
+ */
+export function residualVariables(...texts: string[]): string[] {
+  const found = texts.flatMap((text) => [...text.matchAll(/\{\{([^}]+)\}\}/g)].map((match) => match[1].trim()));
+  return [...new Set(found)];
 }
 
 export interface BulkRecipient { contactId: string; displayName: string; email: string; via: string }
