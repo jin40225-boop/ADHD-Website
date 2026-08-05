@@ -16,24 +16,25 @@ const ACTIONS = new Set(['attend', 'reschedule']);
  */
 const ACTIVE_STATUSES = new Set(['pending', 'reviewing', 'confirmed', 'success', 'waitlist', 'reschedule']);
 
-function page(title: string, message: string, tone: 'ok' | 'warn' = 'ok') {
-  const accent = tone === 'ok' ? '#2E7D32' : '#B75F43';
-  return new Response(
-    `<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${title}｜ADHD 家長支持平台</title>
-<style>
- body{background:#FFFDF5;color:#5D4037;font-family:"Noto Sans TC",system-ui,sans-serif;display:grid;place-items:center;min-height:100vh;margin:0;padding:24px}
- .card{background:#fff;border:2px solid #5D4037;border-radius:16px;box-shadow:4px 4px 0 #5D4037;max-width:480px;padding:28px 26px;text-align:center}
- h1{color:${accent};font-size:1.3rem;margin:0 0 12px}
- p{line-height:1.8;margin:0 0 8px}
- small{color:#8d6e63;display:block;margin-top:16px}
-</style></head><body><div class="card">
-<h1>${title}</h1><p>${message}</p>
-<small>如有其他問題，直接回覆這封信或來信 jin40225@gmail.com 都可以。</small>
-</div></body></html>`,
-    { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } },
-  );
+/**
+ * 這支函式**不自己畫頁面**，一律 302 導回站內的 /confirm-result。
+ *
+ * 原本是直接回一頁 HTML，家長點下去看到的卻是一整片原始碼加中文亂碼：Supabase Functions 的閘道
+ * 會把回應強制成 `text/plain`（且不帶 charset）並加上 `X-Content-Type-Options: nosniff`，函式自己設的
+ * `text/html; charset=utf-8` 被覆蓋掉——nosniff + text/plain 讓瀏覽器把標籤當字印出來，沒有 charset
+ * 則讓中文以 Big5 解碼。那是平台不讓人在 supabase.co 上託管任意 HTML 的限制，不是這裡寫錯，
+ * 所以也修不掉，只能不要在這裡出頁面。資料動作在導向之前就已經全部完成。
+ *
+ * 結果碼只作顯示用：改網址上的 r 只會換掉那一頁的字，不會回頭影響任何資料。**token 不進網址。**
+ */
+const SITE_URL = (Deno.env.get('PUBLIC_SITE_URL') ?? 'https://jin40225-boop.github.io/ADHD-Website/').replace(/\/?$/, '/');
+type ResultCode = 'attend' | 'reschedule' | 'duplicate' | 'expired' | 'invalid' | 'closed' | 'error';
+
+function result(code: ResultCode) {
+  return new Response(null, {
+    status: 302,
+    headers: { Location: `${SITE_URL}confirm-result/?r=${code}`, 'Cache-Control': 'no-store' },
+  });
 }
 
 Deno.serve(async (req) => {
@@ -42,22 +43,21 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const token = (url.searchParams.get('token') ?? '').trim();
     const action = (url.searchParams.get('action') ?? '').trim();
-    if (!token || !ACTIONS.has(action)) return page('連結不完整', '這個連結看起來不完整，請直接回覆信件告訴我們你的決定。', 'warn');
+    if (!token || !ACTIONS.has(action)) return result('invalid');
 
     const { data: record } = await admin
       .from('attendance_confirmations')
       .select('id, registration_id, session_id, action, responded_at, expires_at')
       .eq('token', token)
       .maybeSingle();
-    if (!record) return page('連結無效', '這個連結已失效。請直接回覆信件告訴我們你的決定。', 'warn');
+    if (!record) return result('invalid');
 
     if (record.responded_at) {
       // 重複點擊不改寫既有回覆——第一次的決定才算數，避免誤點蓋掉。
-      const done = record.action === 'attend' ? '確認出席' : '請假改期';
-      return page('已經收到了', `你先前已經回覆「${done}」，我們已經記錄下來，不需要再操作一次。`);
+      return result('duplicate');
     }
     if (new Date(record.expires_at).getTime() < Date.now()) {
-      return page('連結已過期', '這個確認連結已經過期。請直接回覆信件告訴我們你的決定，我們會協助處理。', 'warn');
+      return result('expired');
     }
 
     // 這筆報名還在安排中嗎？退回／已取消／中途放棄是後台或本人已經下過的決定，
@@ -65,11 +65,7 @@ Deno.serve(async (req) => {
     const { data: registration } = await admin
       .from('registrations').select('id, status, thread_id').eq('id', record.registration_id).maybeSingle();
     if (!registration || !ACTIVE_STATUSES.has(registration.status)) {
-      return page(
-        '這筆報名已經結案',
-        '這筆報名目前不在安排中，信裡的按鈕不會再更動它。如果你想重新安排，請直接回覆這封信告訴我們，我們會協助處理。',
-        'warn',
-      );
+      return result('closed');
     }
 
     const respondedAt = new Date().toISOString();
@@ -84,7 +80,7 @@ Deno.serve(async (req) => {
       .select('id');
     if (updateError) throw updateError;
     if (!consumed?.length) {
-      return page('已經收到了', '你的回覆已經記錄下來了，不需要再操作一次。');
+      return result('duplicate');
     }
 
     const mailState = action === 'attend' ? 'attend_confirmed' : 'reschedule_requested';
@@ -106,12 +102,10 @@ Deno.serve(async (req) => {
       detail: JSON.stringify({ action, session_id: record.session_id }),
     });
 
-    return action === 'attend'
-      ? page('收到，感謝你的確認 🎉', '我們已經記錄你會出席。活動前我們會再寄一次提醒信給你。')
-      : page('收到，我們會再聯繫你 🔁', '已經記錄你需要請假或改期，我們會盡快與你聯繫安排新的時間。名額會先為你保留。');
+    return result(action === 'attend' ? 'attend' : 'reschedule');
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     await admin.from('audit_log').insert({ action: 'attendance_confirmation', result: 'error', detail: message });
-    return page('系統忙碌中', '記錄的時候出了點狀況。請直接回覆信件告訴我們你的決定，我們會手動處理。', 'warn');
+    return result('error');
   }
 });

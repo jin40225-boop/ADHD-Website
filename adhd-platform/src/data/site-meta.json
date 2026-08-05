@@ -30,5 +30,6 @@
   {"route":"/admin/team","title":"成員與權限｜ADHD 專案","description":"邀請行政與講師並管理計畫角色。"},
   {"route":"/admin/integrations","title":"整合狀態｜ADHD 專案","description":"檢查 Gmail、Calendar 與 Meet 整合。"},
   {"route":"/admin/audit","title":"稽核紀錄｜ADHD 專案","description":"查閱行政操作與整合結果。"},
-  {"route":"/admin/gallery","title":"介面元件庫｜ADHD 專案","description":"ADHD 專案內部介面元件預覽。"}
+  {"route":"/admin/gallery","title":"介面元件庫｜ADHD 專案","description":"ADHD 專案內部介面元件預覽。"},
+  {"route":"/confirm-result","title":"出席確認結果｜大A彥宇","description":"信件中「我確認出席／我需要請假改期」按下後的結果頁。"}
 ]

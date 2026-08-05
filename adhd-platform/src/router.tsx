@@ -19,6 +19,7 @@ import ArticlesPage from '@/pages/public/ArticlesPage';
 import ArticleDetailPage from '@/pages/public/ArticleDetailPage';
 import InstructorsPage from '@/pages/public/InstructorsPage';
 import FeedbackPage from '@/pages/public/FeedbackPage';
+import ConfirmResultPage from '@/pages/public/ConfirmResultPage';
 
 const InstructorAvailabilityPage = lazy(() => import('@/pages/InstructorAvailabilityPage'));
 const OperationsOverviewPage = lazy(() => import('@/admin/pages/OperationsOverviewPage'));
@@ -63,6 +64,9 @@ const router = createBrowserRouter([
     { path: 'instructor/availability', element: <RequireAuth>{withSuspense(<InstructorAvailabilityPage />)}</RequireAuth> },
     { path: 'feedback', element: <FeedbackPage /> },
   ]},
+  // 信裡的確認按鈕落地頁。獨立於 PublicLayout 之外：家長是從信件點進來看一句結果的，
+  // 不需要先穿過整個站台導覽。confirm-attendance 做完資料庫動作後 302 導到這裡。
+  { path: '/confirm-result', element: <ConfirmResultPage /> },
   { path: '/admin/login', element: <AdminLogin /> },
   { path: '/admin', element: <RequireAuth><RequireAdmin><AdminShell /></RequireAdmin></RequireAuth>, children: [
     { index: true, element: withSuspense(<OperationsOverviewPage />) },

@@ -3,6 +3,8 @@ import { resolve } from 'node:path';
 
 const root = resolve(import.meta.dirname, '..');
 const read = (path) => readFileSync(resolve(root, path), 'utf8');
+/** 拿掉註解再比對：禁用字串的檢查看的是程式碼，而說明為什麼禁用它往往得寫出那個字串本身。 */
+const withoutComments = (source) => source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
 const requireText = (path, needles) => {
   const value = read(path);
   for (const needle of needles) {
@@ -89,6 +91,18 @@ requireText('src/admin/pages/DocumentsPage.tsx', ['<WarmButton disabled', 'Phase
 // Phase 4 信件系統。
 // 信中確認按鈕是「對方點開信件」偵測不可靠之後的替代方案（裁決 12），端點必須公開才點得到。
 requireText('supabase/config.toml', ['[functions.confirm-attendance]', 'verify_jwt = false']);
+// 這支不得再自己回 HTML。Supabase Functions 的閘道會把回應強制成 text/plain（無 charset）並加上
+// nosniff，家長點進去看到的是一整片原始碼加中文亂碼——資料明明都記錄成功了。一律 302 回站內結果頁。
+requireText('supabase/functions/confirm-attendance/index.ts', ['status: 302', 'confirm-result/?r=']);
+// 只看程式碼，不看註解——這一段的註解本來就得寫出 text/html 才講得清楚為什麼不能用它。
+if (withoutComments(read('supabase/functions/confirm-attendance/index.ts')).includes('text/html')) {
+  throw new Error('confirm-attendance builds HTML again; the gateway forces text/plain + nosniff and the parent sees source code.');
+}
+requireText('src/router.tsx', ["path: '/confirm-result'"]);
+// 七種分支都要有落點，少一種就是一頁空白卡片。
+requireText('src/pages/public/ConfirmResultPage.tsx', [
+  'attend:', 'reschedule:', 'duplicate:', 'expired:', 'invalid:', 'closed:', 'error:',
+]);
 // 兩道守門都是「不改狀態」的保證，拿掉任何一道都看不出來：白名單擋掉已結案的報名，
 // `.select('id')` 讓函式知道自己有沒有真的搶到那一列（兩個請求可能都讀到 responded_at 是 null）。
 requireText('supabase/functions/confirm-attendance/index.ts', [
