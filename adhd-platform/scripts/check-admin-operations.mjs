@@ -159,7 +159,21 @@ requireText('supabase/functions/gmail-sync/index.ts', [
     throw new Error('gmail-sync marks needs_reply without checking the thread is linked to a registration or contact.');
   }
 }
-requireText('supabase/migrations/20260805000022_app_settings_sync_label.sql', ['add column if not exists sync_label']);
+// 第三條規則（人工救援管道）的三個必要條件，少一個它就等於不存在：
+//   a. 存 label id 不存名稱——改名時 id 不變，比對名稱會在改名當下安靜失效
+//   b. 設定頁用選的，不讓人打字（所以要有唯讀的列標籤端點）
+//   c. 貼標籤的那封信早就同步過並被前兩條篩掉了，所以增量要看 labelAdded，
+//      而且要能直接把「帶著這個標籤的信」撈回來——history 撈不到兩個月前的舊信
+requireText('supabase/migrations/20260805000022_app_settings_sync_label_id.sql', ['add column if not exists sync_label_id']);
+requireText('supabase/functions/gmail-sync/index.ts', ['sync_label_id', 'historyTypes=labelAdded', "searchParams.set('labelIds'"]);
+if (withoutComments(read('supabase/functions/gmail-sync/index.ts')).includes('sync_label ?')) {
+  throw new Error('gmail-sync matches the sync label by name again; renaming the label in Gmail would silently disable rule 3.');
+}
+requireText('supabase/functions/gmail-labels/index.ts', ['users/me/labels', 'is_system_owner', 'FORBIDDEN']);
+if (withoutComments(read('supabase/functions/gmail-labels/index.ts')).match(/from\('[a-z_]+'\)\.(insert|update|delete|upsert)/)) {
+  throw new Error('gmail-labels writes to the database; it is meant to be read-only.');
+}
+requireText('src/admin/pages/SettingsPage.tsx', ['saveSyncLabel', 'listGmailLabels', 'syncLabelId']);
 // F17：主旨在建串時決定後不再覆寫，否則轉寄一次整條串就改名成「Fwd: …」。
 requireText('supabase/functions/gmail-sync/index.ts', ['thread.subject ? {} : { subject:']);
 // F14：導航場次的起迄是「該月候選時段最早起到最晚迄」，會跨日。只印時鐘時間會變成

@@ -67,19 +67,34 @@ Deno.serve(async (req) => {
     for (const row of contactEmails ?? []) if (row.primary_email) knownAddresses.add(String(row.primary_email).trim().toLowerCase());
     const knownThreads = new Set((knownThreadRows ?? []).map((row) => String(row.gmail_thread_id)));
 
-    // 訊息上帶的是 label id 不是名稱，所以先把使用者設定的標籤名稱換成 id。
-    const syncLabelName = String(settings?.sync_label ?? '').trim();
-    let syncLabelId = '';
-    let labelWarning: string | undefined;
-    if (syncLabelName) {
-      const labelRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/labels', { headers });
-      const labelList = await labelRes.json();
-      syncLabelId = ((labelList.labels ?? []) as { id: string; name: string }[])
-        .find((label) => label.name.toLowerCase() === syncLabelName.toLowerCase())?.id ?? '';
-      if (!syncLabelId) labelWarning = `Gmail 裡找不到標籤「${syncLabelName}」，第三條規則這次沒有生效。`;
-    }
+    // 存的是 label id 不是名稱：標籤改名時 id 不變，比對名稱會在使用者改名的那一刻安靜失效。
+    const syncLabelId = String(settings?.sync_label_id ?? '').trim();
     let messageIds: string[] = []; let historyId = String(mailbox.historyId ?? state?.history_id ?? ''); let useFull = Boolean(full || !state?.history_id);
-    if (!useFull) { const historyRes = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/history?startHistoryId=${encodeURIComponent(state.history_id)}&historyTypes=messageAdded&maxResults=500`, { headers }); if (historyRes.status === 404) useFull = true; else { const history = await historyRes.json(); if (!historyRes.ok) throw new Error(history.error?.message ?? 'Gmail history 讀取失敗'); const additions = (history.history ?? []) as { messagesAdded?: { message: { id: string } }[] }[]; messageIds = [...new Set<string>(additions.flatMap((item) => (item.messagesAdded ?? []).map((entry) => entry.message.id)))]; historyId = String(history.historyId ?? historyId); } }
+    // 增量同步要同時看「新訊息」與「被加上標籤」。使用者貼標籤的那封信早就同步過、也早就被
+    // 規則 1、2 篩掉了——只看 messageAdded 的話，貼標籤不會有任何反應。
+    if (!useFull) { const historyRes = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/history?startHistoryId=${encodeURIComponent(state.history_id)}&historyTypes=messageAdded&historyTypes=labelAdded&maxResults=500`, { headers }); if (historyRes.status === 404) useFull = true; else { const history = await historyRes.json(); if (!historyRes.ok) throw new Error(history.error?.message ?? 'Gmail history 讀取失敗'); const additions = (history.history ?? []) as { messagesAdded?: { message: { id: string } }[]; labelsAdded?: { message: { id: string } }[] }[]; messageIds = [...new Set<string>(additions.flatMap((item) => [...(item.messagesAdded ?? []), ...(item.labelsAdded ?? [])].map((entry) => entry.message.id)))]; historyId = String(history.historyId ?? historyId); } }
+
+    /* 直接把「帶著同步標籤的信」全部撈進候選名單。
+     *
+     * history 只回溯到上次同步之後，而且 startHistoryId 太舊時 Gmail 會回 404 直接退回完整同步，
+     * 而完整同步只看最新幾頁——使用者要是給一封兩個月前的舊信貼標籤，兩條路都撈不到它。
+     * 這個查詢與時間無關，只問「現在有哪些信帶著這個標籤」，所以貼上去就一定收得到。
+     * 已經收過的會在下面被 email_messages 的既存檢查擋掉，不會重複。 */
+    if (syncLabelId) {
+      let labelPage = '';
+      for (let page = 0; page < FULL_SYNC_PAGES; page += 1) {
+        const url = new URL('https://gmail.googleapis.com/gmail/v1/users/me/messages');
+        url.searchParams.set('maxResults', '100');
+        url.searchParams.set('labelIds', syncLabelId);
+        if (labelPage) url.searchParams.set('pageToken', labelPage);
+        const response = await fetch(url, { headers });
+        const list = await response.json();
+        if (!response.ok) break;
+        messageIds.push(...(list.messages ?? []).map((item: { id: string }) => item.id));
+        labelPage = list.nextPageToken ?? '';
+        if (!labelPage) break;
+      }
+    }
     // 完整同步改分頁。原本固定只看最新 25 封：家長昨天的回信只要被今天的幾封廣告信推出窗口，
     // 就永遠不會被收進來，而畫面上看起來一切正常。
     if (useFull) {
@@ -169,7 +184,8 @@ Deno.serve(async (req) => {
     await admin.from('gmail_sync_state').upsert({ mailbox_email: mailbox.emailAddress, history_id: historyId, last_full_sync_at: useFull ? new Date().toISOString() : state?.last_full_sync_at ?? null, last_incremental_sync_at: new Date().toISOString(), last_error: null, updated_at: new Date().toISOString() }, { onConflict: 'mailbox_email' });
     // 略過幾封也記進稽核：這個數字是「過濾有沒有在動」的唯一外顯訊號。
     await admin.from('audit_log').insert({ action: 'gmail_sync', actor_id: auth.user.id, result: 'success', detail: `${useFull ? 'full' : 'incremental'}:${synced} skipped:${skipped}` });
-    return jsonResponse({ ok: true, synced, skipped, mailboxEmail: mailbox.emailAddress, ...(labelWarning ? { labelWarning } : {}) });
+    // 移除標籤不做回溯刪除：同步端只該有「收進來」這個權限，誤收的清理由人決定。
+    return jsonResponse({ ok: true, synced, skipped, mailboxEmail: mailbox.emailAddress, syncLabelActive: syncLabelId !== '' });
   } catch (err) { const detail = errorMessage(err); const missingScope = isMissingGmailScope(detail) || detail === gmailScopeMessage; const message = missingScope ? gmailScopeMessage : detail; await admin.from('audit_log').insert({ action: 'gmail_sync', result: 'error', detail: message }); return jsonResponse({ error: message, code: missingScope ? 'GMAIL_SCOPE_MISSING' : 'GMAIL_SYNC_FAILED' }, 500); }
 });
 

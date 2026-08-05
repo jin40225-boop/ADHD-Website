@@ -85,8 +85,15 @@ export interface GeneratedDocumentRecord {
 export interface AppSettings {
   /** 寄出後幾天未回覆算逾期。Phase 4 的信件狀態機接線後才會真的依它判斷。 */
   followUpDays: number;
+  /**
+   * gmail-sync 第三條收信規則：帶著這個 Gmail 標籤 id 的信一律收進來。留空＝不啟用。
+   * 存 id 不存名稱——標籤改名時 id 不變，比對名稱會在改名的那一刻安靜失效。
+   */
+  syncLabelId?: string;
   updatedAt?: string;
 }
+
+export interface GmailLabel { id: string; name: string }
 
 export type NoteType = 'general' | 'contact' | 'eligibility' | 'handoff' | 'risk';
 export interface InternalNote {

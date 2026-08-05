@@ -8,6 +8,7 @@ import type {
   EmailDraftRecord,
   FollowUpTask,
   GeneratedDocumentRecord,
+  GmailLabel,
   GmailSyncState,
   InternalNote,
   MailState,
@@ -304,15 +305,31 @@ export async function listGeneratedDocuments(): Promise<GeneratedDocumentRecord[
 export async function getAppSettings(): Promise<AppSettings> {
   const { data, error } = await db().from('app_settings').select('*').maybeSingle();
   assert(error, '讀取設定失敗');
-  return { followUpDays: data?.follow_up_days ?? 3, updatedAt: data?.updated_at ?? undefined };
+  return {
+    followUpDays: data?.follow_up_days ?? 3,
+    // 欄位可能還沒套用 migration；沒有就是「第三條收信規則未啟用」。
+    syncLabelId: data?.sync_label_id ?? undefined,
+    updatedAt: data?.updated_at ?? undefined,
+  };
 }
 
-export async function updateAppSettings(patch: { followUpDays: number }) {
+export async function updateAppSettings(patch: { followUpDays?: number; syncLabelId?: string | null }) {
   const { error } = await db()
     .from('app_settings')
-    .update({ follow_up_days: patch.followUpDays, updated_at: new Date().toISOString() })
+    .update({
+      ...(patch.followUpDays === undefined ? {} : { follow_up_days: patch.followUpDays }),
+      ...(patch.syncLabelId === undefined ? {} : { sync_label_id: patch.syncLabelId || null }),
+      updated_at: new Date().toISOString(),
+    })
     .eq('id', true);
   assert(error, '更新設定失敗');
+}
+
+/** 唯讀：列出信箱裡使用者自建的 Gmail 標籤，給設定頁的下拉用（存 id、顯示名稱）。 */
+export async function listGmailLabels(): Promise<GmailLabel[]> {
+  const { data, error } = await db().functions.invoke('gmail-labels', { body: {} });
+  await assertFunction(error, '讀取 Gmail 標籤失敗');
+  return (data as { labels?: GmailLabel[] }).labels ?? [];
 }
 
 export async function listNotes(target: { contactId?: string; registrationId?: string; caseId?: string }): Promise<InternalNote[]> {
