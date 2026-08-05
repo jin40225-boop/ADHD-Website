@@ -39,6 +39,13 @@ const META_CONCURRENCY = 3;
 const BATCH_SIZE = 5;
 /** 每次執行最多比對幾封信頭。信頭很輕，但也不該一次掃三百封。 */
 const SCAN_LIMIT = 120;
+/** 一次 Gmail 搜尋最多翻幾頁（每頁 100 筆 id）。 */
+const SEARCH_PAGES = 5;
+/**
+ * 一次搜尋包幾個信箱位址（以 OR 串起）。56 個位址塞進同一個查詢會把查詢字串撐爆，
+ * 一個一個查又是 56 趟；包 8 個是折衷。
+ */
+const ADDRESS_QUERY_CHUNK = 8;
 /**
  * 附件超過這個大小就不下載。下載是 base64 字串→binary 字串→Uint8Array 三份副本，
  * 一個 10MB 的附件在記憶體裡會膨脹成三十幾 MB，而且逐字元轉換是純 CPU。
@@ -98,17 +105,20 @@ async function runSync(admin: ReturnType<typeof createClient>, actorId: string, 
     const { data: settings } = await admin.from('app_settings').select('*').maybeSingle();
     const followUpDays = Number(settings?.follow_up_days ?? 3);
 
-    /* ------------------------- 收信範圍（三條規則的聯集） -------------------------
-     * 先前這裡沒有任何過濾：完整同步＝「取信箱最新 25 封、不帶條件」，把使用者的私人信件
-     * 連內文全文存進資料庫。那不只是雜訊——25 封的窗口會讓家長的回信被廣告信擠掉，是漏信。
+    /* ------------------------- 收信範圍：主動搜尋，不是篩子 -------------------------
+     * 一開始這裡沒有任何過濾，把使用者的私人信件連內文全文存進資料庫。加了規則之後雜訊沒了，
+     * 但真信也沒進來：56 個已知信箱裡有 46 個一封往來都沒有。
      *
-     * 任一成立才收：
-     *   1. 對方信箱命中 registrations.email ∪ contacts.primary_email（大小寫不敏感）
-     *   2. 該封信的 threadId 已經在 email_threads 裡（接住「用別的信箱回同一封信」）
-     *   3. 該封信帶有指定的 Gmail 標籤（陌生信箱寄來的信，使用者在 Gmail 手動貼標籤即可收進來）
+     * 原因是規則只能「在候選名單裡放行」，而候選名單只有三個來源——history 的新活動、
+     * 最新幾百封、指定標籤。四到七月與家長的往來早被幾千封廣告推到窗口之外，
+     * 從來沒成為候選。**垃圾進得來是因為它新，真信進不來是因為它舊。**
      *
-     * 名單每次同步即時從資料庫撈，不塞進 q=：60+ 報名、50+ 聯絡人會把查詢字串撐爆，
-     * 而且每新增一個人就要重組一次。
+     * 所以發現階段改成主動去搜尋整個信箱（Gmail 搜尋不受「最新 N 封」限制）：
+     *   1. 每個已知信箱：`from:<addr> OR to:<addr>`（位址多就分批 OR 串起）
+     *   2. history 的新活動與被加標籤的訊息
+     *   3. 帶著指定標籤的信（每個標籤各查一次，見下）
+     *   4. 主旨關鍵字（可在設定調整）
+     * 四種來源的結果聯集之後，仍然走同一個比對閘門與分批佇列。
      */
     const [{ data: regEmails }, { data: contactEmails }, { data: knownThreadRows }] = await Promise.all([
       admin.from('registrations').select('email'),
@@ -128,6 +138,11 @@ async function runSync(admin: ReturnType<typeof createClient>, actorId: string, 
     const syncLabelIds: string[] = Array.isArray(manyLabels) && manyLabels.length
       ? manyLabels.map(String).map((id) => id.trim()).filter(Boolean)
       : [String(settings?.sync_label_id ?? '').trim()].filter(Boolean);
+    /* 第四條規則的主旨關鍵字。預設不含 add／ADD：Gmail 搜尋不分大小寫，`subject:add`
+     * 會命中 Add／Added／Address，廣告信大量中獎——等於把剛趕走的雜訊請回來。 */
+    const subjectKeywords: string[] = Array.isArray(settings?.sync_subject_keywords)
+      ? (settings!.sync_subject_keywords as string[]).map(String).map((word) => word.trim()).filter(Boolean)
+      : [];
     /* 上一批沒做完的續傳佇列。有東西就直接接著做，完全跳過探索——探索本身也要花時間，
      * 而且會把同一批候選重算一次。清空之後才會再去問 Gmail 有什麼新東西。 */
     const queued: string[] = Array.isArray(state?.pending_message_ids) ? (state!.pending_message_ids as string[]).map(String) : [];
@@ -144,25 +159,43 @@ async function runSync(admin: ReturnType<typeof createClient>, actorId: string, 
      * 而完整同步只看最新幾頁——使用者要是給一封兩個月前的舊信貼標籤，兩條路都撈不到它。
      * 這個查詢與時間無關，只問「現在有哪些信帶著這個標籤」，所以貼上去就一定收得到。
      * 已經收過的會在下面被 email_messages 的既存檢查擋掉，不會重複。 */
-    /* ⚠ messages.list 的 labelIds 是 **AND**（同時具備全部標籤），不是 OR。
-     * 要的是「任一標籤符合就收」，所以每個標籤各查一次再把 id 聯集起來；
-     * 塞多個 labelIds 進同一次查詢會變成「同時貼了這幾個標籤的信」，幾乎永遠是空的。 */
-    if (!resuming) {
-      for (const labelId of syncLabelIds) {
-        let labelPage = '';
-        for (let page = 0; page < FULL_SYNC_PAGES; page += 1) {
-          const url = new URL('https://gmail.googleapis.com/gmail/v1/users/me/messages');
-          url.searchParams.set('maxResults', '100');
-          url.searchParams.set('labelIds', labelId);
-          if (labelPage) url.searchParams.set('pageToken', labelPage);
-          const response = await fetch(url, { headers });
-          const list = await response.json();
-          if (!response.ok) break;
-          messageIds.push(...(list.messages ?? []).map((item: { id: string }) => item.id));
-          labelPage = list.nextPageToken ?? '';
-          if (!labelPage) break;
-        }
+    /** 一次搜尋（分頁取完，最多 SEARCH_PAGES 頁）。把找到的 id 直接堆進候選名單。 */
+    const search = async (params: { q?: string; labelId?: string }) => {
+      let pageToken = '';
+      for (let page = 0; page < SEARCH_PAGES; page += 1) {
+        const url = new URL('https://gmail.googleapis.com/gmail/v1/users/me/messages');
+        url.searchParams.set('maxResults', '100');
+        if (params.q) url.searchParams.set('q', params.q);
+        if (params.labelId) url.searchParams.set('labelIds', params.labelId);
+        if (pageToken) url.searchParams.set('pageToken', pageToken);
+        const response = await fetch(url, { headers });
+        const list = await response.json();
+        if (!response.ok) break;
+        messageIds.push(...(list.messages ?? []).map((item: { id: string }) => item.id));
+        pageToken = list.nextPageToken ?? '';
+        if (!pageToken) break;
       }
+    };
+
+    if (!resuming) {
+      /* 主動搜尋每個已知信箱的往來。這是把四到七月那批歷史通訊找回來的唯一辦法——
+       * 它們不在最新幾百封裡，history 也早就翻不到那麼久以前。 */
+      const knownList = [...knownAddresses];
+      for (let i = 0; i < knownList.length; i += ADDRESS_QUERY_CHUNK) {
+        const chunk = knownList.slice(i, i + ADDRESS_QUERY_CHUNK);
+        await search({ q: `(${chunk.map((addr) => `from:${addr} OR to:${addr}`).join(' OR ')})` });
+      }
+
+      /* ⚠ messages.list 的 labelIds 是 **AND**（同時具備全部標籤），不是 OR。
+       * 要的是「任一標籤符合就收」，所以每個標籤各查一次再把 id 聯集起來；
+       * 塞多個 labelIds 進同一次查詢會變成「同時貼了這幾個標籤的信」，幾乎永遠是空的。
+       *
+       * 這個查詢與時間無關，只問「現在有哪些信帶著這個標籤」，所以貼上去就一定收得到，
+       * 即使那封信是兩個月前的、history 早就翻不到。 */
+      for (const labelId of syncLabelIds) await search({ labelId });
+
+      // 主旨關鍵字。同樣是搜尋整個信箱，不受最新 N 封限制。
+      if (subjectKeywords.length) await search({ q: `subject:(${subjectKeywords.join(' OR ')})` });
     }
     // 完整同步改分頁。原本固定只看最新 25 封：家長昨天的回信只要被今天的幾封廣告信推出窗口，
     // 就永遠不會被收進來，而畫面上看起來一切正常。
@@ -180,6 +213,7 @@ async function runSync(admin: ReturnType<typeof createClient>, actorId: string, 
         if (!pageToken) break;
       }
     }
+    const discovered = new Set(messageIds).size;
     let synced = 0; let skipped = 0; let failed = 0;
     const candidates = [...new Set(messageIds)];
 
@@ -190,7 +224,9 @@ async function runSync(admin: ReturnType<typeof createClient>, actorId: string, 
       action: 'gmail_sync', actor_id: auth.user.id, result: 'success',
       detail: resuming
         ? `start batch queued:${queued.length}`
-        : `start ${useFull ? 'full' : 'incremental'} candidates:${candidates.length}`,
+        // discovered＝搜尋找到多少封，candidates 是去重後的數量；兩個都留著，
+        // 「搜尋有沒有在動」與「還有多少沒收」才分得開。
+        : `start ${useFull ? 'full' : 'incremental'} found:${discovered} candidates:${candidates.length}`,
     });
 
     /* 一次問完哪些已經收過。
@@ -210,7 +246,9 @@ async function runSync(admin: ReturnType<typeof createClient>, actorId: string, 
     for (let i = 0; !resuming && i < fresh.length; i += META_CONCURRENCY) {
       if (Date.now() > deadline) break;
       const metas = await Promise.all(fresh.slice(i, i + META_CONCURRENCY).map(async (id) => {
-        const metaUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}?format=metadata&metadataHeaders=From&metadataHeaders=To`;
+        // 主旨也要拿：第四條規則靠它判斷，而陌生信箱寄來的關鍵字信在前三條全部不成立——
+        // 搜尋找得到、閘門卻放不行的話，那條規則等於白做。
+        const metaUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}?format=metadata&metadataHeaders=From&metadataHeaders=To&metadataHeaders=Subject`;
         const metaRes = await fetch(metaUrl, { headers });
         const meta = await metaRes.json();
         if (!metaRes.ok) return { id, inScope: false };
@@ -219,10 +257,13 @@ async function runSync(admin: ReturnType<typeof createClient>, actorId: string, 
         const metaOutbound = address(metaHeaders.from) === String(mailbox.emailAddress).toLowerCase() || metaLabels.includes('SENT');
         const metaCounterpart = metaOutbound ? address(metaHeaders.to) : address(metaHeaders.from);
         if (!metaCounterpart) return { id, inScope: false };
-        // 標籤那條是交集判斷：訊息帶著設定裡的**任何一個**標籤就算數。
+        // 標籤與關鍵字那兩條都是交集判斷：任何一個命中就算數。
+        // 主旨比對用小寫，與 Gmail 搜尋的不分大小寫一致——否則搜尋找得到、閘門卻擋下來。
+        const metaSubject = String(metaHeaders.subject ?? '').toLowerCase();
         const inScope = knownAddresses.has(metaCounterpart)
           || knownThreads.has(String(meta.threadId))
-          || syncLabelIds.some((labelId) => metaLabels.includes(labelId));
+          || syncLabelIds.some((labelId) => metaLabels.includes(labelId))
+          || subjectKeywords.some((word) => metaSubject.includes(word.toLowerCase()));
         return { id, inScope };
       }));
       for (const entry of metas) {

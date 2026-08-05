@@ -175,7 +175,18 @@ if (withoutComments(read('supabase/functions/gmail-labels/index.ts')).match(/fro
 }
 // 標籤可複選：三條規則本來就是聯集，標籤那條沒有理由是單選——名字很像的標籤只能挑一個時，
 // 挑錯就是一整輪驗收白跑（ADHD相關資訊／ADHD重要訊息，已經發生過一次）。
-requireText('src/admin/pages/SettingsPage.tsx', ['saveSyncLabels', 'listGmailLabels', 'selectedLabelIds', 'marketing']);
+requireText('src/admin/pages/SettingsPage.tsx', ['saveSyncLabels', 'listGmailLabels', 'selectedLabelIds', 'marketing', 'saveKeywords']);
+// 收信範圍是「主動搜尋」不是「篩子」：規則只能在候選名單裡放行，而候選名單原本只有
+// history／最新幾百封／標籤三個來源——四到七月與家長的往來早被廣告推出窗口，從來沒成為候選，
+// 56 個已知信箱裡有 46 個一封都沒收到。所以要對每個已知信箱主動下 Gmail 搜尋。
+requireText('supabase/functions/gmail-sync/index.ts', [
+  'ADDRESS_QUERY_CHUNK', 'from:${addr} OR to:${addr}', 'subject:(${subjectKeywords.join', 'metadataHeaders=Subject',
+  'subjectKeywords.some((word) => metaSubject.includes(word.toLowerCase()))',
+]);
+requireText('supabase/migrations/20260805000027_app_settings_subject_keywords.sql', ['add column if not exists sync_subject_keywords']);
+if (read('supabase/migrations/20260805000027_app_settings_subject_keywords.sql').includes('"add"')) {
+  throw new Error('the default subject keywords include "add"; Gmail search is case-insensitive so it matches Add/Added/Address.');
+}
 requireText('supabase/migrations/20260805000026_app_settings_sync_label_ids.sql', ['add column if not exists sync_label_ids']);
 // ⚠ messages.list 的 labelIds 是 AND（同時具備），不是 OR。要「任一符合」就必須每個標籤各查一次；
 // 塞多個進同一次查詢會變成「同時貼了這幾個標籤的信」，幾乎永遠是空的。

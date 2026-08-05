@@ -23,10 +23,11 @@ export default function SettingsPage() {
   const [newContact, setNewContact] = useState({ displayName: '', primaryEmail: '', phone: '' });
   const [daysDraft, setDaysDraft] = useState('3');
   const [labels, setLabels] = useState<GmailLabel[]>([]); const [labelError, setLabelError] = useState<string>();
+  const [keywordDraft, setKeywordDraft] = useState('');
 
   const reload = async () => {
     const [nextContacts, nextGroups, nextTemplates, nextSettings] = await Promise.all([listContacts(), listContactGroups(), adminListEmailTemplates(), getAppSettings()]);
-    setContacts(nextContacts); setGroups(nextGroups); setTemplates(nextTemplates); setSettings(nextSettings); setDaysDraft(String(nextSettings.followUpDays));
+    setContacts(nextContacts); setGroups(nextGroups); setTemplates(nextTemplates); setSettings(nextSettings); setDaysDraft(String(nextSettings.followUpDays)); setKeywordDraft((nextSettings.syncSubjectKeywords ?? []).join('、'));
   };
   useEffect(() => { reload().catch((e: unknown) => setError(e instanceof Error ? e.message : '讀取設定失敗')).finally(() => setLoading(false)); }, []);
   // 標籤清單讀不到不該讓整頁失敗——它只是下拉的選項來源，其餘設定照樣要能改。
@@ -72,6 +73,11 @@ export default function SettingsPage() {
     const value = Number(daysDraft);
     if (!Number.isInteger(value) || value < 0 || value > 60) { setError('逾期門檻請填 0–60 的整數天數。'); return; }
     await run('settings', () => updateAppSettings({ followUpDays: value }), `逾期門檻已存為 ${value} 天（Phase 4 狀態機接線後生效）。`);
+  };
+  const saveKeywords = async () => {
+    const words = [...new Set(keywordDraft.split(/[、,，]/).map((word) => word.trim()).filter(Boolean))];
+    await run('sync-keywords', () => updateAppSettings({ syncSubjectKeywords: words }),
+      words.length ? `主旨關鍵字已存為「${words.join('」「')}」。` : '主旨關鍵字已清空；第四條規則不啟用。');
   };
   const saveSyncLabels = async (ids: string[]) => {
     const names = ids.map((id) => labels.find((label) => label.id === id)?.name ?? id);
@@ -154,6 +160,16 @@ export default function SettingsPage() {
         會把大量與本系統無關的信件<b>連同內文</b>收進資料庫——你的信箱裡就有這種標籤。
         建議只勾為了這件事另外建立的標籤。
       </OpsNotice>
+      {/* 第四條規則：主旨關鍵字。與標籤同樣是「搜尋整個信箱」，不受最新 N 封限制。 */}
+      <div className="ops-form-grid">
+        <div className="ops-full"><TextInput
+          label="主旨關鍵字（第四條規則，以逗號或頓號分隔）"
+          value={keywordDraft}
+          helpText="主旨含其中任一個就收。Gmail 搜尋不分大小寫，所以像 add 這種短字會命中 Add／Added／Address，廣告信會大量中獎——建議用完整、少見的詞。"
+          onChange={(e) => setKeywordDraft(e.target.value)}
+        /></div>
+      </div>
+      <div className="ops-button-row"><WarmButton variant="secondary" onClick={() => void saveKeywords()}>儲存關鍵字</WarmButton></div>
       {labelError ? <OpsNotice tone="warning">讀不到 Gmail 標籤清單（{labelError}）。標籤設定這一區暫時只能維持現狀。</OpsNotice> : null}
       {settings.updatedAt ? <p className="ops-cell-muted">上次更新：{new Date(settings.updatedAt).toLocaleString('zh-TW')}</p> : null}
     </article>

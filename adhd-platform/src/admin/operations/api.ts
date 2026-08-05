@@ -312,11 +312,12 @@ export async function getAppSettings(): Promise<AppSettings> {
     // 欄位可能還沒套用 migration；沒有就是「第三條收信規則未啟用」。
     syncLabelIds: Array.isArray(data?.sync_label_ids) ? (data!.sync_label_ids as string[]).map(String) : [],
     syncLabelId: data?.sync_label_id ?? undefined,
+    syncSubjectKeywords: Array.isArray(data?.sync_subject_keywords) ? (data!.sync_subject_keywords as string[]).map(String) : [],
     updatedAt: data?.updated_at ?? undefined,
   };
 }
 
-export async function updateAppSettings(patch: { followUpDays?: number; syncLabelIds?: string[] }) {
+export async function updateAppSettings(patch: { followUpDays?: number; syncLabelIds?: string[]; syncSubjectKeywords?: string[] }) {
   const { error } = await db()
     .from('app_settings')
     .update({
@@ -324,6 +325,7 @@ export async function updateAppSettings(patch: { followUpDays?: number; syncLabe
       // 只寫新的清單欄位。舊的 sync_label_id 一律不動——它是「還沒重新勾選時的退路」，
       // 被這裡覆寫掉的話，那條退路就在使用者沒察覺的情況下消失了。
       ...(patch.syncLabelIds === undefined ? {} : { sync_label_ids: patch.syncLabelIds }),
+      ...(patch.syncSubjectKeywords === undefined ? {} : { sync_subject_keywords: patch.syncSubjectKeywords }),
       updated_at: new Date().toISOString(),
     })
     .eq('id', true);

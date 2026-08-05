@@ -94,6 +94,8 @@ export interface AppSettings {
   syncLabelIds?: string[];
   /** 舊的單選欄位。`syncLabelIds` 為空時才會被讀到；保留是為了讓還沒重新勾選的設定行為不變。 */
   syncLabelId?: string;
+  /** 第四條收信規則：主旨含其中任一關鍵字就收。空陣列＝不啟用。 */
+  syncSubjectKeywords?: string[];
   updatedAt?: string;
 }
 
