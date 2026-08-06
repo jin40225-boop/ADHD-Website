@@ -277,6 +277,40 @@ export async function listContactGroups(): Promise<ContactGroupRecord[]> {
 }
 
 /** 手動加入／移出類群。自動歸群由 sync_registration_contact_group 負責，不走這裡。 */
+/**
+ * 建立自訂類群。
+ *
+ * `key` 是 not null unique，但那是給系統類群用的穩定識別字（`registrant_parent` 之類，
+ * 自動歸群靠它找目標）。自訂類群沒有程式會去 by-key 查它，所以這裡產一個帶前綴的值，
+ * 既保證不撞到系統類群，也讓之後有人翻資料庫時一眼看得出哪些是人建的。
+ * `auto_rule: 'manual'`＝成員只由人增減，自動歸群不會碰它。
+ */
+export async function createContactGroup(input: { name: string; description?: string }) {
+  const name = input.name.trim();
+  if (!name) throw new Error('請填類群名稱。');
+  const { data, error } = await db().from('contact_groups').insert({
+    key: `custom_${crypto.randomUUID().slice(0, 8)}`,
+    name,
+    description: input.description?.trim() || null,
+    auto_rule: 'manual',
+    is_system: false,
+  }).select('id').single();
+  assert(error, '建立類群失敗');
+  if (!data) throw new Error('建立類群失敗：資料庫沒有回傳新類群，通常是權限（RLS）擋下了寫入。');
+  return data.id as string;
+}
+
+/**
+ * 刪除自訂類群。系統類群由資料庫的 trigger 擋下——這裡的檢查只是為了給出好一點的訊息，
+ * 真正的保護不在前端（前端擋得住按鈕，擋不住直接打 API）。
+ */
+export async function deleteContactGroup(groupId: string) {
+  const { error, count } = await db().from('contact_groups').delete({ count: 'exact' }).eq('id', groupId);
+  assert(error, '刪除類群失敗');
+  // 與 deleteThreads 同一個道理：沒有錯誤不等於刪掉了東西，RLS 濾掉時只會回 0。
+  if (count === 0) throw new Error('沒有刪除任何類群——資料庫接受了請求但沒有符合的列，通常是權限（RLS）把它濾掉了。');
+}
+
 export async function setContactGroupMember(groupId: string, contactId: string, member: boolean) {
   const query = member
     ? db().from('contact_group_members').insert({ group_id: groupId, contact_id: contactId, source: 'manual' })

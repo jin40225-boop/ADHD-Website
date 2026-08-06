@@ -82,6 +82,21 @@ requireText('src/admin/operations/SessionTable.tsx', ['onReject(']);
 // 設定・聯絡人（03_v4）：聯絡人與類群可直接編輯，且兩條防假原則要留在畫面上——
 // 逾期門檻在 Phase 4 前只存值、Claude API 在 Phase 6 前不做輸入框。拿掉說明就等於假生效。
 requireText('src/admin/operations/SettingsTables.tsx', ['onPatch(', 'onToggleMember(', 'ops-member-chip']);
+// 自訂類群可建立／刪除；系統類群不可，而那道保護必須也在資料庫——UI 擋得住按鈕，
+// 擋不住直接打 PostgREST，而擋不住的那條路正是出事時沒有人看著的那條。
+requireText('src/admin/operations/api.ts', ['export async function createContactGroup', 'export async function deleteContactGroup']);
+requireText('src/admin/operations/SettingsTables.tsx', ['onDelete(', 'group.isSystem', 'confirmingId === group.id']);
+requireText('src/admin/pages/SettingsPage.tsx', ['createContactGroup', 'deleteContactGroup', '建立類群']);
+requireText('supabase/migrations/20260806000030_contact_group_admin.sql', [
+  'protect_system_contact_group', 'trg_contact_groups_protect', 'log_contact_group_change', 'trg_contact_groups_audit',
+]);
+{
+  // 自訂類群的 key 不得寫死：它是 unique 欄位，寫死等於第二個類群建不出來。
+  const source = withoutComments(read('src/admin/operations/api.ts'));
+  if (!/key: `custom_\$\{crypto\.randomUUID/.test(source)) {
+    throw new Error('createContactGroup no longer generates a unique key; contact_groups.key is unique, so a fixed value means the second group cannot be created.');
+  }
+}
 // 逾期門檻原本是「只存值、Phase 4 才生效」，那句話當時是誠實的。Phase 4 接線之後它反過來
 // 變成不實敘述——說明文字必須跟著功能走，過期的免責聲明和假生效一樣會誤導人。改成斷言
 // 「已生效」的說法在，並禁用舊句子，免得有人把警語又貼回來。

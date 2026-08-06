@@ -58,10 +58,14 @@ const AUTO_RULE_TEXT: Record<string, string> = {
 export interface GroupEditorHandlers {
   busyKey?: string;
   onToggleMember: (group: ContactGroupRecord, contactId: string, member: boolean) => void;
+  onDelete: (group: ContactGroupRecord) => void;
 }
 
 export function GroupEditor({ groups, contacts, handlers }: { groups: ContactGroupRecord[]; contacts: ContactRecord[]; handlers: GroupEditorHandlers }) {
-  const { busyKey, onToggleMember } = handlers;
+  const { busyKey, onToggleMember, onDelete } = handlers;
+  // 刪除是不可回復的，確認做在頁面裡而不是 window.confirm——原生對話框在自動化瀏覽器裡
+  // 會被自動取消，等於這條路徑永遠驗不到。
+  const [confirmingId, setConfirmingId] = useState<string>();
   const nameOf = (contactId: string) => {
     const contact = contacts.find((item) => item.id === contactId);
     return contact ? contact.displayName || contact.primaryEmail || contactId : contactId;
@@ -75,8 +79,22 @@ export function GroupEditor({ groups, contacts, handlers }: { groups: ContactGro
           <strong>{group.name}</strong>
           {group.isSystem ? <span className="ops-status ops-status--blue">系統類群</span> : null}
           <span className="ops-status ops-status--gray">{group.members.length} 人</span>
+          {group.isSystem
+            ? null
+            : confirmingId === group.id
+              ? <span className="ops-chip-row">
+                <button type="button" className="ops-link-button ops-link-button--danger" disabled={busy} onClick={() => { setConfirmingId(undefined); onDelete(group); }}>確定刪除</button>
+                <button type="button" className="ops-link-button" disabled={busy} onClick={() => setConfirmingId(undefined)}>取消</button>
+              </span>
+              : <button type="button" className="ops-link-button" disabled={busy} onClick={() => setConfirmingId(group.id)}>刪除類群…</button>}
         </div>
         <small>{group.description ?? ''}{group.autoRule ? `｜${AUTO_RULE_TEXT[group.autoRule] ?? group.autoRule}` : ''}</small>
+        {group.isSystem
+          ? <small className="ops-cell-muted">系統類群由報名流程自動維護成員，因此不可改名或刪除（資料庫層也擋著）。成員仍可手動增減。</small>
+          : null}
+        {confirmingId === group.id
+          ? <small className="ops-cell-danger">將刪除「{group.name}」與它的 {group.members.length} 筆成員關聯。聯絡人本身不會被刪除，但這個類群在群發選單上會消失。</small>
+          : null}
       </header>
       {group.members.length ? <div className="ops-chip-row">{group.members.map((member) => <span className="ops-member-chip" key={member.contactId}>
         {nameOf(member.contactId)}

@@ -9,7 +9,7 @@ import { TextInput, Select } from '@/components/ui/FormField/FormField';
 import { WarmButton } from '@/components/ui/WarmButton/WarmButton';
 import { adminListEmailTemplates } from '@/lib/api';
 import {
-  createContact, getAppSettings, listContactGroups, listContacts, listGmailLabels, setContactGroupMember, updateAppSettings, updateContact,
+  createContact, createContactGroup, deleteContactGroup, getAppSettings, listContactGroups, listContacts, listGmailLabels, setContactGroupMember, updateAppSettings, updateContact,
 } from '../operations/api';
 import type { AppSettings, ContactGroupRecord, ContactRecord, GmailLabel } from '../operations/types';
 import { ContactTable, GroupEditor } from '../operations/SettingsTables';
@@ -21,6 +21,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true); const [notice, setNotice] = useState<string>(); const [error, setError] = useState<string>();
   const [busyId, setBusyId] = useState<string>(); const [search, setSearch] = useState('');
   const [newContact, setNewContact] = useState({ displayName: '', primaryEmail: '', phone: '' });
+  const [newGroup, setNewGroup] = useState({ name: '', description: '' });
   const [daysDraft, setDaysDraft] = useState('3');
   const [labels, setLabels] = useState<GmailLabel[]>([]); const [labelError, setLabelError] = useState<string>();
   const [keywordDraft, setKeywordDraft] = useState(''); const [sinceDraft, setSinceDraft] = useState('');
@@ -61,6 +62,15 @@ export default function SettingsPage() {
     busyKey: busyId,
     onToggleMember: (group: ContactGroupRecord, contactId: string, member: boolean) =>
       void run(group.id, () => setContactGroupMember(group.id, contactId, member), member ? '已加入類群。' : '已移出類群。'),
+    onDelete: (group: ContactGroupRecord) =>
+      void run(group.id, () => deleteContactGroup(group.id), `已刪除類群「${group.name}」，刪除已入帳。`),
+  };
+  const addGroup = async () => {
+    if (!newGroup.name.trim()) { setError('請填類群名稱。'); return; }
+    await run('new-group', async () => {
+      await createContactGroup(newGroup);
+      setNewGroup({ name: '', description: '' });
+    }, '已建立自訂類群，可以開始加入成員了。');
   };
   const addContact = async () => {
     if (!newContact.displayName.trim()) { setError('請填稱呼。'); return; }
@@ -116,7 +126,15 @@ export default function SettingsPage() {
     </article>
 
     <article className="ops-panel">
-      <div className="ops-panel-header"><div><h2>🗂 聯絡人類群</h2><p>群發時可整組選取。標「自動」的成員由報名成立時自動歸群，手動加入與移出都會記錄歷程。</p></div></div>
+      <div className="ops-panel-header"><div><h2>🗂 聯絡人類群</h2><p>群發時可整組選取。標「自動」的成員由報名成立時自動歸群；手動加入、移出，以及建立與刪除類群本身，都會記錄歷程。</p></div></div>
+      <div className="ops-group-new">
+        <p className="ops-cell-muted">建立自訂類群（例如「講師群」「候補名單」）。成員只由你手動增減，自動歸群不會碰它。</p>
+        <div className="ops-form-grid">
+          <TextInput label="類群名稱" value={newGroup.name} onChange={(e) => setNewGroup({ ...newGroup, name: e.target.value })} placeholder="例：講師群" />
+          <TextInput label="說明（選填）" value={newGroup.description} onChange={(e) => setNewGroup({ ...newGroup, description: e.target.value })} placeholder="例：合作講師與客座來賓" />
+        </div>
+        <div className="ops-button-row"><WarmButton size="sm" onClick={() => void addGroup()} disabled={!newGroup.name.trim() || busyId === 'new-group'}>{busyId === 'new-group' ? '建立中…' : '建立類群'}</WarmButton></div>
+      </div>
       {groups.length ? <GroupEditor groups={groups} contacts={contacts} handlers={groupHandlers} /> : <EmptyPanel title="尚未建立類群" />}
     </article>
 
