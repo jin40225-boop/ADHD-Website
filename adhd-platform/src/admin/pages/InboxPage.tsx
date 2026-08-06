@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import { TextInput, Textarea, Select } from '@/components/ui/FormField/FormField';
 import { WarmButton } from '@/components/ui/WarmButton/WarmButton';
 import { adminListEmailTemplates, invokeSendEmail } from '@/lib/api';
-import { createEmailAttachmentUrl, getGmailSyncState, listInbox, markThreadRead, saveDraft } from '../operations/api';
+import { createEmailAttachmentUrl, deleteThreads, getGmailSyncState, listInbox, markThreadRead, markThreadsHandled, saveDraft } from '../operations/api';
 import { syncGmailUntilDone, syncSummary } from '../operations/gmailSync';
 import type { GmailSyncState, OperationalThread } from '../operations/types';
 import { EmptyPanel, InlineSpinner, OpsNotice, PageHeader, StatusPill } from '../operations/components';
@@ -20,6 +20,9 @@ export default function InboxPage() {
   const [syncing, setSyncing] = useState(false);
   const [notice, setNotice] = useState<string>();
   const [error, setError] = useState<string>();
+  const [picked, setPicked] = useState<string[]>([]);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [batchBusy, setBatchBusy] = useState(false);
 
   const reload = useCallback(async () => {
     try {
@@ -49,6 +52,30 @@ export default function InboxPage() {
     return matchesFilter && (!query.trim() || haystack.includes(query.trim().toLowerCase()));
   }), [filter, query, threads]);
 
+  // 勾選只保留仍在目前檢視裡的項目：換了篩選卻還留著看不見的勾，按下刪除就會刪到畫面上沒有的信。
+  const visibleIds = useMemo(() => filtered.map((thread) => thread.id), [filtered]);
+  const selectedIds = useMemo(() => picked.filter((id) => visibleIds.includes(id)), [picked, visibleIds]);
+  const allVisiblePicked = visibleIds.length > 0 && selectedIds.length === visibleIds.length;
+  const togglePicked = (id: string) => setPicked((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
+  const toggleAllVisible = () => { setConfirmingDelete(false); setPicked(allVisiblePicked ? [] : visibleIds); };
+
+  const runBatch = async (action: () => Promise<string>) => {
+    setBatchBusy(true); setNotice(undefined); setError(undefined);
+    try { const message = await action(); setPicked([]); setConfirmingDelete(false); await reload(); setNotice(message); }
+    catch (err) { setError(err instanceof Error ? err.message : '批次處理失敗'); }
+    finally { setBatchBusy(false); }
+  };
+  const handleMarkHandled = () => void runBatch(async () => {
+    const count = await markThreadsHandled(selectedIds);
+    return `已將 ${count} 個對話標為已處理，未讀與待回覆一併收掉。`;
+  });
+  /* 刪除是不可回復的，所以確認做在頁面裡而不是 window.confirm——原生對話框在自動化瀏覽器裡
+   * 會被自動取消，代驗就永遠做不到，而「要人親手確認」跟「這個動作驗不了」是兩回事。 */
+  const handleDelete = () => void runBatch(async () => {
+    const result = await deleteThreads(selectedIds);
+    return `已刪除 ${result.threads} 個對話${result.attachments ? `，連同 ${result.attachments} 個附件檔案` : ''}。信件內容與附件都不再留存於資料庫。`;
+  });
+
   async function handleSync(full = false) {
     setSyncing(true); setNotice(undefined); setError(undefined);
     /* 這顆按鈕先前只送一次請求，所以每按一次只前進一批（5 封）——佇列 113 封要按 23 次，
@@ -70,7 +97,19 @@ export default function InboxPage() {
     {syncState ? <OpsNotice tone={syncState.lastError ? 'warning' : 'info'}>信箱：{syncState.mailboxEmail}　·　最後同步：{syncState.lastIncrementalSyncAt || syncState.lastFullSyncAt ? formatDate(syncState.lastIncrementalSyncAt || syncState.lastFullSyncAt!) : '尚未同步'}{syncState.lastError ? `　·　最近錯誤：${syncState.lastError}` : ''}</OpsNotice> : <OpsNotice tone="warning">Gmail 尚未完成首次收信同步；可先按「同步 Gmail」建立狀態。</OpsNotice>}
     {notice ? <OpsNotice tone="success" role="status">{notice}</OpsNotice> : null}{error ? <OpsNotice tone="danger" role="alert">{error}</OpsNotice> : null}
     <div className="ops-toolbar"><div className="ops-search"><TextInput label="搜尋信件" name="inbox-search" value={query} placeholder="寄件者、主旨或內容" onChange={(e) => setQuery(e.target.value)} /></div><Select label="收件匣檢視" name="inbox-filter" value={filter} onChange={(e) => setFilter(e.target.value)} options={[{ value: 'all', label: '全部對話' }, { value: 'unread', label: '未讀' }, { value: 'reply', label: '待回覆' }, { value: 'waiting', label: '等待對方' }, { value: 'closed', label: '已處理' }, { value: 'unlinked', label: '未關聯人員' }]} /></div>
-    {loading ? <InlineSpinner label="同步信件索引…" /> : <div className="ops-inbox"><section className="ops-panel ops-panel--flush"><div className="ops-thread-list" style={{ padding: '.8rem' }}>{filtered.map((thread) => <button key={thread.id} type="button" onClick={() => setSelectedId(thread.id)} className={`ops-list-button ${thread.id === selected?.id ? 'ops-list-button--active' : ''}`}><div className="ops-list-row"><span><strong>{thread.subject || '（無主旨）'}</strong><small>{thread.counterpartEmail}</small></span>{thread.hasUnread ? <StatusPill tone="coral">新信</StatusPill> : null}</div><small>{thread.messages.at(-1)?.snippet || thread.messages.at(-1)?.body.slice(0, 70) || '尚無信件內容'}</small><div className="ops-list-meta">{thread.needsReply ? <StatusPill tone="yellow">待回覆</StatusPill> : null}{!thread.registrationId ? <StatusPill tone="red">未關聯</StatusPill> : null}<StatusPill>{thread.messages.length} 封</StatusPill></div></button>)}{!filtered.length ? <EmptyPanel title="這個檢視沒有信件" /> : null}</div></section><section className="ops-panel">{selected ? <ThreadDetail thread={selected} onSent={async () => { setNotice('信件已寄出並保留在往來紀錄。'); await reload(); }} onError={setError} /> : <EmptyPanel title="請選擇一個對話" description="左側會列出已同步的收件與寄件對話。" />}</section></div>}
+    {loading ? <InlineSpinner label="同步信件索引…" /> : <div className="ops-inbox"><section className="ops-panel ops-panel--flush">
+      <div className="ops-batch-bar">
+        <label className="ops-batch-all"><input type="checkbox" checked={allVisiblePicked} onChange={toggleAllVisible} disabled={!visibleIds.length || batchBusy} /> 全選這個檢視（{visibleIds.length}）</label>
+        {selectedIds.length ? <div className="ops-batch-actions">
+          <span className="ops-batch-count">已選 {selectedIds.length} 個</span>
+          <WarmButton size="sm" variant="secondary" onClick={handleMarkHandled} disabled={batchBusy}>標為已處理</WarmButton>
+          {confirmingDelete
+            ? <><WarmButton size="sm" variant="danger" onClick={handleDelete} disabled={batchBusy}>{batchBusy ? '刪除中…' : `確定刪除 ${selectedIds.length} 個`}</WarmButton><WarmButton size="sm" variant="secondary" onClick={() => setConfirmingDelete(false)} disabled={batchBusy}>取消</WarmButton></>
+            : <WarmButton size="sm" variant="secondary" onClick={() => setConfirmingDelete(true)} disabled={batchBusy}>刪除…</WarmButton>}
+        </div> : null}
+      </div>
+      {confirmingDelete && selectedIds.length ? <OpsNotice tone="danger" role="alert">將永久刪除 {selectedIds.length} 個對話，連同其中所有信件內容與附件檔案，無法復原。Gmail 上的原信不受影響。</OpsNotice> : null}
+      <div className="ops-thread-list" style={{ padding: '.8rem' }}>{filtered.map((thread) => <div key={thread.id} className={`ops-thread-row ${thread.id === selected?.id ? 'ops-thread-row--active' : ''}`}><input type="checkbox" className="ops-thread-check" checked={selectedIds.includes(thread.id)} onChange={() => togglePicked(thread.id)} disabled={batchBusy} aria-label={`選取 ${thread.subject || '（無主旨）'}`} /><button type="button" onClick={() => setSelectedId(thread.id)} className={`ops-list-button ${thread.id === selected?.id ? 'ops-list-button--active' : ''}`}><div className="ops-list-row"><span><strong>{thread.subject || '（無主旨）'}</strong><small>{thread.counterpartEmail}</small></span>{thread.hasUnread ? <StatusPill tone="coral">新信</StatusPill> : null}</div><small>{thread.messages.at(-1)?.snippet || thread.messages.at(-1)?.body.slice(0, 70) || '尚無信件內容'}</small><div className="ops-list-meta">{thread.needsReply ? <StatusPill tone="yellow">待回覆</StatusPill> : null}{!thread.registrationId ? <StatusPill tone="red">未關聯</StatusPill> : null}<StatusPill>{thread.messages.length} 封</StatusPill></div></button></div>)}{!filtered.length ? <EmptyPanel title="這個檢視沒有信件" /> : null}</div></section><section className="ops-panel">{selected ? <ThreadDetail thread={selected} onSent={async () => { setNotice('信件已寄出並保留在往來紀錄。'); await reload(); }} onError={setError} /> : <EmptyPanel title="請選擇一個對話" description="左側會列出已同步的收件與寄件對話。" />}</section></div>}
   </div>;
 }
 

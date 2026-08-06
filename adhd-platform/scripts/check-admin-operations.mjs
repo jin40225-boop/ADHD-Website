@@ -206,8 +206,35 @@ requireText('supabase/functions/gmail-sync/index.ts', ['const withAfter', 'withA
 requireText('src/admin/pages/PeoplePage.tsx', ['handleImportHistory', '匯入這個人的歷史往來']);
 requireText('src/admin/pages/RegistrationsOperationsPage.tsx', ['importGmailHistory', '匯入這個人的歷史往來']);
 requireText('src/admin/pages/IntegrationsPage.tsx', ['clearGmailQueue', 'confirmingClear']);
+// 收件匣批次管理：勾選＋批次標為已處理／刪除。刪除必須先清掉 storage 的附件檔案再刪列——
+// 物件的讀取權限是拿路徑第一段的 thread id 去問 can_access_thread，thread 先被刪掉的話，
+// 那些檔案就同時變成讀不到也刪不掉的孤兒，而裡面裝的正是要清掉的個資。
+requireText('src/admin/operations/api.ts', ['export async function markThreadsHandled', 'export async function deleteThreads']);
+{
+  const source = withoutComments(read('src/admin/operations/api.ts'));
+  const deleteFn = source.slice(source.indexOf('export async function deleteThreads'));
+  const body = deleteFn.slice(0, deleteFn.indexOf('\nexport '));
+  if (body.indexOf(".from('email_threads').delete(") < body.indexOf("storage.from('email-attachments').remove")) {
+    throw new Error('deleteThreads removes the thread rows before the attachment files; the files become unreadable and undeletable orphans.');
+  }
+}
+requireText('src/admin/pages/InboxPage.tsx', ['markThreadsHandled', 'deleteThreads', 'confirmingDelete', 'ops-thread-check', '全選這個檢視']);
+// 勾選要跟著檢視走：換篩選後留著看不見的勾，按下刪除就會刪到畫面上根本沒有的信。
+requireText('src/admin/pages/InboxPage.tsx', ['picked.filter((id) => visibleIds.includes(id))']);
+
 // 破壞性動作要確認，但確認不能用 window.confirm：原生對話框在自動化瀏覽器裡會被自動取消，
-// 等於把所有代驗擋在門外。這三處都是這一輪新增的動作，一律做成站內確認。
+// 等於把所有代驗擋在門外。全站一律做成站內確認——這幾頁先前各自留著一個原生對話框。
+for (const page of ['FeedbackPage', 'FormsPage', 'TemplatesPage', 'CasesOperationsPage', 'InboxPage']) {
+  if (withoutComments(read(`src/admin/pages/${page}.tsx`)).includes('window.confirm')) {
+    throw new Error(`${page}.tsx uses window.confirm; an automated browser cancels it, so the action can never be verified.`);
+  }
+}
+if (withoutComments(read('src/features/email-templates/EmailTemplateManager.tsx')).includes('window.confirm')) {
+  throw new Error('EmailTemplateManager.tsx uses window.confirm; template deletion would stop being verifiable.');
+}
+requireText('src/features/email-templates/EmailTemplateManager.tsx', ['confirming===template.id']);
+requireText('src/admin/pages/FormsPage.tsx', ['pendingProjectId']);
+requireText('src/admin/pages/FeedbackPage.tsx', ['confirmingId === r.id']);
 for (const page of ['IntegrationsPage', 'PeoplePage', 'RegistrationsOperationsPage']) {
   if (withoutComments(read(`src/admin/pages/${page}.tsx`)).includes('window.confirm')) {
     throw new Error(`${page}.tsx uses window.confirm; an automated browser cancels it, so the action can never be verified.`);

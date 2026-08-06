@@ -20,6 +20,7 @@ function formatDate(iso: string) {
 export default function FeedbackPage() {
   const live = isSupabaseReady;
   const [rows, setRows] = useState<EventFeedback[]>([]);
+  const [confirmingId, setConfirmingId] = useState<string>();
   const [loading, setLoading] = useState(live);
   const [error, setError] = useState<string>();
 
@@ -39,8 +40,10 @@ export default function FeedbackPage() {
     void reload();
   }, [reload]);
 
+  // 兩段式確認做在頁面裡而不是 window.confirm：原生對話框在自動化瀏覽器裡會被自動取消，
+  // 代驗就永遠做不到，而「破壞性動作要人親手點」跟「這個動作驗不了」是兩回事。
   const handleDelete = async (row: EventFeedback) => {
-    if (!window.confirm(`確定刪除 ${row.name} 的這則回饋？此動作無法復原。`)) return;
+    setConfirmingId(undefined);
     const prev = rows;
     setRows((r) => r.filter((x) => x.id !== row.id)); // 樂觀更新
     try {
@@ -75,13 +78,24 @@ export default function FeedbackPage() {
       id: 'actions',
       header: '',
       cell: (r) => (
-        <button
-          type="button"
-          onClick={() => void handleDelete(r)}
-          className="text-alert-red underline text-sm whitespace-nowrap"
-        >
-          刪除
-        </button>
+        confirmingId === r.id ? (
+          <span className="flex items-center gap-2 whitespace-nowrap">
+            <button type="button" onClick={() => void handleDelete(r)} className="text-alert-red font-bold underline text-sm">
+              確定刪除
+            </button>
+            <button type="button" onClick={() => setConfirmingId(undefined)} className="text-brown/70 underline text-sm">
+              取消
+            </button>
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setConfirmingId(r.id)}
+            className="text-alert-red underline text-sm whitespace-nowrap"
+          >
+            刪除
+          </button>
+        )
       ),
     },
   ];

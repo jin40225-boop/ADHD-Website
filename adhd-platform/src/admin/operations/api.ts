@@ -515,6 +515,48 @@ export async function markThreadRead(id: string) {
   assert(messages.error, '更新信件已讀狀態失敗');
 }
 
+/** 批次標為已處理：紅點與待回覆一起收掉，否則清單看起來還是有事情要做。 */
+export async function markThreadsHandled(ids: string[]) {
+  if (!ids.length) return 0;
+  const { error, count } = await db()
+    .from('email_threads')
+    .update({ status: 'closed', has_unread: false, needs_reply: false }, { count: 'exact' })
+    .in('id', ids);
+  assert(error, '標記為已處理失敗');
+  const { error: msgError } = await db().from('email_messages').update({ is_read: true }).in('thread_id', ids).eq('direction', 'inbound');
+  assert(msgError, '更新信件已讀狀態失敗');
+  return count ?? ids.length;
+}
+
+/**
+ * 批次刪除信件串。
+ *
+ * 附件檔案必須先從儲存桶移除，順序不能反過來：物件的讀取權限是用路徑第一段的 thread id
+ * 去問 can_access_thread，thread 一旦刪掉，那些檔案就同時變成讀不到也刪不掉的孤兒，
+ * 而它們裡面裝的正是要清掉的個資。所以先刪檔、再刪列；檔案沒刪成就整批中止，
+ * 不做「刪一半」——半刪的結果從畫面上完全看不出來。
+ */
+export async function deleteThreads(ids: string[]) {
+  if (!ids.length) return { threads: 0, attachments: 0 };
+  const { data: attachments, error: listError } = await db()
+    .from('email_attachments')
+    .select('storage_path, email_messages!inner(thread_id)')
+    .in('email_messages.thread_id', ids)
+    .not('storage_path', 'is', null);
+  assert(listError, '讀取附件清單失敗');
+  const paths = (attachments ?? []).map((row: Row) => row.storage_path).filter(Boolean);
+  if (paths.length) {
+    const { data: removed, error: removeError } = await db().storage.from('email-attachments').remove(paths);
+    if (removeError) throw new Error(`附件檔案刪除失敗，整批已中止（沒有任何信件被刪除）：${removeError.message}`);
+    if ((removed ?? []).length < paths.length) {
+      throw new Error(`附件檔案只刪掉 ${(removed ?? []).length}／${paths.length} 個，整批已中止（沒有任何信件被刪除）。缺少 storage 的 delete 權限時會這樣。`);
+    }
+  }
+  const { error, count } = await db().from('email_threads').delete({ count: 'exact' }).in('id', ids);
+  assert(error, '刪除信件失敗');
+  return { threads: count ?? ids.length, attachments: paths.length };
+}
+
 export async function saveDraft(input: Omit<EmailDraftRecord, 'id' | 'createdAt' | 'revision' | 'status'> & { id?: string }) {
   const payload = {
     registration_id: input.registrationId,

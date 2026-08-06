@@ -68,7 +68,7 @@ export default function TemplatesPage() {
       if (!live) setNotice('示意模式：範本已從目前畫面移除。');
       return;
     }
-    if (!window.confirm(`確定刪除信件範本「${template.name}」？此動作無法復原。`)) return;
+    // 確認已由 EmailTemplateManager 以站內兩段式按鈕完成，不再用 window.confirm。
     try {
       await adminDeleteEmailTemplate(template.id);
       setTemplates((prev) => prev.filter((item) => item.id !== template.id));

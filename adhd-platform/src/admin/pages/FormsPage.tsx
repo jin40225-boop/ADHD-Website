@@ -16,6 +16,7 @@ import { WarmButton } from '@/components/ui/WarmButton';
 export default function FormsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectId, setProjectId] = useState<string>('');
+  const [pendingProjectId, setPendingProjectId] = useState<string>();
   const [schema, setSchema] = useState<FormSchema | null>(null);
   const [loading, setLoading] = useState(true);
   const [schemaLoading, setSchemaLoading] = useState(false);
@@ -103,12 +104,21 @@ export default function FormsPage() {
             name="form-project"
             value={projectId}
             onChange={(event) => {
-              if (dirty && !window.confirm('尚未儲存的變更將遺失，確定切換專案？')) return;
+              // 有未存變更就先問，而且問在頁面裡：window.confirm 在自動化瀏覽器裡會被自動取消，
+              // 於是「切換專案」在代驗時永遠等於按了取消，這條路徑就再也驗不到。
+              if (dirty && event.target.value !== projectId) { setPendingProjectId(event.target.value); return; }
               setProjectId(event.target.value);
             }}
             options={projects.map((p) => ({ value: p.id, label: p.name }))}
           />
         </div>
+        {pendingProjectId ? (
+          <p role="alert" className="w-full rounded-xl border-2 border-alert-red/60 bg-alert-red/10 px-4 py-2.5 text-sm">
+            切換到「{projects.find((p) => p.id === pendingProjectId)?.name ?? '另一個專案'}」會捨棄尚未儲存的變更。
+            <button type="button" className="ml-3 font-bold underline" onClick={() => { setProjectId(pendingProjectId); setPendingProjectId(undefined); }}>捨棄變更並切換</button>
+            <button type="button" className="ml-3 underline" onClick={() => setPendingProjectId(undefined)}>取消</button>
+          </p>
+        ) : null}
         <WarmButton icon={Save} disabled={!dirty || saving || schemaLoading} onClick={handleSave}>
           {saving ? '儲存中…' : dirty ? '儲存變更' : '已是最新'}
         </WarmButton>
