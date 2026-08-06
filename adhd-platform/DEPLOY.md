@@ -79,6 +79,25 @@ Google refresh token 至少需要：
 
 輪替 Google Client Secret 時，先建立新 secret、更新 Supabase secret 並完成寄信與 Calendar smoke test，確認成功後才撤銷舊 secret。不得把 secret 值貼進 issue、commit、Actions log 或本文件。
 
+### 資料清理：直接刪 `registrations` 之前先讀這段
+
+名額計數（`sessions.booked_count`）由兩支東西維護：INSERT 時 `enforce_session_capacity` 遞增，狀態轉成退回／取消時 `admin_transition_registration` 遞減並寫上 `capacity_released_at`。`20260806000032` 補上了 DELETE 的回收 trigger，所以**現在直接刪報名也會把名額還回去**。
+
+仍要知道的一件事：**trigger 看 `capacity_released_at` 決定要不要扣**。一筆已經退回／取消的報名早就把名額還過了，刪除時不會再扣一次——這是刻意的，重複扣會吃掉別的報名的名額，而且沒有任何錯誤訊息（`20260804000015` 修過同一類問題）。所以如果你手動改過 `capacity_released_at`，或用 SQL 直接改過 `status` 而沒有走轉換函式，計數就可能與實際不符。
+
+改狀態一律走後台或 `admin_transition_registration`，不要直接 `update registrations set status = ...`。若懷疑計數已經歪掉，用這個查詢對帳：
+
+```sql
+select s.id, s.title, s.booked_count,
+       (select count(*) from public.registrations r
+         where s.id = any(r.session_ids) and r.capacity_released_at is null) as 實際佔用
+  from public.sessions s
+ where s.status in ('open', 'full')
+ order by s.starts_at;
+```
+
+兩欄不一致的那幾列才需要手動修正。
+
 ### 排障：`GOOGLE_TOKEN_ERROR: Token has been expired or revoked.`
 
 **症狀**：收信與寄信同時全停。`gmail-sync`、`gmail-labels`、`send-email-v2`、`send-instructor-invite` 四支都靠同一個 `GOOGLE_REFRESH_TOKEN`，所以它一失效就是全倒，不是單一功能壞掉。稽核會留下 `gmail_sync` / `error` 一列。

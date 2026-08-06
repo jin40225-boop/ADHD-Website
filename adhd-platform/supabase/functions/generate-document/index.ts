@@ -3,8 +3,10 @@
  *
  * 三件事按這個順序發生，順序本身就是規格：
  *   1. 讀場次／報名／範本等素材（服務端讀，前端不必先撈一份出來）。
- *   2. **去識別化**：姓名、電話、信箱一律換成代號（家長A、電話1、信箱1…），判讀性內容照送。
- *   3. 只把去識別化後的文字送給 Claude；回來的草稿把代號還原成真實姓名，存成 draft 等人審。
+ *   2. **去識別化**：姓名、電話、信箱一律換成代號（〔家長1〕〔孩子1〕〔電話1〕〔信箱1〕…），
+ *      判讀性內容照送。孩子姓名與家長姓名分開編碼，因為還原規則不同。
+ *   3. 只把去識別化後的文字送給 Claude；回來的草稿**只還原家長姓名**，存成 draft 等人審。
+ *      孩子姓名、電話、信箱都不還原——產出物裡寫〔孩子1〕就夠了。
  *
  * 兩個不能妥協的點：
  *   - `preview: true` 時**完全不呼叫 API**，只回傳「將送出的這些字」。裁決要求生成前先看到
@@ -30,22 +32,69 @@ function scrubSecrets(message: string) {
 }
 
 type Row = Record<string, any>;
-/** 代號對照表：送出前把真實資料換成代號，草稿回來後再換回去。 */
+/**
+ * 代號對照表。`placeholders` 是送出前要換掉的全部真實字串；`restore` 只放**可以還原**的那些。
+ * 兩者不對稱是刻意的：孩子姓名進 placeholders 但不進 restore——見 `buildRedaction`。
+ */
 interface Redaction { placeholders: Record<string, string>; restore: Record<string, string> }
 
 const EMAIL_RE = /[\w.+-]+@[\w-]+\.[\w.-]+/g;
 const PHONE_RE = /(?:\+886[-\s]?|0)\d{1,3}[-\s]?\d{3,4}[-\s]?\d{3,4}/g;
 
+/** 表單裡會夾帶真實身分的欄位。孩子與家長分開收，因為還原規則不同。 */
+const PARENT_NAME_KEYS = ['name', 'parentName', 'guardianName', 'contactName', 'displayName'];
+const CHILD_NAME_KEYS = ['childName', 'childAlias'];
+/** 舊報名沒有固定 schema，所以除了列舉的 key，也掃任何看起來像姓名欄位的鍵。 */
+function looksLikeNameKey(key: string) { return /(^|_)name$/i.test(key) || key.includes('姓名') || key.includes('稱呼'); }
+
 /**
  * 去識別化。姓名要逐一比對（它們不像信箱電話有形狀），所以先從素材裡收集已知姓名，
  * 由長到短替換——「林小明」必須先於「小明」被換掉，否則會留下半截真名。
+ *
+ * ⚠ **孩子姓名代號化後不還原。** 報名表那一欄寫的是「孩子姓名或代號」，實務上家長多半填真名，
+ * 所以它就是兒少的真實姓名。家長姓名還原是因為草稿要寄給那位家長、信裡得有稱呼；
+ * 孩子沒有這個需要——文件裡寫「〔孩子1〕」完全足夠，還原只是把兒少姓名重新寫回產出物。
+ * 兩份對照表因此不對稱：孩子只進 placeholders，不進 restore。
  */
-function buildRedaction(names: string[]): Redaction {
+function buildRedaction(parentNames: string[], childNames: string[]): Redaction {
   const placeholders: Record<string, string> = {};
   const restore: Record<string, string> = {};
-  const unique = [...new Set(names.map((n) => n.trim()).filter((n) => n.length >= 2))].sort((a, b) => b.length - a.length);
-  unique.forEach((name, index) => { const code = `〔家長${index + 1}〕`; placeholders[name] = code; restore[code] = name; });
-  return { placeholders, restore };
+  const clean = (list: string[]) => [...new Set(list.map((n) => n.trim()).filter((n) => n.length >= 2))];
+  const parents = clean(parentNames);
+  // 孩子名若與某位家長同名，家長那條代號會先換掉它，這裡不重複建碼。
+  const children = clean(childNames).filter((name) => !parents.includes(name));
+
+  parents.forEach((name, index) => { const code = `〔家長${index + 1}〕`; placeholders[name] = code; restore[code] = name; });
+  children.forEach((name, index) => { placeholders[name] = `〔孩子${index + 1}〕`; });
+
+  // 由長到短排序後重建，確保「林小明」先於「小明」被替換。
+  const ordered: Record<string, string> = {};
+  for (const name of Object.keys(placeholders).sort((a, b) => b.length - a.length)) ordered[name] = placeholders[name];
+  return { placeholders: ordered, restore };
+}
+
+/** 從一筆報名的 answers 收集身分字串。回傳 [家長姓名, 孩子姓名]。 */
+function collectNames(answers: Row): [string[], string[]] {
+  const parents: string[] = [];
+  const children: string[] = [];
+  for (const [key, value] of Object.entries(answers ?? {})) {
+    if (typeof value === 'string' && value.trim()) {
+      if (CHILD_NAME_KEYS.includes(key)) children.push(value);
+      else if (PARENT_NAME_KEYS.includes(key) || looksLikeNameKey(key)) parents.push(value);
+    }
+  }
+  // 新版表單的孩子是可增減的陣列，代號欄位是 `alias`。
+  if (Array.isArray(answers?.children)) {
+    for (const child of answers.children) {
+      if (child && typeof child === 'object') {
+        for (const key of ['alias', 'name', 'childName']) {
+          const value = (child as Row)[key];
+          if (typeof value === 'string' && value.trim()) children.push(value);
+        }
+      }
+    }
+  }
+  return [parents, children];
 }
 
 function redact(text: string, redaction: Redaction) {
@@ -57,7 +106,11 @@ function redact(text: string, redaction: Redaction) {
   return out;
 }
 
-/** 草稿回來後把姓名代號換回真名。信箱／電話代號刻意不還原——AI 沒有理由自己寫出聯絡方式。 */
+/**
+ * 草稿回來後把**家長**姓名代號換回真名。
+ * 刻意不還原的三種：信箱、電話（AI 沒有理由自己寫出聯絡方式）、以及**孩子姓名**
+ * （見 `buildRedaction`——文件裡寫〔孩子1〕就夠了，還原等於把兒少姓名寫回產出物）。
+ */
 function restoreNames(text: string, redaction: Redaction) {
   let out = text;
   for (const [code, name] of Object.entries(redaction.restore)) out = out.replaceAll(code, name);
@@ -95,7 +148,8 @@ Deno.serve(async (req) => {
 
     // ---- 素材 ----------------------------------------------------------------
     const materials: string[] = [];
-    const names: string[] = [];
+    const parentNames: string[] = [];
+    const childNames: string[] = [];
     if (sessionId) {
       const { data: session } = await admin.from('sessions').select('title, starts_at, ends_at, capacity, booked_count, topic, guest').eq('id', sessionId).maybeSingle();
       if (session) materials.push(`場次：${session.title}\n時間：${session.starts_at} ~ ${session.ends_at}\n名額：${session.booked_count}/${session.capacity}\n主題：${session.topic ?? '未定'}\n來賓：${session.guest ?? '未定'}`);
@@ -105,14 +159,18 @@ Deno.serve(async (req) => {
         .contains('session_ids', [sessionId]);
       for (const reg of (regs ?? []) as Row[]) {
         const name = reg.contacts?.display_name ?? reg.answers?.name ?? '';
-        if (name) names.push(String(name));
+        if (name) parentNames.push(String(name));
+        // 姓名一律先收集再整段替換，所以自由填答（議題、家庭型態…）裡出現的同一個名字也會一起被換掉。
+        const [answerParents, answerChildren] = collectNames(reg.answers ?? {});
+        parentNames.push(...answerParents);
+        childNames.push(...answerChildren);
         const child = reg.answers?.childName ? `／孩子：${reg.answers.childName}` : '';
         materials.push(`報名：${name}（${reg.status}）${child}\n議題：${reg.answers?.topic ?? reg.answers?.question ?? '未填'}`);
       }
     }
     if (!materials.length) return jsonResponse({ error: 'NO_MATERIAL' }, 400);
 
-    const redaction = buildRedaction(names);
+    const redaction = buildRedaction(parentNames, childNames);
     const prompt = [
       DOC_PROMPTS[docType],
       instruction ? `補充指示：${instruction}` : '',
@@ -127,6 +185,7 @@ Deno.serve(async (req) => {
         preview: true,
         willSend: prompt,
         redactedNames: Object.keys(redaction.placeholders).length,
+        redactedChildren: Object.keys(redaction.placeholders).length - Object.keys(redaction.restore).length,
         model: 'claude-opus-5',
       });
     }
@@ -165,7 +224,7 @@ Deno.serve(async (req) => {
     }).select('id, title, content, status, created_at').single();
     if (error) throw new Error(error.message);
 
-    return jsonResponse({ document: saved, redactedNames: Object.keys(redaction.placeholders).length, usage: { input: message.usage.input_tokens, output: message.usage.output_tokens } });
+    return jsonResponse({ document: saved, redactedNames: Object.keys(redaction.placeholders).length, redactedChildren: Object.keys(redaction.placeholders).length - Object.keys(redaction.restore).length, usage: { input: message.usage.input_tokens, output: message.usage.output_tokens } });
   } catch (err) {
     const message = err instanceof Error ? err.message : '文件生成失敗';
     return jsonResponse({ error: scrubSecrets(message) }, 500);

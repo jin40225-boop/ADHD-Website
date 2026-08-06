@@ -149,6 +149,20 @@ requireText('supabase/functions/generate-document/index.ts', [
 }
 // 預覽與實際送出必須是同一份文字：預覽若是另外組的字，使用者審閱的就不是會送出的東西。
 requireText('supabase/functions/generate-document/index.ts', ['if (preview)', 'willSend: prompt']);
+// 孩子姓名同樣要代號化，而且**不還原**。報名表那欄寫的是「孩子姓名或代號」，實務上家長多半填真名，
+// 所以它就是兒少的真實姓名；家長姓名還原是因為信裡要有稱呼，孩子沒有這個需要。
+requireText('supabase/functions/generate-document/index.ts', ['CHILD_NAME_KEYS', '〔孩子', 'function collectNames', 'childNames']);
+{
+  const source = withoutComments(read('supabase/functions/generate-document/index.ts'));
+  // 孩子姓名進 placeholders 但不得進 restore——兩份對照表的不對稱就是「不還原」這條規則本身。
+  if (/children\.forEach\([^)]*\)\s*=>\s*\{[^}]*restore\[/.test(source)) {
+    throw new Error('generate-document restores child names; codes are enough in the output, restoring writes a child\'s real name back into it.');
+  }
+}
+// 直接刪報名要回收名額，且不得對已釋額的報名重複扣（會吃掉別人的名額，且沒有錯誤訊息）。
+requireText('supabase/migrations/20260806000032_release_capacity_on_delete.sql', [
+  'release_capacity_on_delete', 'trg_registration_release_on_delete', 'old.capacity_released_at is not null',
+]);
 requireText('src/admin/pages/DocumentsPage.tsx', ['invokeGenerateDocument', 'genPreview', '檢視將送出的資料']);
 
 // Phase 4 信件系統。
@@ -290,8 +304,10 @@ requireText('DEPLOY.md', ['GOOGLE_TOKEN_ERROR', 'get-google-refresh-token.mjs', 
 {
   // 取 token 的腳本不得把憑證寫進任何檔案——它只該印在終端機。
   const source = read('scripts/get-google-refresh-token.mjs');
-  if (/writeFileSync|appendFileSync|createWriteStream/.test(source)) {
-    throw new Error('get-google-refresh-token.mjs writes to disk; the refresh token must only ever reach the terminal.');
+  // 同步與非同步兩套都要擋。原本只列 *Sync，於是 `node:fs/promises` 的 writeFile／appendFile
+  // 完全不在守門範圍內——而「順手改成 await 版」正是這種腳本最可能被改動的方向。
+  if (/writeFileSync|appendFileSync|createWriteStream|fs\/promises|\bwriteFile\b|\bappendFile\b|\bopen\s*\(/.test(source)) {
+    throw new Error('get-google-refresh-token.mjs writes to disk (sync or async); the refresh token must only ever reach the terminal.');
   }
   requireText('scripts/get-google-refresh-token.mjs', ["'access_type', 'offline'", "'prompt', 'consent'"]);
 }
