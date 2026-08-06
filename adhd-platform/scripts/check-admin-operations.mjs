@@ -242,6 +242,17 @@ requireText('supabase/functions/gmail-sync/index.ts', [
     throw new Error('updateAppSettings writes the legacy single-label column; it is the fallback for settings not yet re-picked.');
   }
 }
+// 內部註記只能掛一個對象：internal_notes 有 `num_nonnulls(contact_id, registration_id, case_id) = 1`
+// 的約束，同時傳報名與聯絡人會被 DB 以 23514 擋下。這個 bug 上線後完全看不出來——POST 回 400、
+// 畫面什麼都沒說、註記就是存不進去，因為處理函式當時沒有 catch。兩個根因各留一條斷言。
+requireText('src/admin/pages/RegistrationsOperationsPage.tsx', ['saveNote({ registrationId:']);
+if (read('src/admin/pages/RegistrationsOperationsPage.tsx').includes('saveNote({ contactId:')) {
+  throw new Error('addNote passes both contactId and registrationId again; internal_notes_one_target rejects that with 23514.');
+}
+// 寫入失敗必須有人接住並顯示。這裡用 catch 裡的訊息當代理——訊息不見了，catch 也就不在了。
+requireText('src/admin/pages/RegistrationsOperationsPage.tsx', ['儲存註記失敗', '建立追蹤待辦失敗']);
+requireText('src/admin/pages/CasesOperationsPage.tsx', ['儲存註記失敗', '建立追蹤待辦失敗', '個案轉移失敗', '封存個案失敗', '封存紀錄失敗']);
+
 // 部署後仍開著的分頁：hashed chunk 消失，lazy import 404，畫面空白且沒有任何訊息。
 // 這個站一天部署數次，後台會被開著好幾天——已經害監督視窗把它誤判成「函式壞了」一次。
 requireText('src/router.tsx', ['StaleChunkBoundary', 'watchForStaleChunks', 'clearStaleChunkFlag']);
