@@ -102,9 +102,32 @@ requireText('src/admin/pages/RegistrationsOperationsPage.tsx', ['<MailOverrideEd
   }
 }
 requireText('src/router.tsx', ["path: 'settings'", "path: 'documents'"]);
-// 文件產生中心在 Phase 6 前是佔位頁：產出鈕必須是停用的，且必須說明何時啟用。
-// 一顆看起來能按、按了沒反應的產出鈕，正是這個專案最初四大重症裡的「死按鈕」。
-requireText('src/admin/pages/DocumentsPage.tsx', ['<WarmButton disabled', 'Phase 6']);
+// Phase 6：AI 文件生成。金鑰只能從環境變數取，永遠不進資料表、不回前端、不進錯誤訊息。
+requireText('supabase/functions/generate-document/index.ts', [
+  "Deno.env.get('ANTHROPIC_API_KEY')", 'function scrubSecrets', "model: 'claude-opus-5'", "status: 'draft'",
+]);
+{
+  const source = withoutComments(read('supabase/functions/generate-document/index.ts'));
+  // 從資料表讀金鑰＝把它放進一個 RLS 之外還有很多人看得到的地方。
+  if (/from\('app_settings'\)[\s\S]{0,200}(api_key|anthropic)/i.test(source)) {
+    throw new Error('generate-document reads the API key from a table; it must come from Deno.env only.');
+  }
+  // 錯誤訊息是最容易把金鑰漏出去的路徑：上游把 header 塞進 message，我們原封不動轉出去。
+  if (!/scrubSecrets\(message\)/.test(source)) {
+    throw new Error('generate-document returns raw error messages; run them through scrubSecrets first.');
+  }
+  // 去識別化必須在送出之前。順序反了就是先把真實姓名送出去再說。
+  if (source.indexOf('anthropic.messages.create') < source.indexOf('redact(materials.join')) {
+    throw new Error('generate-document calls the API before redacting; names would leave the system in the clear.');
+  }
+  // AI 不寄信：這支只寫草稿，不得呼叫寄信函式。
+  if (/send-email-v2|gmail\.googleapis\.com/.test(source)) {
+    throw new Error('generate-document can send mail; AI must only produce drafts for a human to send.');
+  }
+}
+// 預覽與實際送出必須是同一份文字：預覽若是另外組的字，使用者審閱的就不是會送出的東西。
+requireText('supabase/functions/generate-document/index.ts', ['if (preview)', 'willSend: prompt']);
+requireText('src/admin/pages/DocumentsPage.tsx', ['invokeGenerateDocument', 'genPreview', '檢視將送出的資料']);
 
 // Phase 4 信件系統。
 // 信中確認按鈕是「對方點開信件」偵測不可靠之後的替代方案（裁決 12），端點必須公開才點得到。

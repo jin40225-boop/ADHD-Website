@@ -1,13 +1,16 @@
 /**
- * 文件產生中心（03_v4）。Phase 6 之前是**佔位頁**：三段選擇器接真實資料、看得到也選得動，
- * 但產出鈕停用並明示 Phase 6 才啟用——比照設定頁的 Claude API 區，不做假生成。
+ * 文件產生中心（03_v4）。Phase 6 起產出功能已啟用。
+ *
+ * 產出走兩段：先要一份**預覽**（不呼叫 API，只回傳「等一下會送出的那份字」），使用者看過再按生成。
+ * 預覽與實際送出的內容由 Edge Function 的同一段程式算出，不是另外寫一份「大概像這樣」的說明——
+ * 否則使用者審閱的東西與實際送出的東西可以無聲地分岔，那就等於沒有審閱。
  */
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { EmailTemplate, Project, SessionSlot } from '@contracts/types';
 import { TextInput, Textarea, Select } from '@/components/ui/FormField/FormField';
 import { WarmButton } from '@/components/ui/WarmButton/WarmButton';
-import { adminListEmailTemplates, adminListProjects, adminListSessions, invokeBulkEmail } from '@/lib/api';
+import { adminListEmailTemplates, adminListProjects, adminListSessions, invokeBulkEmail, invokeGenerateDocument } from '@/lib/api';
 import { listContactGroups, listContacts, listGeneratedDocuments } from '../operations/api';
 import type { ContactGroupRecord, ContactRecord, GeneratedDocumentRecord } from '../operations/types';
 import { applyTemplate, buildBulkContext, residualVariables, resolveBulkRecipients } from '../operations/emailCompose';
@@ -32,6 +35,36 @@ export default function DocumentsPage() {
   const [docType, setDocType] = useState(DOC_TYPES[0]); const [scope, setScope] = useState('all-h2'); const [audience, setAudience] = useState('none'); const [note, setNote] = useState('');
   const [bulk, setBulk] = useState({ groupIds: [] as string[], includeIds: [] as string[], excludeIds: [] as string[], templateId: '', subject: '', body: '' });
   const [sending, setSending] = useState(false); const [confirming, setConfirming] = useState(false);
+  /** 生成的兩段式：先拿 willSend（不呼叫 API），使用者看過才真的產。 */
+  const [genPreview, setGenPreview] = useState<{ willSend: string; redactedNames: number; model: string }>();
+  const [generating, setGenerating] = useState(false);
+
+  const DOC_TYPE_KEYS: Record<string, string> = {
+    '月度活動宣傳與通知信（群發）': 'monthly_report',
+    '整批行前提醒信（該場全部報名者）': 'followup_notes',
+    '活動計畫書（外部版）': 'session_summary',
+    'FB／網路宣傳文': 'monthly_report',
+    '年度成果彙整': 'monthly_report',
+    '自訂需求（用一句話描述）': 'session_summary',
+  };
+  const previewGeneration = async () => {
+    setGenerating(true); setError(undefined); setNotice(undefined);
+    try {
+      const result = await invokeGenerateDocument({ docType: DOC_TYPE_KEYS[docType], sessionId: scope === 'all-h2' ? undefined : scope, instruction: note, preview: true });
+      setGenPreview({ willSend: result.willSend ?? '', redactedNames: result.redactedNames ?? 0, model: result.model ?? '' });
+    } catch (e) { setError(e instanceof Error ? e.message : '預覽失敗'); }
+    finally { setGenerating(false); }
+  };
+  const runGeneration = async () => {
+    setGenerating(true); setError(undefined);
+    try {
+      const result = await invokeGenerateDocument({ docType: DOC_TYPE_KEYS[docType], sessionId: scope === 'all-h2' ? undefined : scope, instruction: note });
+      setGenPreview(undefined);
+      await reload();
+      setNotice(`草稿已產生（去識別化 ${result.redactedNames ?? 0} 個姓名）。狀態為「draft」，要寄出請自行審閱後從報名工作台或群發區操作——AI 不會自己寄。`);
+    } catch (e) { setError(e instanceof Error ? e.message : '生成失敗'); }
+    finally { setGenerating(false); }
+  };
 
   const reload = () => Promise.all([adminListSessions(), adminListProjects(), listContactGroups(), listGeneratedDocuments(), listContacts(), adminListEmailTemplates()])
     .then(([nextSessions, nextProjects, nextGroups, nextDocuments, nextContacts, nextTemplates]) => {
@@ -77,13 +110,8 @@ export default function DocumentsPage() {
     {notice ? <OpsNotice tone="success">{notice}</OpsNotice> : null}
     {error ? <OpsNotice tone="danger">{error}</OpsNotice> : null}
 
-    <OpsNotice tone="warning">
-      <b>這一頁的產出功能要到 Phase 6 才啟用。</b>下面的選擇器接的是真實場次與類群、選得動，但「產出草稿」目前是停用的——
-      Phase 6 接上 <code>generate-document</code>（Claude API 代理）之後才會真的產生內容。在那之前不做假的產出結果。
-    </OpsNotice>
-
     <article className="ops-panel">
-      <div className="ops-panel-header"><div><h2>產生設定</h2><p>Phase 6 的流程：選類型 → 選範圍 → 選對象 → Claude 產草稿 → 你全文審閱 → 寄出或匯出。AI 永不自行寄出。</p></div></div>
+      <div className="ops-panel-header"><div><h2>產生設定</h2><p>流程：選類型 → 選範圍 → <b>看過將送出的資料</b> → Claude 產草稿 → 你全文審閱 → 寄出或匯出。AI 永不自行寄出。</p></div></div>
       <div className="ops-form-grid">
         <Select label="文件類型" value={docType} onChange={(e) => setDocType(e.target.value)}>
           {DOC_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}
@@ -101,11 +129,20 @@ export default function DocumentsPage() {
         <TextInput label="補充指示（選填）" placeholder="例：語氣輕鬆、強調可當天直接參加" value={note} onChange={(e) => setNote(e.target.value)} />
       </div>
       <div className="ops-button-row">
-        <WarmButton disabled onClick={() => {}}>🤖 產出草稿（Phase 6 啟用）</WarmButton>
+        {genPreview
+          ? <>
+            <WarmButton disabled={generating} onClick={() => void runGeneration()}>{generating ? '生成中…' : '確認送出並產生草稿'}</WarmButton>
+            <WarmButton variant="secondary" disabled={generating} onClick={() => setGenPreview(undefined)}>取消</WarmButton>
+          </>
+          : <WarmButton disabled={generating} onClick={() => void previewGeneration()}>{generating ? '準備中…' : '🤖 檢視將送出的資料'}</WarmButton>}
       </div>
+      {genPreview ? <div className="ops-override-box">
+        <p className="ops-cell-muted">以下是<b>實際會送給 Claude 的全部內容</b>（已去識別化 {genPreview.redactedNames} 個姓名，模型 {genPreview.model}）。看過再按確認。</p>
+        <pre className="ops-willsend">{genPreview.willSend}</pre>
+      </div> : null}
       <OpsNotice tone="info">
-        送出前會顯示「將送出哪些資料」清單，且姓名／電話／信箱一律代號化後才送 API（裁決 15，去識別化固定啟用）。
-        金鑰在 <Link to="/admin/settings">設定・聯絡人</Link> 的 Claude API 區設定，同樣要到 Phase 6。
+        姓名／電話／信箱一律代號化後才送 API（裁決 15，去識別化固定啟用），草稿回來後只還原姓名——聯絡方式不還原，AI 沒有理由自己寫出它們。
+        金鑰只存在 Supabase secrets（`ANTHROPIC_API_KEY`），不經過瀏覽器也不寫在資料表；<Link to="/admin/settings">設定・聯絡人</Link> 的說明同步更新。
       </OpsNotice>
     </article>
 

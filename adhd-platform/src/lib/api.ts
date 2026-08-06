@@ -771,6 +771,22 @@ export async function invokeBulkEmail(input: {
   return invokeFunction('send-email-v2', input);
 }
 
+/**
+ * Phase 6：AI 文件生成（`generate-document`）。
+ *
+ * `preview: true` 不呼叫 Claude，只回傳「等一下會送出的那份字」——裁決 15 要求生成前先看到送出
+ * 內容，而預覽與實際送出必須由同一段程式算出，否則審閱的與送出的可以無聲分岔。
+ * 金鑰只在 Edge Function 內以 `Deno.env.get('ANTHROPIC_API_KEY')` 取用；前端拿不到也不需要。
+ */
+export async function invokeGenerateDocument(input: {
+  docType: string;
+  sessionId?: string;
+  instruction?: string;
+  preview?: boolean;
+}): Promise<{ willSend?: string; redactedNames?: number; model?: string; document?: { id: string; title: string; content: string; status: string } }> {
+  return invokeFunction('generate-document', input);
+}
+
 /** 為場次建立/更新 Google Calendar 事件與 Meet 連結。 */
 export async function invokeCalendarUpsert(sessionId: string): Promise<{ ok: boolean; meetUrl?: string }> {
   return invokeFunction('calendar-upsert', { sessionId });

@@ -98,3 +98,4 @@
 .ops-override-hint{color:#7c675e;font-size:.78rem;margin:.35rem 0 0}
 .ops-override-toggle{background:none;border:0;color:#9a5b3d;cursor:pointer;font:inherit;font-size:.78rem;font-weight:700;padding:0 .3rem;text-decoration:underline}
 .ops-override-box{background:#fffaf1;border:1px solid #e2cda8;border-radius:12px;display:grid;gap:.5rem;margin-top:.5rem;padding:.7rem}
+.ops-willsend{background:#fffdf8;border:1px solid #e6d9c6;border-radius:10px;font-size:.78rem;margin:0;max-height:16rem;overflow:auto;padding:.6rem;white-space:pre-wrap;word-break:break-word}

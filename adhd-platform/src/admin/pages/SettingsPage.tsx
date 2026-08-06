@@ -195,12 +195,13 @@ export default function SettingsPage() {
 
     <article className="ops-panel">
       <div className="ops-panel-header"><div><h2>🤖 Claude API 設定</h2></div></div>
-      <OpsNotice tone="warning">
-        <b>Phase 6 才會啟用</b>，因此這一區的控制項全部停用、也不接受輸入。金鑰屆時存於 Supabase secrets，前端永不落地；
-        去識別化（姓名／電話／信箱代號化）依裁決固定啟用、不可關閉。這裡先不做輸入框，是為了避免看起來能填、填了卻沒有任何地方接收。
+      <OpsNotice tone="info">
+        <b>已啟用</b>（Phase 6）。金鑰只存在 Supabase secrets 的 <code>ANTHROPIC_API_KEY</code>，由 Edge Function 讀取——
+        不寫在資料表、不經過瀏覽器，所以這裡沒有、也不該有輸入框。去識別化依裁決 15 固定啟用、不可關閉。
+        產出入口在 <Link to="/admin/documents">文件產生中心</Link>，送出前會先讓你看過實際要送出的全部文字。
       </OpsNotice>
       <div className="ops-form-grid">
-        <Select label="模型" value="" disabled onChange={() => {}}><option value="">（Phase 6 設定）</option></Select>
+        <Select label="模型" value="claude-opus-5" disabled onChange={() => {}}><option value="claude-opus-5">claude-opus-5（由 Edge Function 指定）</option></Select>
         <Select label="去識別化" value="on" disabled onChange={() => {}}><option value="on">固定啟用（裁決 15，不可關閉）</option></Select>
       </div>
     </article>
