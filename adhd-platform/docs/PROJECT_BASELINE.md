@@ -737,6 +737,52 @@ Notion 匯出造成同一張圖重複：`02-recommendation-db.tsx` 的 `map-guid
 **再生性**：`gen-k4-migration.mjs` 讀 `../Notion完整備份_2026-07-11`（該資料夾仍在文件區），故 K4 那支可重新產生——但只在能看到該備份的位置才行，D 槽的 `adhd-platform/..` 是 repo 根目錄，沒有這份備份。`gen-peer-group-registrations.mjs` 讀的 `peer-group-responses.private.csv` 則**只存在於該 OneDrive 副本**，刪掉就再也產不出來。
 
 **已刪除**：`_codex_maintenance/`（13,399 檔，HEAD `339ae4d` 經 `merge-base --is-ancestor` 確認為 `main` 祖先、工作樹 clean、無 stash、無額外分支；全樹比對的 15 個獨有檔全是 playwright 測試產物或 git 歷史可取回的原始碼，無任何私有檔）、空殼 `ADHD-Website-release/`。
-**保留待裁決**：`adhd-platform/`（OneDrive 副本）——刪除前提已因上述發現失效，需重新決定。
+**保留待裁決**：`adhd-platform/`（OneDrive 副本）——刪除前提已因上述發現失效，需重新決定。（已於 2026-08-06 重新裁決後刪除，見第 20 節。）
+
+## 20. 2026-08-06 註記靜默失敗、收件匣批次管理、舊副本收尾
+
+基準：`main` @ `008ef72`，CI run `31070052985` success，正式站主資源 `index-Dq4JLKvT.js`（本機重建 hash 相同）。
+
+### P1：內部註記完全無法儲存（`d8d81db`）
+
+兩個獨立的根因疊在一起，任一個單獨存在都不會這麼難發現：
+
+1. `addNote` 同時送 `contactId` 與 `registrationId`，而 `internal_notes` 有 `num_nonnulls(contact_id, registration_id, case_id) = 1` 的約束，每一次 POST 都回 400／23514。
+2. 該處理函式沒有 catch，被拒絕的 promise 沒有任何人接——**畫面看起來就跟成功一樣，輸入框甚至清空了**。
+
+修法：拿掉 `contactId`（下一行的 `listNotes` 本來就只用 `registrationId` 讀回來，設計上註記就是掛報名）；補 catch → `setError`。
+
+**驗收沒有用看畫面的方式做，因為看畫面正是這個 bug 騙過所有人的方法。** 用 esbuild 把真正的 `api.ts` 打包起來、指向本機假 PostgREST，錄下實際送出的 body：`contact_id: null`／`registration_id` 有值／`case_id: null`＝一個非空對象，符合約束。再用舊參數重跑一次，重現兩個非空對象＝違反——證明這個 harness 分辨得出差異，不是什麼都會過。
+
+### 靜默失敗體檢（`scripts/audit-silent-writes.mjs`）
+
+新增一支可重跑的掃描：先從各 api 層找出真的會寫入的函式（含只是轉呼叫的包裝），再掃四種呼叫模式——具名 async 函式、JSX 匿名處理函式、`void f()`、`f().then()` 未接 `.catch`、以及 `useEffect` 內的非同步寫入。
+
+⚠ **寫這支掃描時它自己先錯過一次**：`.then` 那條正規式從左往右比對，`if (confirm('…')) void f(x).then(` 裡的 `[^;]*?` 會從 `confirm(` 一路吃到 `f(x)`，於是呼叫者被認成 `confirm`、真正的 `f` 被吞掉且永不再檢查。改成從 `.then(` 往回走括號配對才抓到。**判準工具本身要有反向對照**：拿施工前的 commit 當對照組跑一次，抓到 10 處；施工後只剩 1 處（`SettingsPage.tsx:65`，包在自帶 try/catch 的 `run()` 裡，已標為疑似誤報但仍列出、不自行剔除）。
+
+修掉的全部：`RegistrationsOperationsPage` 的 `addNote`／`addTask`；`CasesOperationsPage` 的 `addNote`／`addTask`／`doTransfer` 與兩顆封存鈕（`.then(reload)` 沒接 `.catch`）。
+
+### 收件匣批次管理（`008ef72`）
+
+收件匣先前只有六個檢視篩選，沒有任何處置入口——灌進來的私人信件（其中一封內文含帳號與預設密碼）除了進 SQL Editor 之外無法清除。現在每列有勾選框、表頭可全選目前檢視，選取後可「標為已處理」或刪除。
+
+⚠ **刪除的順序不是美觀問題**：附件物件的讀取權限是拿路徑第一段的 thread id 去問 `can_access_thread`，thread 列一旦先刪掉，那些檔案就同時變成讀不到也刪不掉的孤兒，而裡面裝的正是要清掉的個資。因此一律先刪 storage 檔案、再刪列；檔案沒能全數刪除就整批中止，**不做半刪**（半刪的結果從畫面上完全看不出來）。此順序已列入 `check:operations` 守門。
+
+⚠ **勾選會與目前檢視取交集**：換了篩選卻留著看不見的勾，按下刪除就會刪到畫面上根本沒有的信。
+
+**migration `20260806000029` 待審未套用**：`email-attachments` bucket 只有 select policy，這支補上條件相同的 delete policy。純新增、對現行行為零影響。**未 push 到資料庫**——在它套用之前，刪除帶附件的信件會拒絕執行而不是半途成功。
+
+### `window.confirm` 全數退場
+
+範本刪除、回饋刪除、表單未存切換、個案兩顆封存鈕，全部改為站內兩段式確認。理由與上週前三處相同：**原生對話框在自動化瀏覽器裡會被自動取消，等於把負責代驗的視窗擋在門外**——「破壞性動作要人親手確認」與「這個動作永遠驗不到」是兩件不該互相交換的事。`check:operations` 的禁用範圍從原本三頁擴到五頁＋`EmailTemplateManager`。
+
+### 舊副本收尾
+
+`adhd-platform/` OneDrive 副本已刪（12,904／12,905 檔）。刪除前九個不可再生的檔案做了離線備份並以 SHA256 逐檔對照：**`D:\ADHD-private-backup\2026-08-06_ADHD專管系統_私有檔\`**。
+
+⚠ **唯一未刪**：`adhd-platform/.github/workflows/deploy.yml`。它是 OneDrive 雲端佔位檔、本機讀不到內容（同步提供者未執行），且該路徑不在 git 歷史，因此無法證明可安全捨棄——沒有檢查過的東西不刪。GitHub 只讀 repo 根目錄的 workflows，該副本不具作用。
+
+⚠ **保全動作本身製造過一個危險，已修正**：把兩支私有 migration 複製回 `supabase/migrations/` 之後，`20260713000001` 出現同版號兩檔（另一個是受版控的去識別化佔位檔），而 `20260717000002` 在 `migration list` 變成「未套用」——**任何人執行 `db push` 都會把含真實個資的 migration 送上正式庫**。已移到 `supabase/private/`（該目錄本來就存在且已放著 `20260804000004_favorite_contacts.sql`，是私有 migration 的正規位置，`.gitignore` 以目錄整個排除）。移動後 `migration list` 回到 41 支、僅 `20260806000029` 一支待套用。
 **未動**：`antigravity-staging/`、`components/`、`foundations/`（無 package.json、無 .git，屬文件非程式碼副本）。
+
 
