@@ -575,6 +575,11 @@ export async function deleteThreads(ids: string[]) {
   }
   const { error, count } = await db().from('email_threads').delete({ count: 'exact' }).in('id', ids);
   assert(error, '刪除信件失敗');
+  // 沒有錯誤不等於刪掉了東西：RLS 濾掉整批時 PostgREST 不報錯，只回 count 0。
+  // 少了這道守門，畫面會平靜地印出「已刪除 0 個對話」，而使用者以為信已經清掉了。
+  if (count === 0) {
+    throw new Error('一封也沒有刪除——資料庫接受了請求但沒有任何一列符合，通常代表權限（RLS）把它們濾掉了。信件仍在。');
+  }
   return { threads: count ?? ids.length, attachments: paths.length };
 }
 

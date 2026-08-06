@@ -259,7 +259,20 @@ requireText('src/admin/operations/api.ts', ['export async function markThreadsHa
     throw new Error('deleteThreads removes the thread rows before the attachment files; the files become unreadable and undeletable orphans.');
   }
 }
+// 刪除回 0 列不是成功。RLS 濾掉整批時 PostgREST 不報錯、只回 count 0，於是畫面平靜地印出
+// 「已刪除 0 個對話」而信件其實還在——沒有錯誤、沒有紅字，跟成功長得一模一樣。
+requireText('src/admin/operations/api.ts', ['if (count === 0)']);
 requireText('src/admin/pages/InboxPage.tsx', ['markThreadsHandled', 'deleteThreads', 'confirmingDelete', 'ops-thread-check', '全選這個檢視']);
+// Google refresh token 失效會讓四支函式同時全倒，修復腳本與排障步驟必須留在文件裡。
+requireText('DEPLOY.md', ['GOOGLE_TOKEN_ERROR', 'get-google-refresh-token.mjs', '已發布（In production）']);
+{
+  // 取 token 的腳本不得把憑證寫進任何檔案——它只該印在終端機。
+  const source = read('scripts/get-google-refresh-token.mjs');
+  if (/writeFileSync|appendFileSync|createWriteStream/.test(source)) {
+    throw new Error('get-google-refresh-token.mjs writes to disk; the refresh token must only ever reach the terminal.');
+  }
+  requireText('scripts/get-google-refresh-token.mjs', ["'access_type', 'offline'", "'prompt', 'consent'"]);
+}
 // 勾選要跟著檢視走：換篩選後留著看不見的勾，按下刪除就會刪到畫面上根本沒有的信。
 requireText('src/admin/pages/InboxPage.tsx', ['picked.filter((id) => visibleIds.includes(id))']);
 

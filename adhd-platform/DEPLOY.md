@@ -79,6 +79,27 @@ Google refresh token 至少需要：
 
 輪替 Google Client Secret 時，先建立新 secret、更新 Supabase secret 並完成寄信與 Calendar smoke test，確認成功後才撤銷舊 secret。不得把 secret 值貼進 issue、commit、Actions log 或本文件。
 
+### 排障：`GOOGLE_TOKEN_ERROR: Token has been expired or revoked.`
+
+**症狀**：收信與寄信同時全停。`gmail-sync`、`gmail-labels`、`send-email-v2`、`send-instructor-invite` 四支都靠同一個 `GOOGLE_REFRESH_TOKEN`，所以它一失效就是全倒，不是單一功能壞掉。稽核會留下 `gmail_sync` / `error` 一列。
+
+**修法**：本機跑一次
+
+```
+node scripts/get-google-refresh-token.mjs
+```
+
+它會問 Client ID 與 Client Secret（secret 輸入時不回顯），開一個 `http://localhost:53682/oauth2callback` 的本機 callback，把授權網址印出來讓你在瀏覽器完成同意，然後**只把 refresh token 印在終端機**——不寫檔、不寫 log。拿到後貼進 Supabase → Project Settings → Edge Functions → Secrets 的 `GOOGLE_REFRESH_TOKEN`，回後台整合設定按一次「同步 Gmail」確認恢復，然後把終端機分頁關掉（那一行是完整憑證）。
+
+執行前先確認 Google Cloud Console 的 OAuth 用戶端已把 `http://localhost:53682/oauth2callback` 列入「已授權的重新導向 URI」，否則會在同意畫面後被擋下。
+
+**⚠ 為什麼會過期——OAuth 同意畫面若停在「測試中（Testing）」，refresh token 固定 7 天後失效。** 這不是可以靠重新授權解決的問題：重新授權只會換來另一個 7 天後同樣失效的 token，於是每週重演一次。要停止重演，到 Google Auth Platform 把發布狀態改成 **「已發布（In production）」**——內部自用的應用不需要通過 Google 審查即可切換。在切換之前，把上面那支腳本當成每週例行工作看待，並且知道它治標不治本。
+
+**兩個常見的空手而回**：
+
+- 拿到回應卻沒有 `refresh_token` 欄位 → 該帳號先前已同意過，而請求少了 `prompt=consent`，Google 便跳過同意畫面且不再發新的 refresh token。腳本已固定帶 `prompt=consent`；若仍如此，到 <https://myaccount.google.com/permissions> 移除本應用的授權後重跑。
+- 拿到 token 但實際呼叫才失敗 → 同意畫面少勾了某個 scope。腳本會比對實際取得的 scope 並列出缺少的項目，看到警告就重跑並全部勾選。
+
 ## Auth 回跳設定
 
 Supabase Auth 的 Redirect URLs 至少包含：
