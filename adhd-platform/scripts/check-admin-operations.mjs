@@ -82,7 +82,25 @@ requireText('src/admin/operations/SessionTable.tsx', ['onReject(']);
 // 設定・聯絡人（03_v4）：聯絡人與類群可直接編輯，且兩條防假原則要留在畫面上——
 // 逾期門檻在 Phase 4 前只存值、Claude API 在 Phase 6 前不做輸入框。拿掉說明就等於假生效。
 requireText('src/admin/operations/SettingsTables.tsx', ['onPatch(', 'onToggleMember(', 'ops-member-chip']);
-requireText('src/admin/pages/SettingsPage.tsx', ['<ContactTable', '<GroupEditor', 'Phase 4', 'Phase 6', '待審閱']);
+// 逾期門檻原本是「只存值、Phase 4 才生效」，那句話當時是誠實的。Phase 4 接線之後它反過來
+// 變成不實敘述——說明文字必須跟著功能走，過期的免責聲明和假生效一樣會誤導人。改成斷言
+// 「已生效」的說法在，並禁用舊句子，免得有人把警語又貼回來。
+requireText('src/admin/pages/SettingsPage.tsx', ['<ContactTable', '<GroupEditor', 'Phase 6', '待審閱', '已生效']);
+if (read('src/admin/pages/SettingsPage.tsx').includes('現在只是存起來')) {
+  throw new Error('SettingsPage.tsx still says the overdue threshold is not wired up; Phase 4 connected it and the text is now false.');
+}
+// 「自動＋可覆寫」的表頭必須有對應的入口，而且覆寫要留下原因。
+requireText('src/admin/operations/RegistrationTable.tsx', ['export function MailOverrideEditor', 'setMailStateOverride', '覆寫原因（必填）']);
+requireText('src/admin/operations/api.ts', ['export async function setMailStateOverride', 'mail_state_override_reason', 'mail_state_override_by']);
+requireText('src/admin/pages/RegistrationsOperationsPage.tsx', ['<MailOverrideEditor']);
+{
+  // 覆寫不得改寫 mail_state：那一欄記的是最後真的發生什麼，蓋掉它就沒有東西可以還原。
+  const source = withoutComments(read('src/admin/operations/api.ts'));
+  const fn = source.slice(source.indexOf('export async function setMailStateOverride'));
+  if (/mail_state:/.test(fn.slice(0, fn.indexOf('\nexport ')))) {
+    throw new Error('setMailStateOverride writes mail_state itself; the override must sit beside the automatic value, not replace it.');
+  }
+}
 requireText('src/router.tsx', ["path: 'settings'", "path: 'documents'"]);
 // 文件產生中心在 Phase 6 前是佔位頁：產出鈕必須是停用的，且必須說明何時啟用。
 // 一顆看起來能按、按了沒反應的產出鈕，正是這個專案最初四大重症裡的「死按鈕」。

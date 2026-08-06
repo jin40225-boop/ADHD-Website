@@ -1,5 +1,8 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import type { SessionSlot } from '@contracts/types';
+import { Select, TextInput } from '@/components/ui/FormField/FormField';
+import { WarmButton } from '@/components/ui/WarmButton/WarmButton';
+import { setMailStateOverride } from './api';
 import type { ContactRecord, MailState, OperationalRegistration } from './types';
 
 /** 03_v4 的核可狀態流。值一個都沒改，只有標籤改成定稿用語＋新增 reschedule。 */
@@ -14,7 +17,7 @@ const STATUS_TONE: Record<string, string> = {
   waitlist: 'orange', rejected: 'red', reschedule: 'purple', withdrawn: 'gray', cancelled: 'gray',
 };
 
-const MAIL_LABEL: Record<MailState, string> = {
+export const MAIL_LABEL: Record<MailState, string> = {
   not_sent: '未寄信', waiting_reply: '已寄出・等待回覆', overdue: '⚠ 逾期未回覆', reminded: '已催覆',
   replied_pending: '🔴 已回覆・待處理', handled: '已處理', attend_confirmed: '✅ 已確認出席', reschedule_requested: '🔁 請假改期',
 };
@@ -75,6 +78,56 @@ export function MailStatusTag({ registration }: { registration: OperationalRegis
 
 function daysSince(iso: string) {
   return Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86400000));
+}
+
+/**
+ * 手動覆寫信件狀態（裁決 11）。欄位（`mail_state_override` 一組四欄）從 Phase 1 就在，
+ * 表頭也一直寫著「自動＋可覆寫」，但一直沒有入口——宣稱有、實際沒有，比誠實地寫「不可改」更糟。
+ *
+ * 覆寫不動 `mail_state`：那一欄記的是最後真的發生了什麼，改它等於竄改事實。原因必填，
+ * 因為覆寫是一個人推翻系統判斷的決定，三個月後要看得懂當初為什麼。
+ */
+export function MailOverrideEditor({ registration, onDone, onError }: {
+  registration: OperationalRegistration;
+  onDone: (message: string) => Promise<void> | void;
+  onError: (message: string) => void;
+}) {
+  const status = registration.mailStatus;
+  const [open, setOpen] = useState(false);
+  const [state, setState] = useState<MailState | ''>(status?.override ?? '');
+  const [reason, setReason] = useState(status?.overrideReason ?? '');
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { setState(status?.override ?? ''); setReason(status?.overrideReason ?? ''); setOpen(false); }, [registration.id, status?.override, status?.overrideReason]);
+
+  if (!status?.threadId) {
+    return <p className="ops-override-hint">尚無信件往來，沒有可覆寫的對象——寄出第一封信之後這裡才會出現覆寫入口。</p>;
+  }
+  const save = async (next: MailState | null) => {
+    setBusy(true);
+    try {
+      await setMailStateOverride(status.threadId, next, reason);
+      await onDone(next ? `信件狀態已手動覆寫為「${MAIL_LABEL[next]}」，原因已記錄。` : '已收回手動覆寫，交還給自動判定。');
+      setOpen(false);
+    } catch (e) { onError(e instanceof Error ? e.message : '覆寫信件狀態失敗'); }
+    finally { setBusy(false); }
+  };
+  if (!open) {
+    return <p className="ops-override-hint">
+      {status.override ? <>目前為手動覆寫（自動判定為「{MAIL_LABEL[status.auto]}」）。</> : '目前依系統自動判定。'}
+      <button type="button" className="ops-override-toggle" onClick={() => setOpen(true)}>手動覆寫…</button>
+    </p>;
+  }
+  return <div className="ops-override-box">
+    <Select label="覆寫為" value={state} onChange={(e) => setState(e.target.value as MailState | '')} disabled={busy}>
+      <option value="">（不覆寫，使用自動判定）</option>
+      {(Object.keys(MAIL_LABEL) as MailState[]).map((key) => <option key={key} value={key}>{MAIL_LABEL[key]}</option>)}
+    </Select>
+    <TextInput label="覆寫原因（必填）" value={reason} onChange={(e) => setReason(e.target.value)} disabled={busy} placeholder="例：改用 LINE 聯繫中、電話已確認出席" />
+    <div className="ops-button-row">
+      <WarmButton size="sm" onClick={() => void save(state === '' ? null : state)} disabled={busy || (state !== '' && !reason.trim())}>{busy ? '儲存中…' : state === '' ? '收回覆寫' : '儲存覆寫'}</WarmButton>
+      <WarmButton size="sm" variant="secondary" onClick={() => setOpen(false)} disabled={busy}>取消</WarmButton>
+    </div>
+  </div>;
 }
 
 const nameColumn: RegistrationColumn = {

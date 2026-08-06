@@ -94,3 +94,7 @@
 .ops-thread-row{align-items:flex-start;display:flex;gap:.5rem}
 .ops-thread-row .ops-list-button{flex:1;min-width:0}
 .ops-thread-check{margin-top:1rem}
+/* --- 信件狀態手動覆寫（裁決 11：可覆寫必須真的有入口） --- */
+.ops-override-hint{color:#7c675e;font-size:.78rem;margin:.35rem 0 0}
+.ops-override-toggle{background:none;border:0;color:#9a5b3d;cursor:pointer;font:inherit;font-size:.78rem;font-weight:700;padding:0 .3rem;text-decoration:underline}
+.ops-override-box{background:#fffaf1;border:1px solid #e2cda8;border-radius:12px;display:grid;gap:.5rem;margin-top:.5rem;padding:.7rem}

@@ -129,8 +129,8 @@ export default function SettingsPage() {
       <div className="ops-form-grid">
         <TextInput type="number" label="逾期門檻（天）" value={daysDraft} onChange={(e) => setDaysDraft(e.target.value)} />
       </div>
-      <OpsNotice tone="warning">
-        這個門檻<b>現在只是存起來</b>：信件狀態機要到 <b>Phase 4</b> 才會依它判定「逾期未回覆」。在那之前改這個數字，後台顯示的信件狀態不會有任何變化——不是壞了，是還沒接線。
+      <OpsNotice tone="info">
+        這個門檻<b>已生效</b>（Phase 4 已接線）：<b>寄出信件的當下</b>用它算出那封信的回覆期限，存在該信件串上；催覆信裡寫的期限也讀這個值。<b>改這個數字只影響之後寄出的信</b>——既有信件的期限在寄出時就已經定了，不會回頭重算。
       </OpsNotice>
       <div className="ops-button-row"><WarmButton onClick={() => void saveDays()}>儲存門檻</WarmButton></div>
       {/* 第三條收信規則，可複選。存的是 label id、畫面上顯示名稱——標籤改名時 id 不變，

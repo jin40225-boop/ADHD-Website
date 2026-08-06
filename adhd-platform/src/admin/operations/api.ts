@@ -515,6 +515,27 @@ export async function markThreadRead(id: string) {
   assert(messages.error, '更新信件已讀狀態失敗');
 }
 
+/**
+ * 手動覆寫信件狀態（裁決 11：所有自動狀態都可人工覆寫，且修改要留歷程）。
+ *
+ * 覆寫值存在 `mail_state_override`，顯示時優先於自動判定；`mail_state` 本身不動，
+ * 因為它記的是「最後真的發生了什麼」，把它改掉等於竄改事實。傳 null 就是收回覆寫、
+ * 交還給自動判定。原因是必填——沒有原因的覆寫，三個月後沒有人知道當初為什麼要蓋掉。
+ */
+export async function setMailStateOverride(threadId: string, override: MailState | null, reason: string) {
+  if (!threadId) throw new Error('這筆報名還沒有任何信件往來，沒有可覆寫的對象。');
+  if (override && !reason.trim()) throw new Error('請填寫覆寫原因。');
+  const { data: auth } = await db().auth.getUser();
+  const now = new Date().toISOString();
+  const { error } = await db().from('email_threads').update({
+    mail_state_override: override,
+    mail_state_override_reason: override ? reason.trim() : null,
+    mail_state_override_by: override ? auth.user?.id ?? null : null,
+    mail_state_override_at: override ? now : null,
+  }).eq('id', threadId);
+  assert(error, '覆寫信件狀態失敗');
+}
+
 /** 批次標為已處理：紅點與待回覆一起收掉，否則清單看起來還是有事情要做。 */
 export async function markThreadsHandled(ids: string[]) {
   if (!ids.length) return 0;

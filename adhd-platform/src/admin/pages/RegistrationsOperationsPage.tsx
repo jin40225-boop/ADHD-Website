@@ -9,7 +9,7 @@ import { createCaseFromRegistration, getAppSettings, importGmailHistory, listCon
 import type { ContactRecord, InternalNote, OperationalRegistration, WorkPriority } from '../operations/types';
 import { EmptyPanel, InlineSpinner, OpsNotice, PageHeader, SavingIndicator } from '../operations/components';
 import {
-  DEFAULT_COLUMNS, MailStatusTag, NAVIGATOR_COLUMNS, PARENT_COLUMNS, PEER_COLUMNS, RegistrationTable, STATUS_LABEL, STATUS_OPTIONS,
+  DEFAULT_COLUMNS, MailOverrideEditor, MailStatusTag, NAVIGATOR_COLUMNS, PARENT_COLUMNS, PEER_COLUMNS, RegistrationTable, STATUS_LABEL, STATUS_OPTIONS,
   toLocalInput, type RegistrationColumn, type RegistrationPatch, type RowContext,
 } from '../operations/RegistrationTable';
 
@@ -207,7 +207,7 @@ export default function RegistrationsOperationsPage() {
               <TextInput label="負責人 UUID" value={draft.assignedTo ?? ''} onChange={(e) => setDraft({ ...draft, assignedTo: e.target.value })} placeholder="可留空" />
             </div>
             <div className="ops-kv">
-              <div><dt>✉ 信件狀態</dt><dd><MailStatusTag registration={current.registration} /></dd></div>
+              <div><dt>✉ 信件狀態</dt><dd><MailStatusTag registration={current.registration} /><MailOverrideEditor registration={current.registration} onDone={async (message) => { await reload(); setNotice(message); }} onError={setError} /></dd></div>
               <div><dt>☑ 已寄信提醒</dt><dd><label className="ops-inline-check"><input type="checkbox" checked={Boolean(current.registration.reminderSentAt)} onChange={(e) => void patchRegistration(current.registration.id, { reminderSentAt: e.target.checked ? new Date().toISOString() : null })} />{current.registration.reminderSentAt ? new Date(current.registration.reminderSentAt).toLocaleString('zh-TW') : '尚未寄送'}</label></dd></div>
               <div><dt>◉ 諮商師回覆確認</dt><dd><Select label="" value={current.registration.counselorConfirmed === true ? 'yes' : current.registration.counselorConfirmed === false ? 'no' : ''} onChange={(e) => void patchRegistration(current.registration.id, { counselorConfirmed: e.target.value === 'yes' ? true : e.target.value === 'no' ? false : null })}><option value="">—</option><option value="yes">可</option><option value="no">不可</option></Select></dd></div>
               <div><dt>✅ 最終確定時段</dt><dd><TextInput type="datetime-local" label="" value={toLocalInput(current.registration.finalSlotAt)} onChange={(e) => void patchRegistration(current.registration.id, { finalSlotAt: e.target.value ? new Date(e.target.value).toISOString() : null })} /></dd></div>

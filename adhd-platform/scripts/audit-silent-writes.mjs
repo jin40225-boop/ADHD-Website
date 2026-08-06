@@ -70,20 +70,45 @@ for (const file of files) {
     ...src.matchAll(/const (\w+)\s*=\s*async\s*\([^)]*\)\s*=>/g),
     ...src.matchAll(/async function (\w+)\s*\([^)]*\)/g),
   ];
+
+  /**
+   * 共用錯誤包裝器：同一個檔案裡自己就有 try/catch 的 async 函式（SettingsPage 的 run() 是這型）。
+   * 寫入被交給它執行時，錯誤已經有人接了——把這種情況也報出來，每次體檢都會重報同一筆，
+   * 久了就沒人看報告。所以改成看「這個 await 是不是落在傳給包裝器的參數裡」。
+   */
+  const safeWrappers = new Set(
+    named.filter((m) => { const b = sliceBody(src, m.index + m[0].length); return b.includes('try {') && b.includes('catch'); })
+      .map((m) => m[1]),
+  );
+  /** 傳給包裝器的參數區間（含巢狀括號），用來判斷某個位置是否已被接住。 */
+  const guardedSpans = (body) => [...body.matchAll(/(\w+)\(/g)].flatMap((call) => {
+    if (!safeWrappers.has(call[1])) return [];
+    let depth = 0;
+    for (let i = call.index + call[0].length - 1; i < body.length; i += 1) {
+      if (body[i] === '(') depth += 1;
+      else if (body[i] === ')') { depth -= 1; if (depth === 0) return [[call.index, i]]; }
+    }
+    return [[call.index, body.length]];
+  });
+  const unguarded = (body) => {
+    const spans = guardedSpans(body);
+    return [...body.matchAll(/await\s+(\w+)\(/g)]
+      .filter((x) => writers.has(x[1]) && !spans.some(([from, to]) => x.index > from && x.index < to))
+      .map((x) => x[1]);
+  };
+
   for (const m of named) {
     const body = sliceBody(src, m.index + m[0].length);
-    const awaited = [...body.matchAll(/await\s+(\w+)\(/g)].map((x) => x[1]).filter((n) => writers.has(n));
-    if (awaited.length && !body.includes('try {')) {
-      // 包在一個自己有 try/catch 的 runner 裡（例如 run(id, async () => {...})）＝已被接住
-      const wrapped = /await\s+run\(/.test(body) && /const run\s*=\s*async[\s\S]{0,400}try \{/.test(src);
-      add(m.index, 'await 無 try/catch', `${m[1]}()`, awaited, wrapped ? '包在自帶 try/catch 的 run() 內，可能為誤報' : undefined);
-    }
+    if (body.includes('try {')) continue;
+    const awaited = unguarded(body);
+    if (awaited.length) add(m.index, 'await 無 try/catch', `${m[1]}()`, awaited);
   }
 
   for (const m of src.matchAll(/(?:onClick|onChange|onBlur|onSubmit|onKeyDown)=\{\s*async\s*\([^)]*\)\s*=>/g)) {
     const body = sliceBody(src, m.index + m[0].length);
-    const awaited = [...body.matchAll(/await\s+(\w+)\(/g)].map((x) => x[1]).filter((n) => writers.has(n));
-    if (awaited.length && !body.includes('try {')) add(m.index, 'JSX 匿名處理函式無 try/catch', '(inline)', awaited);
+    if (body.includes('try {')) continue;
+    const awaited = unguarded(body);
+    if (awaited.length) add(m.index, 'JSX 匿名處理函式無 try/catch', '(inline)', awaited);
   }
 
   for (const m of src.matchAll(/useEffect\(/g)) {
