@@ -101,6 +101,13 @@ requireText('supabase/migrations/20260806000030_contact_group_admin.sql', [
 // 變成不實敘述——說明文字必須跟著功能走，過期的免責聲明和假生效一樣會誤導人。改成斷言
 // 「已生效」的說法在，並禁用舊句子，免得有人把警語又貼回來。
 requireText('src/admin/pages/SettingsPage.tsx', ['<ContactTable', '<GroupEditor', 'Phase 6', '待審閱', '已生效']);
+// 審閱狀態要有切換入口，否則「六封改 approved」永遠只能下 SQL——一個只能靠 SQL 完成的
+// 待辦會一直掛著。狀態改動不走 adminSaveEmailTemplate：審閱是獨立決定，不該因為改錯字就變。
+requireText('src/admin/operations/api.ts', ['export async function setTemplateReviewStatus']);
+requireText('src/admin/pages/SettingsPage.tsx', ['setTemplateReviewStatus', '標為定稿']);
+if (read('src/lib/api.ts').includes('review_status: template.reviewStatus')) {
+  throw new Error('adminSaveEmailTemplate writes review_status; editing a typo would silently flip a template back to draft (or to approved).');
+}
 if (read('src/admin/pages/SettingsPage.tsx').includes('現在只是存起來')) {
   throw new Error('SettingsPage.tsx still says the overdue threshold is not wired up; Phase 4 connected it and the text is now false.');
 }

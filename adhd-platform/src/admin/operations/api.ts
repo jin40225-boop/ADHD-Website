@@ -311,6 +311,19 @@ export async function deleteContactGroup(groupId: string) {
   if (count === 0) throw new Error('沒有刪除任何類群——資料庫接受了請求但沒有符合的列，通常是權限（RLS）把它濾掉了。');
 }
 
+/**
+ * 範本審閱狀態。
+ *
+ * `adminSaveEmailTemplate` 只送 name／subject／body，刻意不碰這一欄——審閱是一個獨立的決定，
+ * 不該因為有人改了一個錯字就跟著變。改動由 `trg_email_templates_audit` 記錄（019 起就涵蓋
+ * review_status），所以這裡不必自己寫稽核。
+ */
+export async function setTemplateReviewStatus(templateId: string, status: 'draft' | 'approved') {
+  const { error, count } = await db().from('email_templates').update({ review_status: status }, { count: 'exact' }).eq('id', templateId);
+  assert(error, '更新審閱狀態失敗');
+  if (count === 0) throw new Error('沒有更新任何範本——資料庫接受了請求但沒有符合的列，通常是權限（RLS）把它濾掉了。');
+}
+
 export async function setContactGroupMember(groupId: string, contactId: string, member: boolean) {
   const query = member
     ? db().from('contact_group_members').insert({ group_id: groupId, contact_id: contactId, source: 'manual' })

@@ -9,7 +9,7 @@ import { TextInput, Select } from '@/components/ui/FormField/FormField';
 import { WarmButton } from '@/components/ui/WarmButton/WarmButton';
 import { adminListEmailTemplates } from '@/lib/api';
 import {
-  createContact, createContactGroup, deleteContactGroup, getAppSettings, listContactGroups, listContacts, listGmailLabels, setContactGroupMember, updateAppSettings, updateContact,
+  createContact, createContactGroup, deleteContactGroup, getAppSettings, listContactGroups, listContacts, listGmailLabels, setContactGroupMember, setTemplateReviewStatus, updateAppSettings, updateContact,
 } from '../operations/api';
 import type { AppSettings, ContactGroupRecord, ContactRecord, GmailLabel } from '../operations/types';
 import { ContactTable, GroupEditor } from '../operations/SettingsTables';
@@ -234,10 +234,22 @@ export default function SettingsPage() {
           <td>{template.reviewStatus === 'draft'
             ? <span className="ops-status ops-status--yellow">待審閱</span>
             : <span className="ops-status ops-status--green">已定稿</span>}</td>
-          <td><Link className="ops-link-button" to="/admin/templates">編輯全文</Link></td>
+          <td>
+            <button
+              type="button"
+              className="ops-link-button"
+              disabled={busyId === template.id}
+              onClick={() => void run(template.id, () => setTemplateReviewStatus(template.id, template.reviewStatus === 'draft' ? 'approved' : 'draft'),
+                template.reviewStatus === 'draft' ? `「${template.name}」已標為定稿。` : `「${template.name}」已退回待審閱。`)}
+            >{template.reviewStatus === 'draft' ? '標為定稿' : '退回待審閱'}</button>
+            <Link className="ops-link-button" to="/admin/templates">編輯全文</Link>
+          </td>
         </tr>)}</tbody>
       </table></div>
-      <OpsNotice tone="info">6 封草稿依計畫在 <b>Phase 4</b> 以「變數帶入後的預覽」逐封審定；審定後才會把狀態改為已定稿。</OpsNotice>
+      <OpsNotice tone="info">
+        審閱請到<Link to="/admin/templates">範本管理頁</Link>看全文，確認後回這裡按「標為定稿」——狀態改動會記錄歷程。
+        還有 {drafts.length} 封待審閱。
+      </OpsNotice>
     </article>
   </section>;
 }
