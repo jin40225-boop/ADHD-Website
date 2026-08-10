@@ -339,24 +339,34 @@ const sessionSelectColumn: RegistrationColumn = {
     // 每一個被勾選的時段都扣掉了一個名額。家長「可複選」是刻意的（先給幾個可以配合
     // 的時間），但最終一定要收斂成一個；而確認錄取只改狀態、不會動 session_ids，
     // 多的那些就會一直被佔著。這裡把實況攤開，並給一鍵收斂。
-    if (row.heldSessions.length > 1) {
+    const multi = row.heldSessions.length > 1;
+    // 已完成／已取消的場次不列入可選項——這份清單是用來「改成哪一場」的，
+    // 把歷年場次全列出來只會讓清單長到難用。目前掛著的那些一定保留，否則會從自己的格子裡消失。
+    const held = new Set(row.heldSessions.map((session) => session.id));
+    const options = row.projectSessions.filter(
+      (session) => held.has(session.id) || session.id === row.session?.id
+        || (session.status !== 'done' && session.status !== 'cancelled'),
+    );
+    // 收斂動作沿用同一顆下拉——挑一個時段本來就是下拉的事，不必為這個情況換一種控制項。
+    // 下拉的 onChange 一直都是 setSessions([一個 id])，本來就會收斂；缺的只是「看得出佔了幾個」。
+    if (multi) {
       return <div className="ops-multi-slot">
         <span className="ops-multi-slot__warn">⚠ 佔用 {row.heldSessions.length} 個時段</span>
-        {row.heldSessions.map((session) => <button
-          type="button"
-          key={session.id}
-          className="ops-multi-slot__pick"
+        <select
+          className="ops-cell-select ops-cell-select--red"
+          value=""
           disabled={row.busy}
-          title="只保留這個時段，其餘自動釋放名額"
-          onClick={() => row.setSessions([session.id])}
-        >{slotLabel(session)}　只留這個</button>)}
+          title="選一個時段收斂；其餘時段的名額會自動釋放"
+          onChange={(e) => e.target.value && row.setSessions([e.target.value])}
+        >
+          <option value="">選定一個時段…</option>
+          {options.map((session) => <option key={session.id} value={session.id}>
+            {slotLabel(session)}｜{session.title}{held.has(session.id) ? '（目前佔用）' : ''}
+          </option>)}
+        </select>
+        <small className="ops-multi-slot__list">目前佔住：{row.heldSessions.map(slotLabel).join('、')}</small>
       </div>;
     }
-    // 已完成／已取消的場次不列入可選項——這份清單是用來「改成哪一場」的，
-    // 把歷年場次全列出來只會讓清單長到難用。目前掛著的那一場一定保留，否則它會從自己的格子裡消失。
-    const options = row.projectSessions.filter(
-      (session) => session.id === row.session?.id || (session.status !== 'done' && session.status !== 'cancelled'),
-    );
     return <select
       className={`ops-cell-select ops-cell-select--${row.session ? 'green' : 'gray'}`}
       value={row.session?.id ?? ''}
