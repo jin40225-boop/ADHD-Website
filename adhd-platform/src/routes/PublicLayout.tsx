@@ -14,6 +14,8 @@ const NAV = [
   { to: '/peer-group', label: '互助聚會' },
   { to: '/navigator', label: '心理師諮詢' },
   { to: '/parent', label: '家長諮詢' },
+  { to: '/career', label: '職場諮詢' },
+  { to: '/co-host', label: '協辦活動' },
   { to: '/map', label: '就醫推薦' },
   { to: '/guide', label: '新手指南' },
   { to: '/articles', label: '入門文章' },

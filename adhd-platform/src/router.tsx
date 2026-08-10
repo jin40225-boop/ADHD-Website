@@ -14,6 +14,8 @@ import HomePage from '@/pages/public/HomePage';
 import PeerGroupPage from '@/pages/public/PeerGroupPage';
 import NavigatorConsultPage from '@/pages/public/NavigatorConsultPage';
 import ParentConsultPage from '@/pages/public/ParentConsultPage';
+import CareerConsultPage from '@/pages/public/CareerConsultPage';
+import CoHostPage from '@/pages/public/CoHostPage';
 import RecommendationMapPage from '@/pages/public/RecommendationMapPage';
 import SubmitRecommendationPage from '@/pages/public/SubmitRecommendationPage';
 import NewbieGuidePage from '@/pages/public/NewbieGuidePage';
@@ -61,6 +63,10 @@ const router = createBrowserRouter([
     { path: 'navigator/register', element: <RegisterPage slug="navigator" showPastSessions /> },
     { path: 'parent', element: <ParentConsultPage /> },
     { path: 'parent/register', element: <RegisterPage slug="parent" /> },
+    { path: 'career', element: <CareerConsultPage /> },
+    { path: 'career/register', element: <RegisterPage slug="career" /> },
+    // 協辦活動沒有 register 路由：報名一律在主辦單位的表單，本站不受理。
+    { path: 'co-host', element: <CoHostPage /> },
     { path: 'map', element: <RecommendationMapPage /> },
     { path: 'map/submit', element: <SubmitRecommendationPage /> },
     { path: 'guide', element: <NewbieGuidePage /> },

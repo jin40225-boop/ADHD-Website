@@ -1,4 +1,4 @@
-import type { Registration } from '@contracts/types';
+import type { CoHostInfo, Registration } from '@contracts/types';
 
 export type ContactStatus = 'active' | 'inactive' | 'do_not_contact' | 'archived';
 export type WorkPriority = 'low' | 'normal' | 'high' | 'urgent';
@@ -206,6 +206,8 @@ export interface ActivityRecord {
   createdAt: string;
   sessionCount?: number;
   registrationCount?: number;
+  /** 協辦活動的合作資訊（主辦單位、我方角色、對方報名連結）。非協辦活動留空。 */
+  coHost?: CoHostInfo;
 }
 
 export interface TeamMemberRecord {

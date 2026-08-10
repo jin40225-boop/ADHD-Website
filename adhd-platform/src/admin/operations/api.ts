@@ -667,10 +667,32 @@ export async function listActivities(): Promise<ActivityRecord[]> {
     endsAt: row.ends_at ?? undefined,
     createdAt: row.created_at,
     sessionCount: row.sessions?.length ?? 0,
+    coHost: row.cohost_info ?? undefined,
   }));
 }
 
+/** 五個鍵全空＝不是協辦活動，整包寫回 null，別在資料庫留一個空殼物件。 */
+function coHostPayload(input?: ActivityRecord['coHost']) {
+  if (!input) return null;
+  const cleaned = {
+    partner: input.partner?.trim() || '',
+    myRole: input.myRole?.trim() || '',
+    formUrl: input.formUrl?.trim() || '',
+    infoUrl: input.infoUrl?.trim() || '',
+    note: input.note?.trim() || '',
+  };
+  const filled = Object.fromEntries(Object.entries(cleaned).filter(([, v]) => v !== ''));
+  return Object.keys(filled).length ? filled : null;
+}
+
 export async function saveActivity(input: Omit<ActivityRecord, 'id' | 'createdAt'> & { id?: string }) {
+  // 對外連結只收 http/https：這一欄會被匿名前台 render 成 <a href>，
+  // 不擋就等於把 javascript: 之類的 scheme 開給後台帳號（或誤貼）。
+  for (const url of [input.coHost?.formUrl, input.coHost?.infoUrl]) {
+    if (url?.trim() && !/^https?:\/\//i.test(url.trim())) {
+      throw new Error('報名表單／活動頁網址必須以 http:// 或 https:// 開頭。');
+    }
+  }
   const payload = {
     project_id: input.projectId,
     name: input.name.trim(),
@@ -678,6 +700,7 @@ export async function saveActivity(input: Omit<ActivityRecord, 'id' | 'createdAt
     public_summary: input.publicSummary?.trim() || null,
     starts_at: input.startsAt || null,
     ends_at: input.endsAt || null,
+    cohost_info: coHostPayload(input.coHost),
   };
   const query = input.id
     ? db().from('activities').update(payload).eq('id', input.id)

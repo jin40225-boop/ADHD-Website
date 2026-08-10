@@ -9,7 +9,7 @@ import { createCaseFromRegistration, getAppSettings, importGmailHistory, listCon
 import type { ContactRecord, InternalNote, OperationalRegistration, WorkPriority } from '../operations/types';
 import { EmptyPanel, InlineSpinner, OpsNotice, PageHeader, SavingIndicator } from '../operations/components';
 import {
-  DEFAULT_COLUMNS, MailOverrideEditor, MailStatusTag, NAVIGATOR_COLUMNS, PARENT_COLUMNS, PEER_COLUMNS, RegistrationTable, STATUS_LABEL, STATUS_OPTIONS,
+  CAREER_COLUMNS, DEFAULT_COLUMNS, MailOverrideEditor, MailStatusTag, NAVIGATOR_COLUMNS, PARENT_COLUMNS, PEER_COLUMNS, RegistrationTable, STATUS_LABEL, STATUS_OPTIONS,
   toLocalInput, type RegistrationColumn, type RegistrationPatch, type RowContext,
 } from '../operations/RegistrationTable';
 
@@ -18,6 +18,8 @@ const TABS: { slug: string; label: string; columns: RegistrationColumn[] }[] = [
   { slug: 'navigator', label: '導航計畫', columns: NAVIGATOR_COLUMNS },
   { slug: 'parent', label: '親職諮詢', columns: PARENT_COLUMNS },
   { slug: 'peer-group', label: '同儕聚會', columns: PEER_COLUMNS },
+  { slug: 'career', label: '職場諮詢', columns: CAREER_COLUMNS },
+  // 協辦活動刻意沒有分頁：報名在主辦單位的表單，本站不會有那些活動的報名資料。
   { slug: 'all', label: '全部', columns: DEFAULT_COLUMNS },
 ];
 const MAIL_FILTERS: { value: string; label: string }[] = [
