@@ -39,6 +39,8 @@ type PublicSession = {
   capacity: number;
   booked_count: number;
   status: 'open' | 'full';
+  /** 所屬活動；協辦活動靠它判斷報名是否在合作單位那邊。 */
+  activity_id: string | null;
 };
 
 type PublicRecommendation = {
@@ -237,22 +239,32 @@ server.registerTool(
       const projectIds = new Set(selected.map((project) => project.id));
       const projectById = new Map(selected.map((project) => [project.id, project]));
       const sessions = await publicQuery<PublicSession>('sessions_public', {
-        select: 'id,project_id,title,starts_at,ends_at,capacity,booked_count,status',
+        select: 'id,project_id,title,starts_at,ends_at,capacity,booked_count,status,activity_id',
         status: 'in.(open,full)',
         ends_at: `gte.${new Date().toISOString()}`,
         order: 'starts_at.asc',
         limit: '100',
       });
+      // 哪些活動的報名在合作單位那邊。**不能用 capacity === 0 判斷**——名額是後台
+      // 可以隨手改的顯示欄位（實際上已經被改過一次），拿它當語意判準會在名額被
+      // 「修好」的那一刻悄悄失準，然後對外宣稱協辦活動「已額滿」。
+      const externalActivities = new Set(
+        (await publicQuery<{ id: string; cohost_info?: { formUrl?: string } }>('activities_public', {
+          select: 'id,cohost_info',
+        }))
+          .filter((activity) => activity.cohost_info?.formUrl)
+          .map((activity) => activity.id),
+      );
       const safeSessions = sessions
         .filter((session) => projectIds.has(session.project_id))
         .slice(0, limit)
         .map((session) => {
           const project = projectById.get(session.project_id)!;
-          // 名額 0 ＝ 這場的報名不由本站管理（協辦活動：報名在主辦單位的表單，
-          // 我方的 booked_count 永遠是 0）。照算 remaining 會得到 0，讀到這份資料的
-          // AI 就會對外宣稱「已額滿」——那是假資訊。這種場次一律不回報名額數字，
-          // 改回一句說明。判準用 capacity 而非 slug，之後有別的外部報名活動也自動適用。
-          const externallyManaged = session.capacity === 0;
+          // 報名在合作單位那邊的場次一律不回報名額數字。我方的 booked_count 永遠是 0，
+          // 照算 remaining 會得到 0，讀到這份資料的 AI 就會對外宣稱「已額滿」——那是假資訊。
+          // 判準是「所屬活動填了對方的報名表單」，與資料庫的 block_external_registration
+          // 同一個依據，不會因為有人調整名額而失準。
+          const externallyManaged = Boolean(session.activity_id && externalActivities.has(session.activity_id));
           return {
             id: session.id,
             service: project.slug,
