@@ -24,7 +24,7 @@ export default function ParentConsultPage() {
 <p className="leading-relaxed text-lg font-medium text-justify">
                         在陪伴 ADHD 孩子的路上，您是否時常感到心力交瘁，覺得沒有人懂您的無力感？<br/>
                         或您想問問「服藥是什麼感覺？」、「為什麼要這樣做？」這些問題我想長大後的成年ADHD可以回答！<br/><br/>
-                        為了支持在教養路上感到疲憊的家長，我們特別推出專屬的免費公益諮詢服務。由身兼「成人 ADHD（大A）」與「前兒少社會工作者」雙重身分的專業工作者為您解答。<br/>
+                        為了支持在教養路上感到疲憊的家長，我們特別推出專屬的免費公益諮詢服務。由<strong>大A社工督導 彥宇、心理師 鏡子、特教老師 Lisa</strong> 共同陪伴家長一個小時，提供專業與 ADHD 經驗親職建議！<br/>
                         我們將根據您的具體議題與需求，彈性邀請相關專業人員或其他大A夥伴共同參與，為您打造最貼近需求、最懂您的專屬對話空間。
                     </p>
 <div className="text-center mt-2 py-2">

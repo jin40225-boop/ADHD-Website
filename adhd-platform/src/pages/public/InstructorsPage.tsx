@@ -20,7 +20,7 @@ export default function InstructorsPage() {
             倡議團隊與合作講師
           </h1>
           <p className="mt-2 text-sm md:text-base">
-            由過來人大 A、專業心理師與身障中心社工共同建構的公益服務團隊。
+            由過來人大 A、專業心理師、特教老師與身障中心社工共同建構的公益服務團隊。
           </p>
         </div>
 
