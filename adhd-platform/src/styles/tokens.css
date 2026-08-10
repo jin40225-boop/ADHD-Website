@@ -150,26 +150,64 @@
   background: linear-gradient(transparent 60%, var(--accent-orange) 60%);
 }
 
-/* session-card：場次卡外框，現由 UpcomingSessions 產生。
-   舊一頁式的 .session-header／.session-content 摺疊樣式與 useSessionCardToggle
-   已隨手寫場次卡一併移除——場次改由資料庫驅動後不再需要摺疊。 */
+/* session-card：月聚合卡，一月一張，UpcomingSessions 產生。 */
 .session-card {
   background: #ffffff;
-  border: 2px solid var(--text-brown);
-  border-radius: 12px;
+  border: var(--warm-border);
+  border-radius: var(--warm-radius);
+  box-shadow: var(--warm-shadow);
   margin-bottom: 16px;
   overflow: hidden;
-  transition: all 0.3s ease;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.session-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 0 var(--text-brown);
 }
 .session-tag {
   font-size: 0.75rem;
   padding: 2px 8px;
   border-radius: 4px;
-  border: 1px solid var(--text-brown);
+  border: 2px solid var(--text-brown);
   font-weight: bold;
   margin-right: 8px;
   white-space: nowrap;
 }
+
+/* session-header / session-content：摺疊互動（2026-08-10 裁決：既定格式，不得移除） */
+.session-header {
+  width: 100%;
+  padding: 16px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  background: none;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+}
+.session-header:hover { background-color: rgba(0, 0, 0, 0.03); }
+.session-content {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.3s ease-out;
+  border-top: 1px dashed var(--text-brown);
+  background-color: #fffde7;
+}
+.session-content.open {
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 0.5s ease-in;
+}
+.session-content > .session-content-inner {
+  overflow: hidden;
+  min-height: 0;
+  visibility: hidden;
+  transition: visibility 0.3s;
+}
+.session-content.open > .session-content-inner { visibility: visible; transition: visibility 0s; }
 
 /* hero-section：頁首黃色漸層橫幅（舊一頁式平移；四個公開頁頁首共用） */
 .hero-section {

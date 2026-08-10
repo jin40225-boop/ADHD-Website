@@ -5,6 +5,7 @@
  * 資料來自 `sessions_public` 且只取 `status='done'`：
  *   - `cancelled`（含測試資料）與未上架場次永遠不會出現在公開軌跡；
  *   - view 不含 `meet_url`，歷史 Meet 連結因此自然下架。
+ * 寬度由呼叫端容器決定，元件本身不設定寬度上限 class。
  */
 import { useEffect, useState } from 'react';
 import { CalendarCheck, ChevronDown } from 'lucide-react';
@@ -78,7 +79,7 @@ export function SessionHistory({
   const years = [...new Set(sessions.map((s) => rocYear(s.startsAt)))].sort((a, b) => b - a);
 
   return (
-    <section className="max-w-4xl mx-auto px-4 mt-16" aria-label="活動軌跡">
+    <section className="mt-16" aria-label="活動軌跡">
       <div className="bg-white border-2 border-brown rounded-3xl p-6 md:p-8 shadow-[8px_8px_0_rgba(93,64,55,0.15)]">
         <h2 className="font-heading text-2xl font-black text-brown flex items-center gap-2">
           <CalendarCheck className="w-6 h-6" aria-hidden="true" /> {title}

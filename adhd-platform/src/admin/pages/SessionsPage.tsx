@@ -120,10 +120,11 @@ export default function SessionsPage() {
               <TextInput type="datetime-local" label="報名截止" value={toLocalInput(draft.registrationDeadline)} onChange={(e) => setDraft({ ...draft, registrationDeadline: e.target.value ? toIso(e.target.value) : undefined })} />
               <Select label="狀態" value={draft.status} onChange={(e) => setDraft({ ...draft, status: e.target.value as SessionStatus })}>{(Object.keys(STATUS_TEXT) as SessionStatus[]).map((status) => <option key={status} value={status}>{STATUS_TEXT[status]}</option>)}</Select>
             </div>
-            <div className="ops-panel-header" style={{ marginTop: '1rem' }}><div><h2>公布主題與客座</h2><p>兩欄留空時，前台顯示「神秘驚喜！」——填了就等於公布。</p></div></div>
+            <div className="ops-panel-header" style={{ marginTop: '1rem' }}><div><h2>公布主題與客座</h2><p>三欄留空時，前台顯示「神秘驚喜！」（介紹段落留空則不顯示）——填了就等於公布。</p></div></div>
             <div className="ops-form-grid">
               <TextInput label="本場主題" value={draft.topic ?? ''} placeholder="留空＝神秘驚喜！" onChange={(e) => setDraft({ ...draft, topic: e.target.value })} />
               <TextInput label="客座來賓" value={draft.guest ?? ''} placeholder="留空＝神秘驚喜！" onChange={(e) => setDraft({ ...draft, guest: e.target.value })} />
+              <div className="ops-full"><Textarea label="場次介紹（我們聊什麼）" value={draft.description ?? ''} rows={3} placeholder="留空＝前台不顯示介紹段" onChange={(e) => setDraft({ ...draft, description: e.target.value })} /></div>
             </div>
             {draft.slotOptions?.length ? <>
               <div className="ops-panel-header" style={{ marginTop: '1rem' }}><div><h2>候選時段（導航計畫）</h2><p>由規則自動換算成確切日期，可逐一手動調整。這 {draft.slotOptions.length} 個時段共用本月 1 個名額。</p></div></div>

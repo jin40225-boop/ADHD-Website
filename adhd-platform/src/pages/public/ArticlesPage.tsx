@@ -14,7 +14,7 @@ export default function ArticlesPage() {
 
   return (
     <div className="min-h-screen bg-cream text-brown py-12 px-4 md:px-8">
-      <div className="max-w-5xl mx-auto space-y-8">
+      <div className="max-w-4xl mx-auto space-y-8">
         <div className="bg-base-yellow border-2 border-brown rounded-3xl p-8 shadow-warm">
           <h1 className="text-3xl font-extrabold flex items-center gap-3">
             <BookOpen className="w-8 h-8 text-highlight" />

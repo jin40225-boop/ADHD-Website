@@ -67,6 +67,7 @@ function mapSession(r: Row): SessionSlot {
     status: r.status as SessionSlot['status'],
     topic: (r.topic as string) || undefined,
     guest: (r.guest as string) || undefined,
+    description: (r.description as string) || undefined,
     registrationDeadline: (r.registration_deadline as string) ?? undefined,
     slotOptions: (r.slot_options as SessionSlot['slotOptions']) ?? undefined,
     meetUrl: (r.meet_url as string) ?? undefined,
@@ -241,7 +242,7 @@ export async function getUpcomingSessions(
       .gte('ends_at', new Date().toISOString())
       .order('starts_at', { ascending: true });
 
-  const SAFE_COLUMNS = 'id, project_id, title, starts_at, ends_at, capacity, booked_count, status, topic, guest, registration_deadline, slot_options';
+  const SAFE_COLUMNS = 'id, project_id, title, starts_at, ends_at, capacity, booked_count, status, topic, guest, description, registration_deadline, slot_options';
   let { data, error } = await query('sessions_public', SAFE_COLUMNS);
   if (error) {
     ({ data, error } = await query('sessions', SAFE_COLUMNS));
@@ -254,7 +255,7 @@ export async function getUpcomingSessions(
  *  只取 `done`——`cancelled`（含測試資料）與未上架場次一律不進公開軌跡。
  *  走 sessions_public，因此不含 meet_url，歷史 Meet 連結自然下架。 */
 export async function getPastSessions(projectId: string): Promise<SessionSlot[]> {
-  const SAFE_COLUMNS = 'id, project_id, title, starts_at, ends_at, capacity, booked_count, status, topic, guest, registration_deadline, slot_options';
+  const SAFE_COLUMNS = 'id, project_id, title, starts_at, ends_at, capacity, booked_count, status, topic, guest, description, registration_deadline, slot_options';
   const { data, error } = await db()
     .from('sessions_public')
     .select(SAFE_COLUMNS)
@@ -470,6 +471,7 @@ export function sessionRowFor(session: SessionSlot) {
     // 未公布時前台顯示「神秘驚喜！」，所以空字串要存成 null 而不是 ''。
     topic: session.topic?.trim() || null,
     guest: session.guest?.trim() || null,
+    description: session.description?.trim() || null,
     registration_deadline: session.registrationDeadline ?? null,
     slot_options: session.slotOptions ?? [],
     meet_url: session.meetUrl ?? null,

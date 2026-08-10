@@ -20,7 +20,9 @@ export default {
         // 輔助色
         teal: '#80CBC4',
         'accent-orange': '#FFCC80',
+        'accent-teal': '#80CBC4',
         pink: '#FFB6B9',
+        'accent-pink': '#FFB6B9',
         'accent-blue': '#B5EAEA',
         // 功能色
         'line-green': '#06C755',

@@ -16,7 +16,7 @@ const LINKS = {
 export default function ParentConsultPage() {
   return (
     <div className="min-h-screen bg-cream text-brown font-body">
-      <svg className="hidden" height="0" width="0"><filter id="hand-drawn"><feTurbulence baseFrequency="0.01" numOctaves="3" result="noise" type="fractalNoise"></feTurbulence><feDisplacementMap in="SourceGraphic" in2="noise" scale="2" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap></filter></svg><header className="hero-section pt-10 px-4 mb-16" id="about"><div className="absolute top-20 right-[-50px] w-96 h-96 opacity-40 animate-blob pointer-events-none"><svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><path d="M44.7,-76.4C58.9,-69.2,71.8,-59,79.6,-45.3C87.4,-31.7,90.2,-14.8,88.2,0.8C86.2,16.5,79.4,30.9,70.1,43.1C60.8,55.3,49,65.3,35.5,72.5C22,79.7,6.7,84.1,-8.9,83.9C-24.5,83.7,-40.4,78.9,-53.2,69.7C-66,60.5,-75.7,46.9,-81.3,31.8C-86.9,16.7,-88.4,0,-85.2,-15.2C-82,-30.4,-74.1,-44.1,-62.8,-52.9C-51.5,-61.7,-36.8,-65.7,-23.4,-73.1C-10,-80.5,2.1,-91.3,16.1,-90.8C30.1,-90.3,46,-83.5,44.7,-76.4Z" fill="#FFD6BA" transform="translate(100 100)"></path></svg></div><div className="max-w-4xl mx-auto flex flex-col items-center relative z-10"><div className="w-full space-y-8"><div className="text-center md:text-left"><div className="inline-block bg-white border-2 border-brown px-4 py-1 rounded-full text-sm font-bold shadow-warm transform -rotate-1 text-accent-teal mb-4">
+      <svg className="hidden" height="0" width="0"><filter id="hand-drawn"><feTurbulence baseFrequency="0.01" numOctaves="3" result="noise" type="fractalNoise"></feTurbulence><feDisplacementMap in="SourceGraphic" in2="noise" scale="2" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap></filter></svg><header className="hero-section pt-10 mb-16" id="about"><div className="absolute top-20 right-[-50px] w-96 h-96 opacity-40 animate-blob pointer-events-none"><svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><path d="M44.7,-76.4C58.9,-69.2,71.8,-59,79.6,-45.3C87.4,-31.7,90.2,-14.8,88.2,0.8C86.2,16.5,79.4,30.9,70.1,43.1C60.8,55.3,49,65.3,35.5,72.5C22,79.7,6.7,84.1,-8.9,83.9C-24.5,83.7,-40.4,78.9,-53.2,69.7C-66,60.5,-75.7,46.9,-81.3,31.8C-86.9,16.7,-88.4,0,-85.2,-15.2C-82,-30.4,-74.1,-44.1,-62.8,-52.9C-51.5,-61.7,-36.8,-65.7,-23.4,-73.1C-10,-80.5,2.1,-91.3,16.1,-90.8C30.1,-90.3,46,-83.5,44.7,-76.4Z" fill="#FFD6BA" transform="translate(100 100)"></path></svg></div><div className="max-w-4xl mx-auto px-4 flex flex-col items-center relative z-10"><div className="w-full space-y-8"><div className="text-center md:text-left"><div className="inline-block bg-white border-2 border-brown px-4 py-1 rounded-full text-sm font-bold shadow-warm transform -rotate-1 text-[#006064] mb-4">
                         ✨ 專屬單項服務介紹
                     </div><h1 className="font-heading text-4xl md:text-5xl font-black leading-tight text-brown">【ADHD 家長諮詢服務】免費公益線上諮詢：前兒少社工陪你找出教養新解方 🌿</h1></div>
 <div className="bg-white/70 p-6 md:p-8 rounded-2xl border-2 border-brown/10 backdrop-blur-sm shadow-sm mt-8">
@@ -36,28 +36,28 @@ export default function ParentConsultPage() {
 </div>
 </div>
 </div>
-</header><div className="max-w-4xl mx-auto px-4 mb-12"><Link to="/parent/register" className="btn-warm w-full py-4 bg-base-yellow text-brown text-xl font-black flex items-center justify-center gap-2 border-2 border-brown shadow-warm">🖊️ 站內報名（額滿即時顯示）</Link></div><div className="max-w-6xl mx-auto px-4 space-y-20"><section id="groups">
+</header><div className="max-w-4xl mx-auto px-4 mb-12"><Link to="/parent/register" className="btn-warm w-full py-4 bg-base-yellow text-brown text-xl font-black flex items-center justify-center gap-2 border-2 border-brown shadow-warm">🖊️ 站內報名（額滿即時顯示）</Link></div><div className="max-w-4xl mx-auto px-4 space-y-20"><section id="groups">
 
 <div className="bg-white border-2 border-brown rounded-3xl p-6 md:p-10 mb-10 relative shadow-[8px_8px_0_rgba(93,64,55,0.15)] flex flex-col gap-8">
 <div className="space-y-4 text-brown">
 </div>
-<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div className="grid grid-cols-1 gap-6">
 <div className="bg-blue-50 border-l-8 border-accent-blue p-6 rounded-r-2xl">
 <h4 className="font-bold text-brown text-xl mb-3 flex items-center gap-2">
 <Info className="w-6 h-6"></Info> 服務資訊
                         </h4>
 <ul className="text-brown space-y-2 font-bold list-disc list-inside text-sm">
-<li><strong>專屬團隊：</strong> 成人 ADHD / 前兒少社工（視需求邀請夥伴加入）</li>
-<li><strong>服務內容：</strong> 單次免費公益線上諮詢（Google Meet）</li>
-<li><strong>適合對象：</strong> 渴望理解孩子、需教養策略或喘息支持的家長</li>
+<li><strong>專屬團隊：</strong> 大A社工督導 彥宇 × 心理師 鏡子 × 特教老師 Lisa（視需求邀請其他專業人員或大A夥伴加入）</li>
+<li><strong>服務內容：</strong> 單次一小時免費公益線上諮詢（Google Meet 進行）</li>
+<li><strong>適合對象：</strong> 渴望理解 ADHD 孩子、需要教養策略討論或喘息支持的家長</li>
 <li><strong>請填寫表單：</strong> 讓我們可以提前了解孩子狀況。</li>
 </ul>
 </div>
-<div className="bg-green-50 border-l-8 border-line-green p-6 rounded-r-2xl">
+<div className="bg-[#FFF9C4] border-l-8 border-accent-orange p-6 rounded-r-2xl">
 <h4 className="font-bold text-brown text-xl mb-3 flex items-center gap-2">
 <Clock className="w-6 h-6"></Clock> 開放報名場次
                         </h4>
-<p className="text-xs font-bold text-brown mb-2">每月限定２個名額，報名截止時間為該場次活動前一週的晚上 12 點。名額即時更新。</p>
+<p className="text-xs font-bold text-brown mb-2">每月限定3個名額，報名截止時間為該場次活動前一週的晚上 12 點。名額即時更新。</p>
 <UpcomingSessions projectSlug="parent" registerPath="/parent/register" />
 </div>
 </div>
@@ -86,13 +86,13 @@ export default function ParentConsultPage() {
 
 <section className="max-w-4xl mx-auto px-4 mt-20 mb-12">
 <div className="bg-cream border-2 border-brown rounded-3xl p-6 md:p-10 shadow-warm relative">
-<div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-white border-2 border-brown px-8 py-2 rounded-full font-black shadow-sm text-accent-teal text-xl transform -rotate-2">
+<div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-white border-2 border-brown px-8 py-2 rounded-full font-black shadow-sm text-[#006064] text-xl transform -rotate-2">
             關於發起人彥宇
         </div>
 <div className="space-y-8 mt-4">
-<div className="bg-white/70 p-6 md:p-8 rounded-2xl border-2 border-brown/10 backdrop-blur-sm shadow-sm"><div className="font-body text-brown leading-relaxed font-medium text-justify text-lg space-y-4"><p>我從小學三年級就診斷ADHD，一路跌跌撞撞成長到大。</p><p>現在是社會工作者-身心障礙者服務中心 社工督導，同時也是受到社團法人台灣赤子心過動症協會總會鼓勵、栽培的倡議工作者。</p><p className="text-xl font-bold text-accent-teal py-1">我希望可以幫助更多像我一樣的人！</p><p>除了本職工作外，我利用下班時間及假日，正在創建各項服務。我相信 <span className="marker-highlight font-bold">從無到有本身就有價值</span>。希望能讓更多的 ADHD 家長、孩童、大A夥伴因此受益。</p><div className="bg-[#FFF9C4]/60 p-4 rounded-xl border border-brown/10 mt-4 text-brown">
+<div className="bg-white/70 p-6 md:p-8 rounded-2xl border-2 border-brown/10 backdrop-blur-sm shadow-sm"><div className="font-body text-brown leading-relaxed font-medium text-justify text-lg space-y-4"><p>我從小學三年級就診斷ADHD，一路跌跌撞撞成長到大。</p><p>現在是社會工作者-身心障礙者服務中心 社工督導，同時也是受到社團法人台灣赤子心過動症協會總會鼓勵、栽培的倡議工作者。</p><p className="text-xl font-bold text-[#006064] py-1">我希望可以幫助更多像我一樣的人！</p><p>除了本職工作外，我利用下班時間及假日，正在創建各項服務。我相信 <span className="marker-highlight font-bold">從無到有本身就有價值</span>。希望能讓更多的 ADHD 家長、孩童、大A夥伴因此受益。</p><div className="bg-[#FFF9C4]/60 p-4 rounded-xl border border-brown/10 mt-4 text-brown">
                             以下是我的實踐，希望可以一路前行，替ADHD族群建構更多資源，獲得更好的環境與生活品質。<br/><span className="font-bold text-highlight mt-2 block">也衷心希望像我一樣的孩子，可以過得比我更好，這是我的初衷與祈願。</span></div></div></div><div className="bg-white/50 p-6 md:p-8 rounded-2xl border-2 border-brown/10 backdrop-blur-sm"><h3 className="font-heading text-xl font-bold text-brown mb-4 flex items-center gap-2"><Sparkles className="w-5 h-5 text-accent-orange"></Sparkles> 更進一步認識我
-                    </h3><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><a className="bg-white p-4 rounded-xl border-2 border-brown/20 hover:border-accent-teal hover:shadow-md transition-all group flex flex-col" href={LINKS.LINK_2} target="_blank"><div className="flex justify-between items-start mb-2"><span className="bg-[#B2EBF2] text-[#006064] text-xs font-bold px-2 py-1 rounded">新聞報導</span><ArrowUpRight className="w-4 h-4 text-brown group-hover:text-accent-teal"></ArrowUpRight></div><div className="font-bold text-brown group-hover:text-accent-teal">ADHD長大成助人者</div></a><div className="space-y-3"><a className="flex items-center justify-between bg-white p-3 rounded-xl border-2 border-brown/20 hover:border-accent-pink hover:shadow-md transition-all group" href={LINKS.LINK_3} target="_blank"><span className="text-sm font-bold text-brown">友善 ADHD 父母的環境</span><PlayCircle className="w-5 h-5 text-brown group-hover:text-accent-pink"></PlayCircle></a><a className="flex items-center justify-between bg-white p-3 rounded-xl border-2 border-brown/20 hover:border-accent-pink hover:shadow-md transition-all group" href={LINKS.LINK_4} target="_blank"><span className="text-sm font-bold text-brown">跟人相處這麼難嗎？</span><PlayCircle className="w-5 h-5 text-brown group-hover:text-accent-pink"></PlayCircle></a></div></div></div>
+                    </h3><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><a className="bg-white p-4 rounded-xl border-2 border-brown/20 hover:border-accent-teal hover:shadow-md transition-all group flex flex-col" href={LINKS.LINK_2} target="_blank"><div className="flex justify-between items-start mb-2"><span className="bg-[#B2EBF2] text-[#006064] text-xs font-bold px-2 py-1 rounded">新聞報導</span><ArrowUpRight className="w-4 h-4 text-brown group-hover:text-[#006064]"></ArrowUpRight></div><div className="font-bold text-brown group-hover:text-[#006064]">ADHD長大成助人者</div></a><div className="space-y-3"><a className="flex items-center justify-between bg-white p-3 rounded-xl border-2 border-brown/20 hover:border-accent-pink hover:shadow-md transition-all group" href={LINKS.LINK_3} target="_blank"><span className="text-sm font-bold text-brown">友善 ADHD 父母的環境</span><PlayCircle className="w-5 h-5 text-brown group-hover:text-[#C2185B]"></PlayCircle></a><a className="flex items-center justify-between bg-white p-3 rounded-xl border-2 border-brown/20 hover:border-accent-pink hover:shadow-md transition-all group" href={LINKS.LINK_4} target="_blank"><span className="text-sm font-bold text-brown">跟人相處這麼難嗎？</span><PlayCircle className="w-5 h-5 text-brown group-hover:text-[#C2185B]"></PlayCircle></a></div></div></div>
 </div>
 </div>
 </section>

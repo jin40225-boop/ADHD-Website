@@ -3,10 +3,15 @@
  * 取代首頁/互助聚會頁手寫的即將場次卡：改讀 Supabase（getUpcomingSessions，
  * 走 sessions_public view），後台開新場次即自動出現、過期自動消失，
  * 不再需要手動維護兩份靜態活動卡。歷史場次卡仍為手寫策展內容。
+ *
+ * 摺疊互動（2026-08-10 裁決：舊版既定格式，除非明確要求拿掉否則永遠保留）：
+ * React state ＋ CSS Grid rows（見 tokens.css 的 .session-header/.session-content），
+ * 不用舊版的命令式 DOM hook——月聚合後每次 re-render 會把 inline style 洗掉，
+ * grid-template-rows: 0fr↔1fr 天生無截斷、資料更新自動跟隨。
  */
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, CalendarClock, Clock, Users } from 'lucide-react';
+import { Calendar, CalendarClock, ChevronDown, Clock, Users } from 'lucide-react';
 import { getProjectBySlug, getUpcomingSessions } from '@/lib/api';
 import type { SessionSlot } from '@contracts/types';
 
@@ -20,6 +25,25 @@ function fmtDate(iso: string): string {
 function fmtTime(iso: string): string {
   const d = new Date(iso);
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
+/** 只剝「【N月場】」這個精確型式，避免誤傷其他【】標題。 */
+function stripMonthTag(title: string): string {
+  return title.replace(/^【\d+月場】\s*/, '');
+}
+
+/** 以 startsAt 的西元年-月分組，一組收斂為一張月卡。
+ *  API 已依 starts_at 升冪排序，用 Map 保留插入順序即可，組間順序自動正確。 */
+function groupByMonth(sessions: SessionSlot[]): { key: string; sessions: SessionSlot[] }[] {
+  const map = new Map<string, SessionSlot[]>();
+  for (const s of sessions) {
+    const d = new Date(s.startsAt);
+    const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
+    const group = map.get(key);
+    if (group) group.push(s);
+    else map.set(key, [s]);
+  }
+  return [...map.entries()].map(([key, groupSessions]) => ({ key, sessions: groupSessions }));
 }
 
 export interface UpcomingSessionsProps {
@@ -41,6 +65,8 @@ export function UpcomingSessions({
 }: UpcomingSessionsProps) {
   const [sessions, setSessions] = useState<SessionSlot[] | null>(null);
   const [failed, setFailed] = useState(false);
+  // 覆寫表＋預設值（第一張卡預設展開）而非初始化 Set，避免 sessions 非同步載入的時序問題。
+  const [toggled, setToggled] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     let alive = true;
@@ -96,69 +122,174 @@ export function UpcomingSessions({
 
   return (
     <>
-      {sessions.map((s) => {
-        const remaining = Math.max(0, s.capacity - s.bookedCount);
-        const isFull = s.status === 'full' || remaining === 0;
-        const notYetOpen = s.status === 'closed';
-        return (
-          <div className="session-card" key={s.id}>
-            <div className="p-6 space-y-4">
-              <div className="flex items-center gap-3 flex-wrap">
-                <span className="session-tag bg-accent-orange text-brown">
-                  {new Date(s.startsAt).getMonth() + 1}月場
-                </span>
-                {notYetOpen ? (
-                  <span className="session-tag bg-gray-200 text-gray-600">即將開放</span>
-                ) : null}
-                <span className="font-bold text-brown text-lg">{s.title}</span>
-              </div>
-              {showTopic ? (
-                <p className="text-brown font-bold">
-                  主題：{mystery(s.topic)}
-                  <span className="mx-2 text-brown/30">·</span>
-                  客座嘉賓：{mystery(s.guest)}
-                </p>
+      {groupByMonth(sessions).map((group, index) => {
+        const first = group.sessions[0];
+        const month = new Date(first.startsAt).getMonth() + 1;
+        const title = stripMonthTag(first.title);
+        // 標題列狀態 tag：整組全 closed →「即將開放」；整組全額滿 →「已額滿」；否則不加。
+        const allClosed = group.sessions.every((s) => s.status === 'closed');
+        const allFull = group.sessions.every((s) => s.status === 'full' || s.capacity - s.bookedCount <= 0);
+        const isOpen = toggled[group.key] ?? (index === 0);
+        const panelId = `session-panel-${group.key}`;
+
+        const header = (
+          <button
+            type="button"
+            className="session-header"
+            aria-expanded={isOpen}
+            aria-controls={panelId}
+            onClick={() => setToggled((t) => ({ ...t, [group.key]: !isOpen }))}
+          >
+            <span className="flex items-center gap-3 flex-wrap">
+              <span className="session-tag bg-accent-orange text-brown">{month}月場</span>
+              {allClosed ? (
+                <span className="session-tag bg-gray-200 text-gray-600">即將開放</span>
+              ) : allFull ? (
+                <span className="session-tag bg-gray-200 text-gray-600">已額滿</span>
               ) : null}
-              <div className="flex flex-wrap gap-4 text-sm font-bold text-gray-600 bg-white/50 p-3 rounded-lg border border-brown/10">
-                {/* 帶 slotOptions 的場次（導航計畫每月 1 位）starts_at～ends_at 是整個月的
-                    候選窗口而非單一場次時間，直接印會變成「20:00 - 10:00」這種跨日怪值。 */}
-                {s.slotOptions?.length ? (
-                  <>
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-4 h-4" /> {new Date(s.startsAt).getMonth() + 1} 月・共 {s.slotOptions.length} 個候選時段
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-4 h-4" /> 確切時段於報名頁勾選
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-4 h-4" /> {fmtDate(s.startsAt)}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-4 h-4" /> {fmtTime(s.startsAt)} - {fmtTime(s.endsAt)}
-                    </span>
-                  </>
-                )}
-                <span className="flex items-center gap-1">
-                  <Users className="w-4 h-4" /> {notYetOpen ? '尚未開放報名' : isFull ? '已額滿' : `剩 ${remaining} 名`}
-                </span>
+              <span className="font-bold text-brown text-lg">
+                {title}
+                {showTopic ? (
+                  first.topic ? (
+                    <>：{first.topic}</>
+                  ) : (
+                    <span className="text-sm font-bold ml-2">主題：{mystery(undefined)}</span>
+                  )
+                ) : null}
+              </span>
+            </span>
+            <ChevronDown
+              className={`w-5 h-5 shrink-0 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
+              aria-hidden="true"
+            />
+          </button>
+        );
+
+        const descriptionBlock = first.description ? (
+          <div>
+            <h4 className="font-bold text-brown mb-2 border-l-4 border-accent-orange pl-2">我們聊什麼：</h4>
+            <p className="text-gray-700 leading-relaxed text-justify whitespace-pre-line">{first.description}</p>
+          </div>
+        ) : null;
+
+        if (first.slotOptions?.length) {
+          // 導航計畫：每月僅一筆 record，slotOptions 是整個月的候選窗口而非單一場次
+          // 時間，直接印 startsAt～endsAt 會變成「20:00 - 10:00」這種跨日怪值——
+          // 完整保留現有文案與卡層級三態 CTA，分組後仍是一月一卡，行為與現狀等價。
+          const remaining = Math.max(0, first.capacity - first.bookedCount);
+          const isFull = first.status === 'full' || remaining === 0;
+          const notYetOpen = first.status === 'closed';
+          return (
+            <div className="session-card" key={group.key}>
+              {header}
+              <div id={panelId} className={`session-content${isOpen ? ' open' : ''}`}>
+                <div className="session-content-inner">
+                  <div className="p-4 md:p-6 space-y-3">
+                    <div className="flex flex-wrap gap-4 text-sm font-bold text-gray-600">
+                      <span className="flex items-center gap-1">
+                        <Calendar className="w-4 h-4" /> {month} 月・共 {first.slotOptions.length} 個候選時段
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-4 h-4" /> 確切時段於報名頁勾選
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Users className="w-4 h-4" /> {notYetOpen ? '尚未開放報名' : isFull ? '已額滿' : `剩 ${remaining} 名`}
+                      </span>
+                    </div>
+                    <div className="flex gap-3 pt-2">
+                      {notYetOpen ? (
+                        <span className="btn-warm py-2 px-4 bg-gray-200 text-gray-500 text-sm pointer-events-none">
+                          即將開放，敬請期待
+                        </span>
+                      ) : isFull ? (
+                        <span className="btn-warm py-2 px-4 bg-gray-200 text-gray-500 text-sm pointer-events-none">
+                          已額滿
+                        </span>
+                      ) : (
+                        <Link className="btn-warm py-2 px-4 bg-accent-orange text-brown hover:bg-[#FFB74D] text-sm" to={registerPath}>
+                          立即報名
+                        </Link>
+                      )}
+                    </div>
+                    {showTopic ? (
+                      <p className="text-brown font-bold">客座嘉賓：{mystery(first.guest)}</p>
+                    ) : null}
+                    {descriptionBlock}
+                  </div>
+                </div>
               </div>
-              <div className="flex gap-3 pt-2">
-                {notYetOpen ? (
-                  <span className="btn-warm py-2 px-4 bg-gray-200 text-gray-500 text-sm pointer-events-none">
-                    即將開放，敬請期待
-                  </span>
-                ) : isFull ? (
-                  <span className="btn-warm py-2 px-4 bg-gray-200 text-gray-500 text-sm pointer-events-none">
-                    已額滿
-                  </span>
-                ) : (
-                  <Link className="btn-warm py-2 px-4 bg-accent-orange text-brown hover:bg-[#FFB74D] text-sm" to={registerPath}>
-                    立即報名
-                  </Link>
-                )}
+            </div>
+          );
+        }
+
+        // 一般時段組：日期列只在全組同一天才於卡層級出現一次，否則省略、日期改進各時段列。
+        const sameDay = group.sessions.every((s) => {
+          const d = new Date(s.startsAt);
+          const d0 = new Date(first.startsAt);
+          return (
+            d.getFullYear() === d0.getFullYear() &&
+            d.getMonth() === d0.getMonth() &&
+            d.getDate() === d0.getDate()
+          );
+        });
+        // showTopic 且卡內僅單一場次時於展開層顯示客座嘉賓列（主題已移至標頭，不重複顯示）；
+        // 一組多場次時，個別時段仍可能各有主題，退化為在各時段列尾附 topic 小字（見下方 <li>）。
+        const singleTopicRow = showTopic && group.sessions.length === 1;
+
+        return (
+          <div className="session-card" key={group.key}>
+            {header}
+            <div id={panelId} className={`session-content${isOpen ? ' open' : ''}`}>
+              <div className="session-content-inner">
+                <div className="p-4 md:p-6 space-y-3">
+                  {sameDay ? (
+                    <span className="flex items-center gap-1 text-sm font-bold text-gray-600">
+                      <Calendar className="w-4 h-4" /> {fmtDate(first.startsAt)}
+                    </span>
+                  ) : null}
+                  <ul>
+                    {group.sessions.map((s) => {
+                      const remaining = Math.max(0, s.capacity - s.bookedCount);
+                      const isFull = s.status === 'full' || remaining === 0;
+                      const notYetOpen = s.status === 'closed';
+                      return (
+                        <li
+                          key={s.id}
+                          className="flex items-center justify-between gap-2 py-2 border-t border-brown/10 first:border-t-0 first:pt-0"
+                        >
+                          <span>
+                            <span className="flex items-center gap-1 text-sm font-bold text-gray-600">
+                              <Clock className="w-4 h-4" />
+                              {sameDay
+                                ? `${fmtTime(s.startsAt)} – ${fmtTime(s.endsAt)}`
+                                : `${fmtDate(s.startsAt)} ${fmtTime(s.startsAt)} – ${fmtTime(s.endsAt)}`}
+                            </span>
+                            <span className="text-xs font-bold text-gray-500">
+                              {notYetOpen ? '尚未開放報名' : isFull ? '已額滿' : `剩 ${remaining} 名`}
+                              {!singleTopicRow && showTopic && s.topic ? ` · ${s.topic}` : ''}
+                            </span>
+                          </span>
+                          {isFull || notYetOpen ? (
+                            <span className="session-tag bg-gray-200 text-gray-600 shrink-0">
+                              {notYetOpen ? '即將開放' : '已額滿'}
+                            </span>
+                          ) : (
+                            <Link
+                              to={registerPath}
+                              className="btn-warm py-1 px-3 bg-accent-orange text-brown hover:bg-[#FFB74D] text-sm shrink-0"
+                            >
+                              報名
+                            </Link>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  {singleTopicRow ? (
+                    <p className="text-brown font-bold">客座嘉賓：{mystery(first.guest)}</p>
+                  ) : null}
+                  {descriptionBlock}
+                </div>
               </div>
             </div>
           </div>

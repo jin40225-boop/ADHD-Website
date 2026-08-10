@@ -62,7 +62,7 @@ export default function ConfirmResultPage() {
   return (
     <div className="min-h-screen bg-cream text-brown font-body flex items-center justify-center px-4 py-16">
       <div className="w-full max-w-lg bg-white border-2 border-brown rounded-3xl p-8 md:p-10 shadow-warm-lg text-center">
-        <h1 className={`font-heading text-2xl md:text-3xl font-black mb-4 ${result.tone === 'ok' ? 'text-accent-teal' : 'text-accent-orange'}`}>
+        <h1 className={`font-heading text-2xl md:text-3xl font-black mb-4 ${result.tone === 'ok' ? 'text-[#006064]' : 'text-accent-orange'}`}>
           {result.title}
         </h1>
         <p className="leading-loose text-lg">{result.message}</p>
