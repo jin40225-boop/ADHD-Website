@@ -1,16 +1,14 @@
 import { Link } from 'react-router-dom';
-import { ArrowUpRight, Clock, Edit3, Info, Mail, PlayCircle, Sparkles } from 'lucide-react';
+import { Clock, Edit3, Info } from 'lucide-react';
 import { UpcomingSessions } from '@/components/UpcomingSessions';
 import { SessionHistory } from '@/components/SessionHistory';
-import { CopyButton } from '@/components/CopyButton';
+import { AboutFounder } from '@/components/AboutFounder';
+import { DonateFooter } from '@/components/DonateFooter';
 import { LineContact } from '@/components/LineContact';
 
 const BASE = import.meta.env.BASE_URL;
 const LINKS = {
   LINK_1: `${BASE}parent/register`,
-  LINK_2: 'https://www.knews.com.tw/news/01CEE23784ECF429098274743517F227',
-  LINK_3: 'https://www.youtube.com/watch?v=q1UL5Kn51gc',
-  LINK_4: 'https://www.youtube.com/watch?v=CsHqUIdz0W4',
 };
 
 export default function ParentConsultPage() {
@@ -84,20 +82,9 @@ export default function ParentConsultPage() {
 <SessionHistory projects={[{ slug: 'parent' }]} title="👣 服務軌跡・已完成場次" description="上半年度已完成的親職諮詢場次永久留存，讓新朋友看見這項服務的累積。" />
 </section></div>
 
-<section className="max-w-4xl mx-auto px-4 mt-20 mb-12">
-<div className="bg-cream border-2 border-brown rounded-3xl p-6 md:p-10 shadow-warm relative">
-<div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-white border-2 border-brown px-8 py-2 rounded-full font-black shadow-sm text-[#006064] text-xl transform -rotate-2">
-            關於發起人彥宇
-        </div>
-<div className="space-y-8 mt-4">
-<div className="bg-white/70 p-6 md:p-8 rounded-2xl border-2 border-brown/10 backdrop-blur-sm shadow-sm"><div className="font-body text-brown leading-relaxed font-medium text-justify text-lg space-y-4"><p>我從小學三年級就診斷ADHD，一路跌跌撞撞成長到大。</p><p>現在是社會工作者-身心障礙者服務中心 社工督導，同時也是受到社團法人台灣赤子心過動症協會總會鼓勵、栽培的倡議工作者。</p><p className="text-xl font-bold text-[#006064] py-1">我希望可以幫助更多像我一樣的人！</p><p>除了本職工作外，我利用下班時間及假日，正在創建各項服務。我相信 <span className="marker-highlight font-bold">從無到有本身就有價值</span>。希望能讓更多的 ADHD 家長、孩童、大A夥伴因此受益。</p><div className="bg-[#FFF9C4]/60 p-4 rounded-xl border border-brown/10 mt-4 text-brown">
-                            以下是我的實踐，希望可以一路前行，替ADHD族群建構更多資源，獲得更好的環境與生活品質。<br/><span className="font-bold text-highlight mt-2 block">也衷心希望像我一樣的孩子，可以過得比我更好，這是我的初衷與祈願。</span></div></div></div><div className="bg-white/50 p-6 md:p-8 rounded-2xl border-2 border-brown/10 backdrop-blur-sm"><h3 className="font-heading text-xl font-bold text-brown mb-4 flex items-center gap-2"><Sparkles className="w-5 h-5 text-accent-orange"></Sparkles> 更進一步認識我
-                    </h3><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><a className="bg-white p-4 rounded-xl border-2 border-brown/20 hover:border-accent-teal hover:shadow-md transition-all group flex flex-col" href={LINKS.LINK_2} target="_blank"><div className="flex justify-between items-start mb-2"><span className="bg-[#B2EBF2] text-[#006064] text-xs font-bold px-2 py-1 rounded">新聞報導</span><ArrowUpRight className="w-4 h-4 text-brown group-hover:text-[#006064]"></ArrowUpRight></div><div className="font-bold text-brown group-hover:text-[#006064]">ADHD長大成助人者</div></a><div className="space-y-3"><a className="flex items-center justify-between bg-white p-3 rounded-xl border-2 border-brown/20 hover:border-accent-pink hover:shadow-md transition-all group" href={LINKS.LINK_3} target="_blank"><span className="text-sm font-bold text-brown">友善 ADHD 父母的環境</span><PlayCircle className="w-5 h-5 text-brown group-hover:text-[#C2185B]"></PlayCircle></a><a className="flex items-center justify-between bg-white p-3 rounded-xl border-2 border-brown/20 hover:border-accent-pink hover:shadow-md transition-all group" href={LINKS.LINK_4} target="_blank"><span className="text-sm font-bold text-brown">跟人相處這麼難嗎？</span><PlayCircle className="w-5 h-5 text-brown group-hover:text-[#C2185B]"></PlayCircle></a></div></div></div>
-</div>
-</div>
-</section>
+<AboutFounder />
 <LineContact />
-<div className="bg-gray-100 border-t border-gray-200 py-6" id="donate"><div className="max-w-2xl mx-auto px-4 text-center"><h4 className="text-sm font-bold text-gray-500 mb-1">支持我的行動</h4><p className="text-[10px] text-gray-400 mb-3 leading-tight">服務均為無償進行。若認同理念，歡迎小額贊助維持營運。<br/>(不論是否打賞，都歡迎來信打氣！)</p><div className="inline-block text-left text-xs"><div className="flex items-center justify-center gap-2 text-gray-500"><span>005 土地銀行</span><span className="font-mono">016-212-34037-9</span><CopyButton value="016-212-34037-9" className="text-[10px] bg-gray-200 hover:bg-gray-300 text-gray-600 py-1 px-2 rounded transition-colors flex items-center gap-1" /></div></div><div className="flex justify-center gap-4 mt-4 text-[10px] text-gray-400"><a className="hover:text-gray-500 flex items-center gap-1" href="mailto:jin40225@gmail.com"><Mail className="w-3 h-3"></Mail> Email</a><span>© 2026 大A彥宇</span></div></div></div>
+<DonateFooter />
     </div>
   );
 }

@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, ArrowUpRight, BookOpen, CalendarClock, Clock, Database, Edit3, Flag, Info, Mail, MapPin, PlayCircle, Sparkles, Users, Video } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, BookOpen, CalendarClock, Clock, Database, Edit3, Flag, Info, MapPin, PlayCircle, Sparkles, Users, Video } from 'lucide-react';
 import { UpcomingSessions } from '@/components/UpcomingSessions';
 import { SessionHistory } from '@/components/SessionHistory';
-import { CopyButton } from '@/components/CopyButton';
 import { NavigatorSlotSummary } from '@/components/NavigatorSlotSummary';
+import { DonateFooter } from '@/components/DonateFooter';
 import { LineContact } from '@/components/LineContact';
 
 // Notion 停用（2026-07 中）連結替換：報名表單改站內報名頁、資料庫改站內地圖、
@@ -204,7 +204,7 @@ export default function HomePage() {
                     </div><div className="flex items-start gap-4"><div className="w-12 h-12 bg-[#C5E1A5] rounded-full flex items-center justify-center border-2 border-brown flex-shrink-0"><BookOpen className="w-6 h-6 text-brown"></BookOpen></div><div><h3 className="text-xl font-bold text-brown mb-2">家長向-親職教育講座</h3><p className="text-gray-600 text-sm leading-relaxed">
                                 預計11月會有一場，地點待訂。
                             </p></div></div></div></div></section></div><LineContact />
-<div className="bg-gray-100 border-t border-gray-200 py-6" id="donate"><div className="max-w-2xl mx-auto px-4 text-center"><h4 className="text-sm font-bold text-gray-500 mb-1">支持我的行動</h4><p className="text-[10px] text-gray-400 mb-3 leading-tight">服務均為無償進行。若認同理念，歡迎小額贊助維持營運。<br/>(不論是否打賞，都歡迎來信打氣！)</p><div className="inline-block text-left text-xs"><div className="flex items-center justify-center gap-2 text-gray-500"><span>005 土地銀行</span><span className="font-mono">016-212-34037-9</span><CopyButton value="016-212-34037-9" className="text-[10px] bg-gray-200 hover:bg-gray-300 text-gray-600 py-1 px-2 rounded transition-colors flex items-center gap-1" /></div></div><div className="flex justify-center gap-4 mt-4 text-[10px] text-gray-400"><a className="hover:text-gray-500 flex items-center gap-1" href="mailto:jin40225@gmail.com"><Mail className="w-3 h-3"></Mail> Email</a><span>© 2026 大A彥宇</span></div></div></div>
+<DonateFooter />
     </div>
   );
 }
