@@ -217,7 +217,7 @@ export default function DocumentsPage() {
           <td><span className="ops-status ops-status--gray">{document.status}</span></td>
           <td><span className="ops-cell-muted">{new Date(document.createdAt).toLocaleString('zh-TW')}</span></td>
         </tr>)}</tbody>
-      </table></div> : <EmptyPanel title="還沒有任何生成紀錄" description="這是預期的：產出功能於 Phase 6 啟用，在那之前不會有任何東西寫入。" />}
+      </table></div> : <EmptyPanel title="還沒有任何生成紀錄" description="還沒有生成過任何文件，用下面的表單產一份草稿。" />}
     </article>
   </section>;
 }

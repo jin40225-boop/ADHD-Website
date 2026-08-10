@@ -3,6 +3,7 @@
  * 詳情裡編輯主題與客座（＝「公布神秘驚喜」的操作入口）、導航的候選時段，並建 Meet／行事曆。
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import type { Project, SessionSlot, SessionStatus } from '@contracts/types';
 import { TextInput, Textarea, Select } from '@/components/ui/FormField/FormField';
 import { WarmButton } from '@/components/ui/WarmButton/WarmButton';
@@ -160,12 +161,7 @@ export default function SessionsPage() {
 
           <article className="ops-panel">
             <div className="ops-panel-header"><div><h2>行政文件區</h2><p>依本場次現況產生講師行前通知、客座邀請等文件。</p></div></div>
-            <OpsNotice tone="warning">文件生成將於 Phase 6 啟用（需先設定 Claude API 金鑰）。在那之前這裡不會產出任何內容。</OpsNotice>
-            <div className="ops-form-grid">
-              <Select label="文件類型" value="" disabled onChange={() => {}}><option value="">客座分享夥伴邀請信／講師行前通知信／活動計畫書…</option></Select>
-              <Textarea label="主題／範圍（給 Claude 的重點）" value="" disabled rows={2} onChange={() => {}} />
-            </div>
-            <WarmButton disabled onClick={() => {}}>🤖 依場次現況產出草稿（Phase 6）</WarmButton>
+            <OpsNotice tone="info">文件生成已啟用。產出入口在<Link to="/admin/documents">文件產生中心</Link>，可依這個場次的現況產生講師行前通知、客座邀請等草稿。</OpsNotice>
           </article>
         </div>
       </aside></> : null}

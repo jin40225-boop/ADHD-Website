@@ -111,6 +111,13 @@ if (read('src/lib/api.ts').includes('review_status: template.reviewStatus')) {
 if (read('src/admin/pages/SettingsPage.tsx').includes('現在只是存起來')) {
   throw new Error('SettingsPage.tsx still says the overdue threshold is not wired up; Phase 4 connected it and the text is now false.');
 }
+// 同一種過期免責聲明，換了個 Phase 號碼：文件生成已於 Phase 6 上線並驗收通過，
+// SessionsPage／DocumentsPage 若還說「將於 Phase 6 啟用」就是對已經能用的功能說謊。
+for (const page of ['src/admin/pages/SessionsPage.tsx', 'src/admin/pages/DocumentsPage.tsx']) {
+  if (read(page).includes('將於 Phase 6 啟用')) {
+    throw new Error(`${page} still says document generation is pending Phase 6; it shipped and passed acceptance on 2026-08-06.`);
+  }
+}
 // 「自動＋可覆寫」的表頭必須有對應的入口，而且覆寫要留下原因。
 requireText('src/admin/operations/RegistrationTable.tsx', ['export function MailOverrideEditor', 'setMailStateOverride', '覆寫原因（必填）']);
 requireText('src/admin/operations/api.ts', ['export async function setMailStateOverride', 'mail_state_override_reason', 'mail_state_override_by']);
