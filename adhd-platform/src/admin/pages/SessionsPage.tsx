@@ -9,8 +9,8 @@ import { WarmButton } from '@/components/ui/WarmButton/WarmButton';
 import { adminListProjects, adminListSessions, adminSaveSession, invokeCalendarUpsert } from '@/lib/api';
 import { isSupabaseReady } from '@/lib/supabase';
 import DemoDataNotice from '../DemoDataNotice';
-import { listContacts } from '../operations/api';
-import type { ContactRecord } from '../operations/types';
+import { listActivities, listContacts } from '../operations/api';
+import type { ActivityRecord, ContactRecord } from '../operations/types';
 import { EmptyPanel, InlineSpinner, OpsNotice, PageHeader, SavingIndicator } from '../operations/components';
 import { STATUS_LABEL, toLocalInput } from '../operations/RegistrationTable';
 import { SESSION_STATUS_TEXT as STATUS_TEXT, SessionTable, sessionDateText as dateText, sessionTimeText as timeText } from '../operations/SessionTable';
@@ -20,14 +20,15 @@ function toIso(value: string) { return value ? new Date(value).toISOString() : '
 export default function SessionsPage() {
   const live = isSupabaseReady;
   const [sessions, setSessions] = useState<SessionSlot[]>([]); const [projects, setProjects] = useState<Project[]>([]); const [contacts, setContacts] = useState<ContactRecord[]>([]);
+  const [activities, setActivities] = useState<ActivityRecord[]>([]);
   const [projectFilter, setProjectFilter] = useState('all'); const [selectedId, setSelectedId] = useState<string>(); const [busyId, setBusyId] = useState<string>();
   const [loading, setLoading] = useState(live); const [notice, setNotice] = useState<string>(); const [error, setError] = useState<string>();
   const [draft, setDraft] = useState<SessionSlot>();
 
   const reload = useCallback(async () => {
     if (!live) return;
-    const [nextSessions, nextProjects, nextContacts] = await Promise.all([adminListSessions(), adminListProjects(), listContacts()]);
-    setSessions(nextSessions); setProjects(nextProjects); setContacts(nextContacts);
+    const [nextSessions, nextProjects, nextContacts, nextActivities] = await Promise.all([adminListSessions(), adminListProjects(), listContacts(), listActivities()]);
+    setSessions(nextSessions); setProjects(nextProjects); setContacts(nextContacts); setActivities(nextActivities);
   }, [live]);
   useEffect(() => { reload().catch((e: unknown) => setError(e instanceof Error ? e.message : '載入場次失敗')).finally(() => setLoading(false)); }, [reload]);
 
@@ -119,6 +120,13 @@ export default function SessionsPage() {
               <TextInput type="number" label="名額" value={String(draft.capacity)} onChange={(e) => setDraft({ ...draft, capacity: Number(e.target.value) })} />
               <TextInput type="datetime-local" label="報名截止" value={toLocalInput(draft.registrationDeadline)} onChange={(e) => setDraft({ ...draft, registrationDeadline: e.target.value ? toIso(e.target.value) : undefined })} />
               <Select label="狀態" value={draft.status} onChange={(e) => setDraft({ ...draft, status: e.target.value as SessionStatus })}>{(Object.keys(STATUS_TEXT) as SessionStatus[]).map((status) => <option key={status} value={status}>{STATUS_TEXT[status]}</option>)}</Select>
+              {/* 所屬活動：`activity_id` 早就存在、adminSaveSession 也一直有送，
+                  但直到現在都沒有任何 UI 可以設定它——協辦活動專欄要靠它把場次掛到
+                  合作案底下，沒有這個選單就是「欄位在、路不通」。只列同一個計畫的活動。 */}
+              <div className="ops-full"><Select label="所屬活動（協辦活動必填）" value={draft.activityId ?? ''} onChange={(e) => setDraft({ ...draft, activityId: e.target.value || undefined })}>
+                <option value="">（不掛活動）</option>
+                {activities.filter((a) => a.projectId === draft.projectId).map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+              </Select></div>
             </div>
             <div className="ops-panel-header" style={{ marginTop: '1rem' }}><div><h2>公布主題與客座</h2><p>三欄留空時，前台顯示「神秘驚喜！」（介紹段落留空則不顯示）——填了就等於公布。</p></div></div>
             <div className="ops-form-grid">

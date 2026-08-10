@@ -59,6 +59,41 @@ export interface Project {
 }
 
 /**
+ * 協辦活動的合作資訊（對映 `activities.cohost_info`）。
+ *
+ * 報名完全在主辦單位那邊，所以這裡沒有任何名額欄位——本站不受理報名、不保留名額。
+ * `formUrl` 有值＝這是一個協辦活動，前台顯示外部報名 CTA。
+ *
+ * 網址一律存資料庫而不是寫進頁面：`scripts/check-site.mjs` 禁止 `forms.gle`
+ * 出現在 `src/pages/public`，寫死會直接讓建置失敗（而那條守門的立法理由
+ * ——寫死的外部資訊會悄悄過期——本來就適用於這裡）。
+ */
+export interface CoHostInfo {
+  /** 主辦單位全名。 */
+  partner: string;
+  /** 我方在這場的角色（例：座談會主持人、主講講師）。 */
+  myRole?: string;
+  /** 主辦單位的報名表單網址。有值才算協辦活動。 */
+  formUrl?: string;
+  /** 主辦單位的活動介紹頁（選填）。 */
+  infoUrl?: string;
+  /** 主辦單位公布的報名資訊，自由文字（選填）。 */
+  note?: string;
+}
+
+/** 公開端的活動（對映 `activities_public` view，只含安全欄位）。 */
+export interface PublicActivity {
+  id: string;
+  projectId: string;
+  name: string;
+  status: 'published' | 'closed' | 'completed';
+  publicSummary?: string;
+  startsAt?: string;
+  endsAt?: string;
+  coHost?: CoHostInfo;
+}
+
+/**
  * 專案內動作權限角色（第二層授權）。每人於不同專案可為不同角色。
  *  - owner：主責人（全部動作）
  *  - admin_collab：行政協作（除個案視設定外全部）

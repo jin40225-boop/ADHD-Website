@@ -10,6 +10,7 @@ import type {
   AvailabilityPoll,
   Case,
   CandidateSlot,
+  CoHostInfo,
   EmailTemplate,
   EventFeedback,
   Recommendation,
@@ -17,6 +18,7 @@ import type {
   FormSchema,
   Instructor,
   Project,
+  PublicActivity,
   Registration,
   RecommendationSubmission,
   SessionSlot,
@@ -242,7 +244,7 @@ export async function getUpcomingSessions(
       .gte('ends_at', new Date().toISOString())
       .order('starts_at', { ascending: true });
 
-  const SAFE_COLUMNS = 'id, project_id, title, starts_at, ends_at, capacity, booked_count, status, topic, guest, description, registration_deadline, slot_options';
+  const SAFE_COLUMNS = 'id, project_id, title, starts_at, ends_at, capacity, booked_count, status, topic, guest, description, registration_deadline, slot_options, activity_id';
   let { data, error } = await query('sessions_public', SAFE_COLUMNS);
   if (error) {
     ({ data, error } = await query('sessions', SAFE_COLUMNS));
@@ -255,7 +257,7 @@ export async function getUpcomingSessions(
  *  只取 `done`——`cancelled`（含測試資料）與未上架場次一律不進公開軌跡。
  *  走 sessions_public，因此不含 meet_url，歷史 Meet 連結自然下架。 */
 export async function getPastSessions(projectId: string): Promise<SessionSlot[]> {
-  const SAFE_COLUMNS = 'id, project_id, title, starts_at, ends_at, capacity, booked_count, status, topic, guest, description, registration_deadline, slot_options';
+  const SAFE_COLUMNS = 'id, project_id, title, starts_at, ends_at, capacity, booked_count, status, topic, guest, description, registration_deadline, slot_options, activity_id';
   const { data, error } = await db()
     .from('sessions_public')
     .select(SAFE_COLUMNS)
@@ -264,6 +266,33 @@ export async function getPastSessions(projectId: string): Promise<SessionSlot[]>
     .order('starts_at', { ascending: false });
   if (error) throw new ApiError(error.message);
   return ((data ?? []) as unknown as Row[]).map(mapSession);
+}
+
+/**
+ * 公開端的活動清單（協辦活動專欄用）。
+ *
+ * 走 `activities_public` view：`activities` 本表對 anon 沒有任何 policy，
+ * view 以 owner 權限執行、靠 where 子句過濾（排除 draft／cancelled／已封存／
+ * 非公開專案）。這裡刻意**不做 fallback 查本表**——查了也一定是 401，
+ * 反而把「view 還沒建立」這個部署順序錯誤偽裝成「沒有活動」。
+ */
+export async function getPublicActivities(projectId: string): Promise<PublicActivity[]> {
+  const { data, error } = await db()
+    .from('activities_public')
+    .select('id, project_id, name, status, public_summary, starts_at, ends_at, cohost_info')
+    .eq('project_id', projectId)
+    .order('starts_at', { ascending: true, nullsFirst: false });
+  if (error) throw new ApiError(error.message);
+  return ((data ?? []) as unknown as Row[]).map((r) => ({
+    id: r.id as string,
+    projectId: r.project_id as string,
+    name: r.name as string,
+    status: r.status as PublicActivity['status'],
+    publicSummary: (r.public_summary as string) || undefined,
+    startsAt: (r.starts_at as string) ?? undefined,
+    endsAt: (r.ends_at as string) ?? undefined,
+    coHost: (r.cohost_info as CoHostInfo) ?? undefined,
+  }));
 }
 
 /** 公開就醫推薦。Supabase 未設定或讀取失敗時，由頁面保留版本化 JSON 後援。 */

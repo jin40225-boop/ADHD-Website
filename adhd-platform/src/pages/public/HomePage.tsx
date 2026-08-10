@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { ArrowRight, ArrowUpRight, BookOpen, CalendarClock, Clock, Database, Edit3, Flag, Info, Mail, MapPin, PlayCircle, Sparkles, Users, Video } from 'lucide-react';
 import { UpcomingSessions } from '@/components/UpcomingSessions';
 import { SessionHistory } from '@/components/SessionHistory';
@@ -142,16 +143,56 @@ export default function HomePage() {
 </a>
 </div>
 </div>
+
+{/* 成人職場及生活適應專業諮詢（2026-08-10 新增）。首頁只放摘要與入口，細節在專頁——
+    首頁已經有三整塊服務說明，再複製兩份會讓這一頁長到沒人滑得完。 */}
+<div className="bg-white border-2 border-brown rounded-3xl p-6 md:p-10 mb-10 relative shadow-[8px_8px_0_rgba(93,64,55,0.15)] flex flex-col gap-6">
+  <div className="space-y-3 text-brown">
+    <h3 className="text-2xl font-black">【成人職場及生活適應專業諮詢】免費公益線上諮詢：把卡住的地方，一起拆成可以開始的步驟 🌿</h3>
+    <p className="leading-relaxed text-lg font-medium text-justify">
+      能力沒問題，卻總在行政事務、作息轉換、時間與生活結構上卡關？這種「局部障礙」和「整體優秀」之間的落差，最容易被誤解成不夠認真。<br />
+      由 <strong>大A社工督導 彥宇 × 諮商心理師 鏡子 × 職能治療師 況況</strong> 陪你把困擾拆開，建立可以立刻開始嘗試的結構化策略。每兩個月一場，Google Meet 線上進行。
+    </p>
+  </div>
+  <div className="bg-[#FFF9C4] border-l-8 border-accent-orange p-5 rounded-r-2xl">
+    <h4 className="font-bold text-brown text-lg mb-2 flex items-center gap-2"><Clock className="w-5 h-5" /> 開放報名場次</h4>
+    <UpcomingSessions projectSlug="career" registerPath="/career/register" />
+  </div>
+  <div className="flex flex-col md:flex-row gap-3">
+    <Link className="btn-warm py-4 px-6 bg-accent-blue text-brown flex-1 text-lg font-black justify-center border-2 border-brown shadow-warm" to="/career">看服務說明</Link>
+    <Link className="btn-warm py-4 px-6 bg-white text-brown flex-1 text-lg font-bold justify-center border-2 border-brown shadow-warm" to="/career/register">前往填寫報名表</Link>
+  </div>
+</div>
+
+{/* 協辦活動綜合專欄（2026-08-10 新增）。這裡刻意只放入口與感謝，不把合作案內容
+    複製一份過來——合作案會一直增加，複製等於每加一個就要改首頁。 */}
+<div className="bg-white border-2 border-brown rounded-3xl p-6 md:p-10 mb-10 relative shadow-[8px_8px_0_rgba(93,64,55,0.15)] flex flex-col gap-6">
+  <div className="space-y-3 text-brown">
+    <div className="flex items-center gap-2 flex-wrap">
+      <span className="session-tag bg-accent-teal text-brown">協辦</span>
+      <h3 className="text-2xl font-black">協辦活動・與各單位合作的講座與座談</h3>
+    </div>
+    <p className="leading-relaxed text-lg font-medium text-justify">
+      我與其他單位合作的活動都收在這裡——不論我是協辦、擔任講師或主持人。<strong>報名一律在主辦單位的表單完成，不經過本站。</strong>
+    </p>
+  </div>
+  <div className="flex flex-col md:flex-row gap-3">
+    <Link className="btn-warm py-4 px-6 bg-accent-teal text-brown flex-1 text-lg font-black justify-center border-2 border-brown shadow-warm" to="/co-host">前往協辦活動專欄</Link>
+  </div>
+</div>
+
 <div className="border-t-4 border-dashed border-brown/20 pt-8"><div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6"><div className="space-y-1"><h3 className="text-2xl font-bold text-brown flex items-center gap-2"><span className="bg-accent-teal text-brown px-2 py-1 rounded text-lg border border-brown">辦理</span>
                             ADHD 成人同儕線上團體-場次說明
                         </h3><p className="text-gray-600 font-medium">(點開有詳細介紹喔！)</p></div></div><UpcomingSessions showTopic />
 <SessionHistory
   title="👣 活動軌跡・已完成場次"
-  description="這些是我們過去美好的回憶！三項服務的場次全部永久留存，讓新朋友看見這個社群的累積。"
+  description="這些是我們過去美好的回憶！各項服務的場次全部永久留存，讓新朋友看見這個社群的累積。"
   projects={[
     { slug: 'peer-group', label: '線上團體' },
     { slug: 'parent', label: '家長諮詢' },
     { slug: 'navigator', label: '導航計畫' },
+    { slug: 'career', label: '職場諮詢' },
+    { slug: 'co-host', label: '協辦活動' },
   ]}
 />
 <div className="relative flex items-center py-8"><div className="flex-grow border-t-2 border-dashed border-brown/30"></div><span className="flex-shrink-0 mx-4 text-gray-500 font-bold bg-[#FFFDE7] px-2">籌備中與即將推出</span><div className="flex-grow border-t-2 border-dashed border-brown/30"></div></div><div className="construction-card"><div className="construction-badge"><MapPin className="w-3 h-3"></MapPin> 場地確認中

@@ -361,6 +361,14 @@ const emailColumn: RegistrationColumn = { key: 'email', header: '✉ 信箱（�
 
 /** 導航計畫分頁的欄位，逐欄對應 03_v4 的表頭。 */
 export const NAVIGATOR_COLUMNS = [nameColumn, statusColumn, mailColumn, reminderColumn, counselorColumn, monthColumn, finalSlotColumn, ageColumn];
+/**
+ * 職場生活諮詢分頁。
+ *
+ * 報名表沿用導航計畫的成人自填題目，但場次做法沿用親職（同一天多個時段、各自名額），
+ * 所以這裡取的是「勾選場次」，而不是導航那組「報名月份／確定時段」——後者是為了
+ * 跨月候選時段媒合而存在的，這條服務線用不到，放上去只會是永遠空白的欄。
+ */
+export const CAREER_COLUMNS = [nameColumn, statusColumn, mailColumn, answerColumn('occupation', '職業'), sessionSelectColumn, reminderColumn, ageColumn];
 /** 親職諮詢分頁（03_v4 的表頭＋使用者指定補上的家庭型態）。 */
 export const PARENT_COLUMNS = [
   withHeader(nameColumn, 'Aa 稱呼'),

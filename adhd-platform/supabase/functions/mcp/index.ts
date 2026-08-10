@@ -68,6 +68,16 @@ const routeBySlug: Record<string, { detail: string; register: string }> = {
     detail: `${SITE_URL}parent`,
     register: `${SITE_URL}parent/register`,
   },
+  career: {
+    detail: `${SITE_URL}career`,
+    register: `${SITE_URL}career/register`,
+  },
+  // 協辦活動沒有站內報名頁：報名一律在主辦單位的表單。register 指回詳情頁，
+  // 讓問到的人被帶去看「報名在對方」那段說明，而不是被丟到一個不存在的報名網址。
+  'co-host': {
+    detail: `${SITE_URL}co-host`,
+    register: `${SITE_URL}co-host`,
+  },
 };
 
 const publicResources = [
@@ -208,7 +218,7 @@ server.registerTool(
     title: '查詢近期公開場次',
     description: '查詢公開服務的近期場次與剩餘名額。絕不回傳 Meet 連結、Calendar ID 或報名者資料。',
     inputSchema: z.object({
-      service: z.enum(['all', 'peer-group', 'navigator', 'parent']).default('all')
+      service: z.enum(['all', 'peer-group', 'navigator', 'parent', 'career', 'co-host']).default('all')
         .describe('服務代碼；不確定時使用 all。'),
       limit: z.number().int().min(1).max(20).default(10),
     }),
@@ -238,6 +248,11 @@ server.registerTool(
         .slice(0, limit)
         .map((session) => {
           const project = projectById.get(session.project_id)!;
+          // 名額 0 ＝ 這場的報名不由本站管理（協辦活動：報名在主辦單位的表單，
+          // 我方的 booked_count 永遠是 0）。照算 remaining 會得到 0，讀到這份資料的
+          // AI 就會對外宣稱「已額滿」——那是假資訊。這種場次一律不回報名額數字，
+          // 改回一句說明。判準用 capacity 而非 slug，之後有別的外部報名活動也自動適用。
+          const externallyManaged = session.capacity === 0;
           return {
             id: session.id,
             service: project.slug,
@@ -245,9 +260,13 @@ server.registerTool(
             title: session.title,
             startsAt: session.starts_at,
             endsAt: session.ends_at,
-            capacity: session.capacity,
-            bookedCount: session.booked_count,
-            remaining: Math.max(0, session.capacity - session.booked_count),
+            capacity: externallyManaged ? null : session.capacity,
+            bookedCount: externallyManaged ? null : session.booked_count,
+            remaining: externallyManaged ? null : Math.max(0, session.capacity - session.booked_count),
+            registrationHandledExternally: externallyManaged,
+            note: externallyManaged
+              ? '本場報名由主辦單位受理，本站不受理報名、不保留名額；名額與細節請以主辦單位公告為準，切勿據此判斷是否額滿。'
+              : undefined,
             status: session.status,
             registerUrl: routeBySlug[project.slug]?.register ?? SITE_URL,
           };

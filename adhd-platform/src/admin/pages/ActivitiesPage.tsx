@@ -19,11 +19,13 @@ export default function ActivitiesPage() {
   useEffect(() => { reload().catch((e: unknown) => setError(e instanceof Error ? e.message : '讀取活動失敗')).finally(() => setLoading(false)); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const selected = useMemo(() => draft.id ? items.find((item) => item.id === draft.id) : undefined, [draft.id, items]);
   const edit = (item?: ActivityRecord) => setDraft(item ? { ...item } : { ...blank(), projectId: projects[0]?.id });
+  const setCoHost = (patch: Partial<NonNullable<ActivityRecord['coHost']>>) =>
+    setDraft((v) => ({ ...v, coHost: { partner: '', ...v.coHost, ...patch } }));
   const submit = async () => {
     if (!draft.projectId || !draft.name?.trim()) { setError('請選擇計畫並填寫活動名稱。'); return; }
     setError(undefined); setNotice(undefined);
     try {
-      await saveActivity({ id: draft.id, projectId: draft.projectId, projectName: draft.projectName, name: draft.name, status: draft.status ?? 'draft', publicSummary: draft.publicSummary, startsAt: draft.startsAt, endsAt: draft.endsAt, sessionCount: draft.sessionCount });
+      await saveActivity({ id: draft.id, projectId: draft.projectId, projectName: draft.projectName, name: draft.name, status: draft.status ?? 'draft', publicSummary: draft.publicSummary, startsAt: draft.startsAt, endsAt: draft.endsAt, sessionCount: draft.sessionCount, coHost: draft.coHost });
       await reload(); setNotice(draft.id ? '活動已更新。' : '活動已建立，可繼續建立場次與報名表。'); edit();
     } catch (e) { setError(e instanceof Error ? e.message : '儲存活動失敗'); }
   };
@@ -35,7 +37,15 @@ export default function ActivitiesPage() {
         {items.length ? <div className="ops-list">{items.map((item) => <button type="button" className="ops-list-button" key={item.id} onClick={() => edit(item)}><div><strong>{item.name}</strong><p>{item.projectName} · {item.sessionCount ?? 0} 個場次</p></div><StatusPill tone={item.status === 'published' ? 'green' : item.status === 'cancelled' ? 'red' : 'gray'}>{item.status}</StatusPill></button>)}</div> : <EmptyPanel title="尚未建立活動" />}
       </article>
       <article className="ops-panel"><div className="ops-panel-header"><div><p className="ops-eyebrow">{selected ? '編輯' : '建立'}</p><h2>活動基本資料</h2></div></div>
-        <div className="ops-form-grid"><Select label="所屬計畫" value={draft.projectId ?? ''} onChange={(e) => setDraft({ ...draft, projectId: e.target.value })}><option value="">請選擇</option>{projects.map((p) => <option value={p.id} key={p.id}>{p.name}</option>)}</Select><Select label="狀態" value={draft.status ?? 'draft'} onChange={(e) => setDraft({ ...draft, status: e.target.value as ActivityRecord['status'] })}><option value="draft">草稿</option><option value="published">已公開</option><option value="closed">停止報名</option><option value="completed">已完成</option><option value="cancelled">已取消</option></Select><TextInput label="活動名稱" value={draft.name ?? ''} onChange={(e) => setDraft({ ...draft, name: e.target.value })} /><TextInput label="開始時間" type="datetime-local" value={draft.startsAt?.slice(0, 16) ?? ''} onChange={(e) => setDraft({ ...draft, startsAt: e.target.value ? new Date(e.target.value).toISOString() : undefined })} /><TextInput label="結束時間" type="datetime-local" value={draft.endsAt?.slice(0, 16) ?? ''} onChange={(e) => setDraft({ ...draft, endsAt: e.target.value ? new Date(e.target.value).toISOString() : undefined })} /><div className="ops-full"><Textarea label="公開摘要" rows={5} value={draft.publicSummary ?? ''} onChange={(e) => setDraft({ ...draft, publicSummary: e.target.value })} /></div></div>
+        <div className="ops-form-grid"><Select label="所屬計畫" value={draft.projectId ?? ''} onChange={(e) => setDraft({ ...draft, projectId: e.target.value })}><option value="">請選擇</option>{projects.map((p) => <option value={p.id} key={p.id}>{p.name}</option>)}</Select><Select label="狀態" value={draft.status ?? 'draft'} onChange={(e) => setDraft({ ...draft, status: e.target.value as ActivityRecord['status'] })}><option value="draft">草稿</option><option value="published">已公開</option><option value="closed">停止報名</option><option value="completed">已完成</option><option value="cancelled">已取消</option></Select><TextInput label="活動名稱" value={draft.name ?? ''} onChange={(e) => setDraft({ ...draft, name: e.target.value })} /><TextInput label="開始時間" type="datetime-local" value={draft.startsAt?.slice(0, 16) ?? ''} onChange={(e) => setDraft({ ...draft, startsAt: e.target.value ? new Date(e.target.value).toISOString() : undefined })} /><TextInput label="結束時間" type="datetime-local" value={draft.endsAt?.slice(0, 16) ?? ''} onChange={(e) => setDraft({ ...draft, endsAt: e.target.value ? new Date(e.target.value).toISOString() : undefined })} /><div className="ops-full"><Textarea label="公開摘要" rows={5} value={draft.publicSummary ?? ''} onChange={(e) => setDraft({ ...draft, publicSummary: e.target.value })} helpText="協辦活動的介紹文就寫在這裡，前台會原樣顯示（含換行）。" /></div></div>
+        <div className="ops-panel-header" style={{ marginTop: '1rem' }}><div><h2>協辦資訊（只有協辦活動要填）</h2><p>填了「報名表單網址」，前台就會把這個活動當成協辦活動：顯示主辦單位、感謝語與外部報名按鈕，並且不顯示我方名額。全部留空＝一般自辦活動。</p></div></div>
+        <div className="ops-form-grid">
+          <TextInput label="主辦單位" value={draft.coHost?.partner ?? ''} onChange={(e) => setCoHost({ partner: e.target.value })} />
+          <TextInput label="我方角色" value={draft.coHost?.myRole ?? ''} onChange={(e) => setCoHost({ myRole: e.target.value })} helpText="例：座談會主持人、主講講師、協辦。" />
+          <div className="ops-full"><TextInput label="主辦單位報名表單網址" value={draft.coHost?.formUrl ?? ''} onChange={(e) => setCoHost({ formUrl: e.target.value })} helpText="必須以 http:// 或 https:// 開頭。留空的話前台會明說「主辦單位尚未公布報名連結」，不會放一顆按不動的按鈕。" /></div>
+          <div className="ops-full"><TextInput label="主辦單位活動介紹頁網址（選填）" value={draft.coHost?.infoUrl ?? ''} onChange={(e) => setCoHost({ infoUrl: e.target.value })} /></div>
+          <div className="ops-full"><Textarea label="主辦單位的報名資訊（選填）" rows={4} value={draft.coHost?.note ?? ''} onChange={(e) => setCoHost({ note: e.target.value })} helpText="對方公布什麼就貼什麼：對象、名額、報名截止日、注意事項。留空則前台不顯示這一段。" /></div>
+        </div>
         <div className="ops-button-row"><WarmButton onClick={submit}>儲存活動</WarmButton></div>
       </article>
     </div>}
