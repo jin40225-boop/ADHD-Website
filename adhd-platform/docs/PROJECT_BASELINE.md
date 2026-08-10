@@ -1,6 +1,6 @@
 # ADHD 家長支持平台：正式基準、目前狀態與重啟指南
 
-基準更新日期：2026-08-04（Asia/Taipei）
+基準更新日期：2026-08-10（Asia/Taipei）
 狀態：正式上線，後續維運
 本文件定位：專案技術狀態的單一事實來源。每次正式發布、資料庫結構變更或外部整合狀態改變後，更新本文件並在最下方新增一筆紀錄。
 
@@ -10,17 +10,19 @@
 |---|---|
 | GitHub repository | `jin40225-boop/ADHD-Website` |
 | 正式 branch | `main` |
-| 正式程式 commit | `c2d6293c27900c22ba1f274a63a336583cfded49` |
-| Commit 主旨 | `ci: run check:operations in deploy workflow` |
+| 正式程式 commit | `ae6cd52` |
+| Commit 主旨 | `feat: fold the sessions into month cards, and give them their fold-open back` |
 | 正式網站 | <https://jin40225-boop.github.io/ADHD-Website/> |
-| GitHub Pages workflow | <https://github.com/jin40225-boop/ADHD-Website/actions/runs/30882280259> |
-| Workflow 結果 | `completed / success` |
-| Workflow 完成時間 | `2026-08-04T05:57:14Z` |
-| 正式前端資源識別 | `assets/index-B_a12VJU.js` |
+| GitHub Pages workflow | <https://github.com/jin40225-boop/ADHD-Website/actions/runs/31353349436> |
+| Workflow 結果 | `completed / success`（含 `check:operations`、`check:site` 兩道守門） |
+| 正式前端資源識別 | `assets/index-BmVIshdb.js`（本機 build 產出 hash 相同，版本對齊已實證） |
 | Supabase project ref | `sssseazkhiswjhtmbluh` |
+| Supabase migration | 45 支，local／remote 全對齊，未套用 0（最新 `20260810000033`） |
 | Production base | `/ADHD-Website/` |
 
-正式程式 commit 與「文件更新 commit」是兩個不同概念。此頁所稱正式程式基準指目前 GitHub Pages 實際部署的 `c2d6293`；若後續只有文件異動，不得誤記為已部署新版功能。
+正式程式 commit 與「文件更新 commit」是兩個不同概念。此頁所稱正式程式基準指目前 GitHub Pages 實際部署的 `ae6cd52`；若後續只有文件異動，不得誤記為已部署新版功能。
+
+**版本對齊的判準**：正式站載入的 `assets/index-*.js` hash 必須與本機 `npm run build` 產出的同名檔一致。不一致就代表在看舊版，任何「改好了」的結論都不成立。
 
 ## 2. 權威 checkout 與副本邊界
 
@@ -880,3 +882,59 @@ DEPLOY.md 加了資料清理段落與對帳查詢。查證正式庫現況：22 �
 `get-google-refresh-token.mjs` 的寫檔禁令只列 `writeFileSync|appendFileSync|createWriteStream`，`node:fs/promises` 的非同步版本完全不在範圍內——而「把它改寫成 await 版」正是這種腳本最可能被改動的方向。已擴充涵蓋同步與非同步兩套。
 
 **通則**：守門若以 API 名稱列舉，就要問「同一件事還有沒有別的寫法」。擋住一種寫法而放過另一種，比沒有守門更危險，因為它讓人以為擋住了。
+
+## 24. 2026-08-10 公開頁面 UI 全面改造（`ae6cd52`）
+
+起因是使用者回報「公開頁面 UI 出現大量問題」，逐步聚焦為場次卡與全站對齊。全部經正式站實測驗收，非 dev server。
+
+### 24-1 場次卡：以「月」為聚合單位
+
+`UpcomingSessions.tsx` 改為 `groupByMonth()`：一個月一張卡，該月的多個時段列在卡內。裁決原文——同一類型活動在同一個月內的多個場次／時段，外層 UI 收斂在同一窗格（8 月場其實是同一天 8/16 的三個時段）。此原則不影響報名表，報名表是既定格式。
+
+| `/parent` @375×812 | 前 | 後 |
+|---|---|---|
+| 場次卡數 | 15 | 5 |
+| 卡片總高 | 5,160px | 774px |
+| 佔整頁比例 | 42% | 10% |
+| 整頁高 | 12,221px（15.1 螢幕） | 7,465px（9.2 螢幕） |
+
+### 24-2 摺疊互動還原，並列為既定格式
+
+摺疊在 `27c6262`（「改由資料庫驅動」那次）連同 `useSessionCardToggle` 一起被移除，但兩頁的「(點開有詳細介紹喔！)」留著——說得開卻點不開。**裁決：摺疊是既定格式，除非使用者明確要求拿掉，否則任何改版都必須維持。**
+
+實作**不還原**舊 hook（命令式改 DOM，月聚合後每次 re-render 會洗掉 inline style）。改用 React state ＋ `grid-template-rows: 0fr↔1fr`：動畫終點就是內容固有高度，比舊版的 `scrollHeight` inline maxHeight 更強（舊版還有 1000px 上限）。標頭改 `<button>`＋`aria-expanded`／`aria-controls`，收合內容以 `visibility:hidden` 脫離 tab 順序。預設最近一個月展開。
+
+### 24-3 `sessions.description`（migration `20260810000033`）
+
+展開層的「我們聊什麼：」介紹文沒有欄位可放。純新增 nullable text ＋ `sessions_public` view 尾端追加 ＋ **稽核枚舉補上該欄**（`log_session_admin_edit` 逐欄列舉，新欄位不會自動被涵蓋；`description` 與 `topic`／`guest` 同為後台可寫、匿名可見的文字欄，卻是三者中唯一沒有軌跡的）。後台場次抽屜新增 Textarea。
+
+推前唯讀檢查：正式庫 view 欄位與 `20260804000007` 逐字一致（無 dashboard 漂移）、`description` 不存在（`42703`）、anon 對 `sessions` 本表 `401/42501`、`migration list` 無 remote-only 版本。
+推後複驗：view 14 欄且 `description` 在尾端、前 13 欄順序未變；anon 對本表仍 401；可見場次 43 場／3 專案，與推前相同。
+
+⚠ **部署順序是硬約束**：`SAFE_COLUMNS` 含 `description` 的前端若先於 migration 上線，`sessions_public` 回 42703、備援查 `sessions` 本表被 revoke 擋下，**四個公開頁的場次區整段失效**。此故障模式已實測證實，非推論。
+
+### 24-4 死掉的色票
+
+`tailwind.config.js` 從未定義 `accent-teal`／`accent-pink`，而 `tokens.css` 有——雙軌同步漏了一軌，全站約 40 處 class 靜默失效。最嚴重的表現是 `bg-accent-teal text-white` 的「辦理」標籤：底色透明＋白字＝文字完全消失（使用者說的「圖形不見」）。
+
+補上色票後浮現第二層問題：`#80CBC4` 當文字色只有 1.87:1。文字與 hover 狀態改 `#006064`（7.35:1），粉色 icon 改 `#C2185B`；`bg-accent-teal/20`、`border-accent-teal` 這類底色與邊框用法維持不動。
+
+### 24-5 容器寬度三級制
+
+T1 `max-w-2xl`（表單／流程頁）、T2 `max-w-4xl`（敘事與卡片內容）、T3 `max-w-6xl`（僅就醫推薦地圖）。同一頁的主內容流只允許一個級別。`SessionHistory` 去掉自帶的 `max-w-4xl`，改由呼叫端決定寬度——那是「服務軌跡比上面的報名按鈕窄」的直接原因。
+
+驗收：1280px 下 `/parent` 的 hero／CTA／主內容／服務軌跡／關於發起人五個區塊全部 L200.5／R1064.5。
+
+### 24-6 一併修正的內容錯誤
+
+- 服務資訊「專屬團隊」落實 2026-08-04 裁決的三人版（大A社工督導 彥宇 × 心理師 鏡子 × 特教老師 Lisa）——該裁決從未落地到前台，兩份拷貝同時修。
+- 寫死的「每月限定２個名額」與資料庫實況（每月 3 場 × 各 1 名）不符，兩處同時改為 3。
+- 家長諮詢頁解除左右分欄，服務資訊與場次各自全寬（桌機右欄原本只有 460px）。
+
+### 24-7 已回報但未修（留待裁決）
+
+- `ParentConsultPage.tsx:27` 開頭段落仍寫「雙重身分的專業工作者」，與三人團隊文案矛盾。
+- `src/data/instructors.json` 只有彥宇與鏡子，缺 Lisa，`/instructors` 看不到她。
+- 同儕聚會 10–12 月在後台仍是 `closed`，首頁看不到（首頁未傳 `includeUnpublished`）。
+- `parent` 專案殘留 `【測試】E2E 專用場次（勿用，測完刪除）`，`status='open'`。
+- 8/16 同儕場的主題／來賓／介紹尚未填入（AI 無後台帳號）。
