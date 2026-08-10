@@ -39,6 +39,8 @@ export interface OperationalRegistration extends Registration {
   mailStatus?: RegistrationMailStatus;
   /** 提醒信寄出時間；undefined 表示 03_v4 的「已寄信提醒」未勾。 */
   reminderSentAt?: string;
+  /** 名額釋放時間。**undefined＝這筆還佔著 session_ids 裡每一場的名額**；有值＝已釋放。 */
+  capacityReleasedAt?: string;
   /** 諮商師回覆確認：undefined 未回覆、true 可、false 不可。 */
   counselorConfirmed?: boolean;
   /** 導航計畫最終確定時段的開始時間（結束＝開始＋60 分）。 */

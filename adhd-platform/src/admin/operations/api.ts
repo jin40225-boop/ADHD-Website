@@ -178,6 +178,10 @@ function mapRegistration(row: Row, projectName?: string, projectSlug?: string): 
     nextActionAt: row.next_action_at ?? undefined,
     archivedAt: row.archived_at ?? undefined,
     reminderSentAt: row.reminder_sent_at ?? undefined,
+    // 這一筆是否還佔著名額的**唯一可靠判準**。用狀態推是錯的：釋放與否看的是
+    // capacity_released_at（admin_transition_registration 只對 rejected／cancelled／
+    // withdrawn 釋放並蓋上時間戳），而狀態可能被人工改成任何值。
+    capacityReleasedAt: row.capacity_released_at ?? undefined,
     counselorConfirmed: row.counselor_confirmed ?? undefined,
     finalSlotAt: row.final_slot_at ?? undefined,
     createdAt: row.created_at,

@@ -112,13 +112,38 @@ export default function RegistrationsOperationsPage() {
     open: () => setSelectedId(registration.id),
   }));
 
-  /** 目前分頁裡有幾筆報名佔住多個時段，以及一共多佔了幾個名額。 */
-  const overHeld = useMemo(() => rows.reduce(
-    (acc, row) => row.heldSessions.length > 1
-      ? { count: acc.count + 1, extra: acc.extra + row.heldSessions.length - 1 }
-      : acc,
-    { count: 0, extra: 0 },
-  ), [rows]);
+  /**
+   * 名額對帳。
+   *
+   * 統計對象是 `inTab`（這條服務線的**全部**報名），不是 `filtered`——用篩選後的清單
+   * 統計會讓「審核狀態＝處理中」之類的預設篩選把待處理的筆數藏起來，變成一個看起來
+   * 是 0、其實不是 0 的數字。
+   *
+   * 判斷一筆是否還佔著名額一律看 `capacityReleasedAt`，不看狀態：釋放是
+   * `admin_transition_registration` 蓋的時間戳，而狀態可以被人工改成任何值。
+   *
+   * `mismatch` 是自我稽核：場次自己記的 `booked_count` 總和，應該等於這些報名宣稱
+   * 佔住的席次數。對不上就代表有席次的持有者不在這份清單裡——例如聯絡人被封存
+   * （`listContacts` 只取 archived_at is null），那筆報名就會整個從工作台消失，
+   * 名額卻還鎖著。這種情況沒有任何畫面會提示，只能靠對帳看出來。
+   */
+  const seatAudit = useMemo(() => {
+    const holders = inTab.filter(({ registration }) => !registration.capacityReleasedAt);
+    const claimed = holders.reduce((n, { registration }) => n + registration.sessionIds.filter((id) => sessionById.has(id)).length, 0);
+    const over = holders.reduce(
+      (acc, { registration }) => {
+        const held = registration.sessionIds.filter((id) => sessionById.has(id)).length;
+        return held > 1 ? { count: acc.count + 1, extra: acc.extra + held - 1 } : acc;
+      },
+      { count: 0, extra: 0 },
+    );
+    const projectIds = new Set(inTab.map(({ registration }) => registration.projectId));
+    const booked = sessions
+      .filter((session) => projectIds.has(session.projectId))
+      .reduce((n, session) => n + session.bookedCount, 0);
+    return { ...over, claimed, booked, mismatch: projectIds.size ? booked - claimed : 0 };
+  }, [inTab, sessions, sessionById]);
+  const overHeld = seatAudit;
 
   const saveAdmin = async () => { if (!current) return; try { await updateRegistrationAdministration(current.registration.id, { answers, priority: draft.priority as WorkPriority, assignedTo: draft.assignedTo || null, nextActionAt: draft.nextActionAt || null }); await reload(); setNotice('報名資料與行政欄位已更新。'); } catch (e) { setError(e instanceof Error ? e.message : '更新失敗'); } };
   const toggleSession = (id: string) => { const ids = draft.sessionIds ?? []; setDraft({ ...draft, sessionIds: ids.includes(id) ? ids.filter((v) => v !== id) : [...ids, id] }); };
@@ -197,8 +222,15 @@ export default function RegistrationsOperationsPage() {
         統計對象刻意是**目前分頁篩選後**的清單，跟你眼前看到的表格一致，不會出現
         「說有 3 筆、表上卻找不到」。 */}
     {overHeld.count ? <OpsNotice tone="warning">
-      ⚠ 這個分頁有 <strong>{overHeld.count}</strong> 筆報名各自佔住多個時段，合計多佔了 <strong>{overHeld.extra}</strong> 個名額。
-      這些名額對外會顯示成「已額滿」，別人報不進來。請在「確定場次」欄按「只留這個」收斂成實際錄取的那一場，多的會自動釋放。
+      ⚠ 這條服務線有 <strong>{overHeld.count}</strong> 筆報名各自佔住多個時段，合計多佔了 <strong>{overHeld.extra}</strong> 個名額（<strong>不受上方篩選影響</strong>）。
+      這些名額對外會顯示成「已額滿」，別人報不進來。請在「確定場次」欄的下拉選定實際錄取的那一場，多的會自動釋放。
+    </OpsNotice> : null}
+    {seatAudit.mismatch ? <OpsNotice tone="danger">
+      ⚠ 名額對不上：場次記錄佔用 <strong>{seatAudit.booked}</strong> 個席次，但這條服務線看得到的報名只認領 <strong>{seatAudit.claimed}</strong> 個
+      （差 {seatAudit.mismatch > 0 ? '+' : ''}{seatAudit.mismatch}）。
+      {seatAudit.mismatch > 0
+        ? '代表有席次的持有者不在這份清單裡——最常見的原因是那位聯絡人被封存了，報名會整個從工作台消失、名額卻還鎖著。'
+        : '代表有報名宣稱佔著名額、場次那邊卻沒記到，通常是資料被直接改過。'}
     </OpsNotice> : null}
     <div className="ops-tabs">{TABS.map((item) => <button type="button" key={item.slug} className={`ops-tab ${item.slug === activeTab.slug ? 'ops-tab--active' : ''}`} onClick={() => setTab(item.slug)}>
       {item.label}<small>{registrations.filter(({ registration }) => item.slug === 'all' || registration.projectSlug === item.slug).length}</small>
