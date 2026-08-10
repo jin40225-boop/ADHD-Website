@@ -255,6 +255,17 @@ server.registerTool(
           .filter((activity) => activity.cohost_info?.formUrl)
           .map((activity) => activity.id),
       );
+      // 第二個判準，與資料庫的 block_external_registration 條件 B 相同：**專案沒有
+      // 報名表定義**＝站內報名頁開不起來＝這條服務線本來就不收站內報名。
+      //
+      // 少了它會有一個真實的破口：活動還是草稿時 `activities_public` 讀不到它，
+      // 上面那個 Set 就是空的，於是協辦場次會被當成一般場次、照實回報「還有 100 個
+      // 名額」。實測確認過這件事會發生——草稿期間本來就是活動已經建好、還沒公開的
+      // 那段時間，而場次早就在 sessions_public 裡了。
+      const projectsWithForm = new Set(
+        (await publicQuery<{ project_id: string }>('form_schemas', { select: 'project_id' }))
+          .map((row) => row.project_id),
+      );
       const safeSessions = sessions
         .filter((session) => projectIds.has(session.project_id))
         .slice(0, limit)
@@ -264,7 +275,8 @@ server.registerTool(
           // 照算 remaining 會得到 0，讀到這份資料的 AI 就會對外宣稱「已額滿」——那是假資訊。
           // 判準是「所屬活動填了對方的報名表單」，與資料庫的 block_external_registration
           // 同一個依據，不會因為有人調整名額而失準。
-          const externallyManaged = Boolean(session.activity_id && externalActivities.has(session.activity_id));
+          const externallyManaged = Boolean(session.activity_id && externalActivities.has(session.activity_id))
+            || !projectsWithForm.has(session.project_id);
           return {
             id: session.id,
             service: project.slug,
