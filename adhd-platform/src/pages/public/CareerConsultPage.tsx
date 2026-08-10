@@ -86,7 +86,7 @@ export default function CareerConsultPage() {
                   <Clock className="w-6 h-6" /> 開放報名場次
                 </h4>
                 <p className="text-xs font-bold text-brown mb-2">
-                  每兩個月一場，每個時段 1 位，名額即時更新。各場次的報名截止時間會顯示在報名表上。
+                  每兩個月一場，每個時段最後會安排 1 位。<strong>同一個時段可以多人報名</strong>——我們會從報名的人之中評估後安排，所以看到時段還開著就可以報，不用擔心被別人先搶走。各場次的報名截止時間會顯示在報名表上。
                 </p>
                 <UpcomingSessions projectSlug="career" registerPath="/career/register" />
               </div>
@@ -98,7 +98,7 @@ export default function CareerConsultPage() {
               </h4>
               <ul className="text-[#006064] space-y-2 font-bold list-decimal list-inside text-lg">
                 <li><strong>填寫表單：</strong> <strong>由你本人填寫</strong>——這是成人自己報名的諮詢，表單問的是你自己的職場與生活狀況，<strong>不需要填寫孩子的資料</strong>。請於各場次的期限前完成，逾期視為無效。</li>
-                <li><strong>需求初評與媒合：</strong> 收到報名後，由社工進行第一線需求初評，釐清你的核心困擾，並媒合合適的專業夥伴。</li>
+                <li><strong>需求初評與媒合：</strong> 收到報名後，由社工進行第一線需求初評，釐清你的核心困擾，並媒合合適的專業夥伴。<strong>同一個時段若有多人報名，會在這一步評估後安排</strong>——沒有被安排到的，我們會提供候補或改期。</li>
                 <li><strong>收取信件：</strong> 無論是否安排成功，審核結果都會透過 Email 通知。</li>
               </ul>
               <div className="mt-4 p-3 bg-white border border-brown text-red-600 font-bold rounded text-sm">
