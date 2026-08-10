@@ -39,6 +39,15 @@ export interface RowContext {
   contact: ContactRecord;
   /** 這筆報名的主場次（session_ids 的第一筆）；導航＝該月名額。 */
   session?: SessionSlot;
+  /**
+   * 這筆報名**實際佔住的所有場次**。
+   *
+   * 一定要有這一項：報名表的時段欄是「可複選」，家長勾兩個時段就會各扣一個名額
+   * （`enforce_session_capacity` 逐一遞增），而確認錄取只改狀態、不會動 session_ids。
+   * 在此之前這一欄只餵 `session`（第一筆），所以「一筆報名佔著兩個時段」在清單上
+   * 完全看不出來——只有點進詳情的場次移轉面板才看得到。
+   */
+  heldSessions: SessionSlot[];
   /** 同專案的所有場次，供「確定場次」下拉選。 */
   projectSessions: SessionSlot[];
   busy: boolean;
@@ -316,11 +325,33 @@ const childrenColumn: RegistrationColumn = {
   },
 };
 
+/** 一筆報名佔住多個時段時的顯示格式：`12/20 09:00`。 */
+function slotLabel(session: SessionSlot) {
+  return new Date(session.startsAt).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
 /** 確定場次：直接在格內換場次，走原子移轉。 */
 const sessionSelectColumn: RegistrationColumn = {
   key: 'sessionPick',
   header: '🕐 確定場次（可改）',
   cell: (row) => {
+    // 佔住多個時段時，下拉選單會說謊——它只顯示得出一個值，而這筆報名實際上把
+    // 每一個被勾選的時段都扣掉了一個名額。家長「可複選」是刻意的（先給幾個可以配合
+    // 的時間），但最終一定要收斂成一個；而確認錄取只改狀態、不會動 session_ids，
+    // 多的那些就會一直被佔著。這裡把實況攤開，並給一鍵收斂。
+    if (row.heldSessions.length > 1) {
+      return <div className="ops-multi-slot">
+        <span className="ops-multi-slot__warn">⚠ 佔用 {row.heldSessions.length} 個時段</span>
+        {row.heldSessions.map((session) => <button
+          type="button"
+          key={session.id}
+          className="ops-multi-slot__pick"
+          disabled={row.busy}
+          title="只保留這個時段，其餘自動釋放名額"
+          onClick={() => row.setSessions([session.id])}
+        >{slotLabel(session)}　只留這個</button>)}
+      </div>;
+    }
     // 已完成／已取消的場次不列入可選項——這份清單是用來「改成哪一場」的，
     // 把歷年場次全列出來只會讓清單長到難用。目前掛著的那一場一定保留，否則它會從自己的格子裡消失。
     const options = row.projectSessions.filter(

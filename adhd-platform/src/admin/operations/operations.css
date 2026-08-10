@@ -36,6 +36,13 @@
 .ops-cell-select--gray{background:#ede7e3;color:#5b4a43}.ops-cell-select--blue{background:#dceff7;color:#255c73}.ops-cell-select--green{background:#dff1e7;color:#276447}
 .ops-cell-select--yellow{background:#fff0b5;color:#765d00}.ops-cell-select--orange{background:#ffe8cc;color:#8f4a12}.ops-cell-select--red{background:#ffe0da;color:#973d2c}.ops-cell-select--purple{background:#efe3fb;color:#5f2f8c}
 .ops-cell-check{accent-color:#2e7d32;cursor:pointer;height:16px;width:16px}.ops-cell-check:disabled{cursor:progress}
+/* 一筆報名佔住多個時段：把實況攤在清單上，並提供一鍵收斂。紅底是刻意的——
+   這是待處理的狀態，不是正常態，掃過清單時要一眼看得到。 */
+.ops-multi-slot{display:flex;flex-direction:column;gap:.2rem;align-items:flex-start}
+.ops-multi-slot__warn{background:#ffe0da;color:#973d2c;border-radius:7px;font-size:.72rem;font-weight:800;padding:.18rem .4rem;white-space:nowrap}
+.ops-multi-slot__pick{background:#fff;border:1.5px solid #d5c4bb;border-radius:7px;cursor:pointer;font:inherit;font-size:.72rem;font-weight:700;padding:.18rem .4rem;white-space:nowrap;color:#5b4a43}
+.ops-multi-slot__pick:hover{background:#dff1e7;border-color:#276447;color:#276447}
+.ops-multi-slot__pick:disabled{cursor:progress;opacity:.6}
 .ops-cell-datetime{background:#fff;border:1.5px solid #e0d4c9;border-radius:7px;color:inherit;font:inherit;font-size:.78rem;padding:.16rem .35rem}
 .ops-cell-datetime:hover{border-color:#b9a294}.ops-cell-datetime:disabled{cursor:progress;opacity:.6}
 .ops-cell-muted{color:#7d675e;font-size:.82rem}
