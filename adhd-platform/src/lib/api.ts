@@ -321,6 +321,10 @@ export async function submitRegistration(input: SubmitRegistrationInput): Promis
     try { const payload = await context.json() as { error?: string }; detail = payload.error || detail; } catch { /* 保留原錯誤 */ }
   }
   if (detail.includes('SESSION_FULL_OR_CLOSED')) throw new ApiError('您選擇的場次剛剛額滿或已關閉，請重新選擇其他場次。', 'SESSION_FULL');
+  if (detail.includes('DUPLICATE_REGISTRATION')) {
+    const dates = detail.split('DUPLICATE_REGISTRATION:')[1] ?? '';
+    throw new ApiError(`您先前已報名過這些場次（${dates}）。若想加報新場次，請只勾選尚未報名的場次再送出。`, 'INSERT');
+  }
   if (detail.includes('RATE_LIMITED')) throw new ApiError('送出次數過多，請稍後再試或聯絡管理員。', 'INSERT');
   if (detail.includes('CAPTCHA')) throw new ApiError('安全驗證未完成，請重新整理後再試。', 'INSERT');
   throw new ApiError(detail, 'INSERT');

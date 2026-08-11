@@ -97,6 +97,8 @@ export default function RegisterPage({ slug, showPastSessions = false }: { slug:
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string>();
   const [reloadKey, setReloadKey] = useState(0);
+  /** 連點防護：確認頁送出鈕在送出期間鎖住，避免同一人連點產生多筆重複報名。 */
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!isSupabaseReady) {
@@ -180,7 +182,8 @@ export default function RegisterPage({ slug, showPastSessions = false }: { slug:
   };
 
   const handleSubmit = async (answers: FormAnswers) => {
-    if (!project || !schema) return;
+    if (!project || !schema || submitting) return;
+    setSubmitting(true);
     setError(undefined);
     const raw = answers[SESSION_FIELD_KEY];
     const picked = Array.isArray(raw) ? raw.filter((item): item is string => typeof item === 'string') : [];
@@ -211,6 +214,8 @@ export default function RegisterPage({ slug, showPastSessions = false }: { slug:
         setError(err instanceof Error ? err.message : '送出失敗，請稍後再試。');
       }
       window.scrollTo(0, 0);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -297,6 +302,7 @@ export default function RegisterPage({ slug, showPastSessions = false }: { slug:
                     schema={effectiveSchema}
                     onSubmit={handleSubmit}
                     submitLabel="送出報名"
+                    disabled={submitting}
                   />
                 ) : null}
               </div>
