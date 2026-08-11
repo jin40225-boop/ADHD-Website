@@ -27,6 +27,28 @@ function fmtTime(iso: string): string {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
+function isSameDay(a: string, b: string): boolean {
+  const x = new Date(a);
+  const y = new Date(b);
+  return x.getFullYear() === y.getFullYear() && x.getMonth() === y.getMonth() && x.getDate() === y.getDate();
+}
+
+/**
+ * 一列時段的時間文字。`withDate` 是「這一組場次不在同一天，所以每列要自己標日期」。
+ *
+ * 跨日的那一場另外處理：`endsAt` 與 `startsAt` 不同天時一定要印出結束日期，
+ * 否則會變成「20:00 – 10:00」這種看起來像壞掉的值——而且此時就算整組同一天，
+ * 開始日期也得補上，不然讀者只看到一個孤零零的結束日期不知道從哪天算起。
+ */
+export function fmtSlotRange(startsAt: string, endsAt: string, withDate: boolean): string {
+  if (!isSameDay(startsAt, endsAt)) {
+    return `${fmtDate(startsAt)} ${fmtTime(startsAt)} – ${fmtDate(endsAt)} ${fmtTime(endsAt)}`;
+  }
+  return withDate
+    ? `${fmtDate(startsAt)} ${fmtTime(startsAt)} – ${fmtTime(endsAt)}`
+    : `${fmtTime(startsAt)} – ${fmtTime(endsAt)}`;
+}
+
 /** 只剝「【N月場】」這個精確型式，避免誤傷其他【】標題。 */
 function stripMonthTag(title: string): string {
   return title.replace(/^【\d+月場】\s*/, '');
@@ -260,9 +282,7 @@ export function UpcomingSessions({
                           <span>
                             <span className="flex items-center gap-1 text-sm font-bold text-gray-600">
                               <Clock className="w-4 h-4" />
-                              {sameDay
-                                ? `${fmtTime(s.startsAt)} – ${fmtTime(s.endsAt)}`
-                                : `${fmtDate(s.startsAt)} ${fmtTime(s.startsAt)} – ${fmtTime(s.endsAt)}`}
+                              {fmtSlotRange(s.startsAt, s.endsAt, !sameDay)}
                             </span>
                             <span className="text-xs font-bold text-gray-500">
                               {notYetOpen ? '尚未開放報名' : isFull ? '已額滿' : `剩 ${remaining} 名`}
