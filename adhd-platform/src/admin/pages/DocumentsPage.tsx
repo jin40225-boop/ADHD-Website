@@ -13,7 +13,7 @@ import { WarmButton } from '@/components/ui/WarmButton/WarmButton';
 import { adminListEmailTemplates, adminListProjects, adminListSessions, invokeBulkEmail, invokeGenerateDocument } from '@/lib/api';
 import { listContactGroups, listContacts, listGeneratedDocuments } from '../operations/api';
 import type { ContactGroupRecord, ContactRecord, GeneratedDocumentRecord } from '../operations/types';
-import { applyTemplate, buildBulkContext, residualVariables, resolveBulkRecipients } from '../operations/emailCompose';
+import { applyTemplate, buildBulkContext, residualVariables, resolveBulkRecipients, sessionAttendeeIds } from '../operations/emailCompose';
 import { EmptyPanel, InlineSpinner, OpsNotice, PageHeader } from '../operations/components';
 import { sessionDateText, sessionTimeText } from '../operations/SessionTable';
 
@@ -33,7 +33,7 @@ export default function DocumentsPage() {
   const [contacts, setContacts] = useState<ContactRecord[]>([]); const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [loading, setLoading] = useState(true); const [error, setError] = useState<string>(); const [notice, setNotice] = useState<string>();
   const [docType, setDocType] = useState(DOC_TYPES[0]); const [scope, setScope] = useState('all-h2'); const [audience, setAudience] = useState('none'); const [note, setNote] = useState('');
-  const [bulk, setBulk] = useState({ groupIds: [] as string[], includeIds: [] as string[], excludeIds: [] as string[], templateId: '', subject: '', body: '' });
+  const [bulk, setBulk] = useState({ groupIds: [] as string[], includeIds: [] as string[], excludeIds: [] as string[], sessionId: '', templateId: '', subject: '', body: '' });
   const [sending, setSending] = useState(false); const [confirming, setConfirming] = useState(false);
   /** 生成的兩段式：先拿 willSend（不呼叫 API），使用者看過才真的產。 */
   const [genPreview, setGenPreview] = useState<{ willSend: string; redactedNames: number; model: string }>();
@@ -81,9 +81,18 @@ export default function DocumentsPage() {
   /** 選擇器接真實場次，Phase 6 接線時不必再換資料來源。已完成的場次不列入產生範圍。 */
   const scopeOptions = useMemo(() => sessions.filter((session) => session.status !== 'done' && session.status !== 'cancelled'), [sessions]);
 
+  /** 選定場次的可讀名稱，作為群發名單上該來源的標籤。 */
+  const sessionVia = useMemo(() => {
+    const session = sessions.find((item) => item.id === bulk.sessionId);
+    return session ? `場次 ${sessionDateText(session.startsAt)} ${sessionTimeText(session.startsAt)}` : '';
+  }, [sessions, bulk.sessionId]);
+  const sessionIncludes = useMemo(
+    () => (bulk.sessionId ? sessionAttendeeIds(contacts, bulk.sessionId).map((contactId) => ({ contactId, via: sessionVia })) : []),
+    [contacts, bulk.sessionId, sessionVia],
+  );
   const { recipients, skipped } = useMemo(
-    () => resolveBulkRecipients(groups, contacts, bulk),
-    [groups, contacts, bulk],
+    () => resolveBulkRecipients(groups, contacts, { ...bulk, sessionIncludes }),
+    [groups, contacts, bulk, sessionIncludes],
   );
   // 主旨與內文都要看：主旨裡漏一個 {{月份}} 同樣是寄給所有人。
   const residual = useMemo(() => residualVariables(bulk.subject, bulk.body), [bulk.subject, bulk.body]);
@@ -93,7 +102,7 @@ export default function DocumentsPage() {
       const result = await invokeBulkEmail({ contactIds: recipients.map((item) => item.contactId), subject: bulk.subject, body: bulk.body });
       await reload();
       setConfirming(false);
-      setBulk({ groupIds: [], includeIds: [], excludeIds: [], templateId: '', subject: '', body: '' });
+      setBulk({ groupIds: [], includeIds: [], excludeIds: [], sessionId: '', templateId: '', subject: '', body: '' });
       setError(undefined);
       // 0 封不是成功。名單空掉（例如類群裡一個人也沒有）時，「全部成功」會讓人以為通知過了。
       if (!result.sent) setError(`一封也沒有寄出——最終名單上沒有任何收得到信的人${result.failed.length ? `，${result.failed.length} 封失敗` : ''}。`);
@@ -156,6 +165,12 @@ export default function DocumentsPage() {
         {group.name}<span className="ops-cell-legacy">{group.members.length}</span>
       </label>)}</div>
       <div className="ops-form-grid">
+        <Select label="依場次選收件人（該場全部報名者）" value={bulk.sessionId} onChange={(e) => { setConfirming(false); setBulk({ ...bulk, sessionId: e.target.value }); }}>
+          <option value="">不依場次篩選</option>
+          {scopeOptions.map((session) => <option key={session.id} value={session.id}>
+            {projectName.get(session.projectId) ?? '—'}｜{sessionDateText(session.startsAt)} {sessionTimeText(session.startsAt)}
+          </option>)}
+        </Select>
         <Select label="另外加選特定人" value="" onChange={(e) => { if (e.target.value) { setConfirming(false); setBulk({ ...bulk, includeIds: [...new Set([...bulk.includeIds, e.target.value])] }); } }}>
           <option value="">選擇…</option>
           {contacts.filter((contact) => contact.primaryEmail).map((contact) => <option key={contact.id} value={contact.id}>{contact.displayName}（{contact.primaryEmail}）</option>)}

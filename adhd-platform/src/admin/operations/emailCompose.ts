@@ -183,14 +183,41 @@ export function residualVariables(...texts: string[]): string[] {
 export interface BulkRecipient { contactId: string; displayName: string; email: string; via: string }
 
 /**
- * 群發名單：選定類群的成員 ＋ 另外加選的人 － 排除的人，依聯絡人去重。
+ * 「已退回／中途放棄／已取消」的報名不算這場還有效的人。拼法在這個專案裡兩種同時存在
+ * （cancelled／canceled，見 `admin_transition_registration` 的釋額清單），兩種都要擋，
+ * 比對前先小寫化以防萬一。
+ */
+const NON_ATTENDING_STATUS = new Set(['rejected', 'withdrawn', 'cancelled', 'canceled']);
+
+/**
+ * 某場次目前仍算數的報名者，對應到的聯絡人 id（去重）。
+ * 只看「這人在這場有沒有一筆還算數的報名」，不管他是否同時報了別場——
+ * 選單一場次時，報兩場的人只該算一次。
+ */
+export function sessionAttendeeIds(
+  contacts: { id: string; registrations: { sessionIds: string[]; status: string }[] }[],
+  sessionId: string,
+): string[] {
+  return contacts
+    .filter((contact) => contact.registrations.some(
+      (reg) => reg.sessionIds.includes(sessionId) && !NON_ATTENDING_STATUS.has(reg.status.toLowerCase()),
+    ))
+    .map((contact) => contact.id);
+}
+
+/**
+ * 群發名單：選定類群的成員 ＋ 選定場次的報名者 ＋ 另外加選的人 － 排除的人，依聯絡人去重。
  * 沒有信箱的人不會進名單（也不會被靜靜吞掉，另外回報在 skipped）——寄不到卻顯示「已寄出 N 封」
  * 是最容易讓人以為通知過了的假象。
  */
 export function resolveBulkRecipients(
   groups: { id: string; name: string; members: { contactId: string }[] }[],
   contacts: { id: string; displayName: string; primaryEmail?: string; noBulkEmail?: boolean }[],
-  selection: { groupIds: string[]; includeIds: string[]; excludeIds: string[] },
+  selection: {
+    groupIds: string[]; includeIds: string[]; excludeIds: string[];
+    /** 依場次選出的收件人，來源標籤已由呼叫端算好（例如「場次 8/16 14:00」）。 */
+    sessionIncludes?: { contactId: string; via: string }[];
+  },
 ): { recipients: BulkRecipient[]; skipped: { displayName: string; reason: string }[] } {
   const byId = new Map(contacts.map((contact) => [contact.id, contact]));
   const excluded = new Set(selection.excludeIds);
@@ -199,6 +226,7 @@ export function resolveBulkRecipients(
     if (!selection.groupIds.includes(group.id)) continue;
     for (const member of group.members) if (!via.has(member.contactId)) via.set(member.contactId, group.name);
   }
+  for (const item of selection.sessionIncludes ?? []) if (!via.has(item.contactId)) via.set(item.contactId, item.via);
   for (const id of selection.includeIds) if (!via.has(id)) via.set(id, '個別加選');
 
   const recipients: BulkRecipient[] = []; const skipped: { displayName: string; reason: string }[] = [];
