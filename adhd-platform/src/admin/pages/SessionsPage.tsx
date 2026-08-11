@@ -152,10 +152,24 @@ export default function SessionsPage() {
           </article>
 
           <article className="ops-panel">
-            <div className="ops-panel-header"><div><h2>報名概況</h2><p>已報名 {current.bookedCount}／名額 {current.capacity}</p></div></div>
+            {/*
+              已結束的場次要顯示「名冊 N 人」而不是「已報名 0／名額 100」。
+              歷史報名回填時刻意不補 booked_count（場次已結束，名額不再被佔用，而後台的
+              兩個名額警告都只統計未釋額的列，補了反而讓它們誤報）。於是舊場次會出現
+              「0／100」配一份十幾人的名冊——**那個 0 是對的**，但它看起來像壞掉的數字，
+              而看起來壞掉的數字會被人「修好」：協辦活動當初就是靠 capacity=0 當防線，
+              被人改成 50／100 之後防線就消失了（見 20260810000038）。這裡直接不顯示
+              那個會誘人動手的數字。
+            */}
+            <div className="ops-panel-header"><div><h2>報名概況</h2><p>
+              {current.status === 'done' || current.status === 'cancelled'
+                ? `名冊 ${rosterOf(current.id).length} 人（場次已結束，不再佔用名額）`
+                : `已報名 ${current.bookedCount}／名額 ${current.capacity}`}
+            </p></div></div>
             {rosterOf(current.id).length ? <div className="ops-list">{rosterOf(current.id).map(({ contact, registration }) => <div className="ops-list-row" key={registration.id}>
               <span><strong>{contact.displayName || registration.email}</strong></span>
-              <small>{STATUS_LABEL[registration.status] ?? registration.status}</small>
+              <small>{STATUS_LABEL[registration.status] ?? registration.status}
+                {registration.capacityReleasedAt ? ' · 不佔名額' : ''}</small>
             </div>)}</div> : <EmptyPanel title="這個場次還沒有報名" />}
           </article>
 

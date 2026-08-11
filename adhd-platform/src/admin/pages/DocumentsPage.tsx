@@ -78,8 +78,17 @@ export default function DocumentsPage() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const projectName = useMemo(() => new Map(projects.map((project) => [project.id, project.name])), [projects]);
-  /** 選擇器接真實場次，Phase 6 接線時不必再換資料來源。已完成的場次不列入產生範圍。 */
-  const scopeOptions = useMemo(() => sessions.filter((session) => session.status !== 'done' && session.status !== 'cancelled'), [sessions]);
+  /**
+   * 選擇器接真實場次。已完成／已取消的不列入產生範圍。
+   * 也排除**已經結束但還沒被轉成 done 的**場次：轉 done 是後台的手動動作，沒有任何
+   * 自動機制會做，所以辦完卻忘了轉的場次會一直留在這份清單裡。這在歷史報名回填之後
+   * 特別要緊——那些舊場次從此有名冊了，選到它就是把整場舊名單重新寄一次行前提醒。
+   */
+  const scopeOptions = useMemo(() => {
+    const now = Date.now();
+    return sessions.filter((session) => session.status !== 'done' && session.status !== 'cancelled'
+      && !(session.endsAt && new Date(session.endsAt).getTime() < now));
+  }, [sessions]);
 
   /** 選定場次的可讀名稱，作為群發名單上該來源的標籤。 */
   const sessionVia = useMemo(() => {
