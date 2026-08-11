@@ -73,7 +73,7 @@ export default function ParentConsultPage() {
                     </div>
 </div>
 <div className="mt-2 w-full">
-<a className="btn-warm py-5 px-6 bg-accent-blue text-brown w-full text-2xl md:text-3xl shadow-warm animate-pulse-slow flex flex-col items-center justify-center border-4 border-brown" href={LINKS.LINK_1} target="_blank">
+<a className="btn-warm py-5 px-6 bg-accent-blue text-brown w-full text-2xl md:text-3xl shadow-warm animate-pulse-slow flex flex-col items-center justify-center border-4 border-brown" href={LINKS.LINK_1} target="_blank" rel="noopener noreferrer">
 <span>📝 前往填寫報名表</span>
 <span className="text-base font-bold mt-2 opacity-80 bg-white/40 px-3 py-1 rounded-full border border-brown/20">報名連結</span>
 </a>
