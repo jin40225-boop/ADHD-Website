@@ -2,9 +2,9 @@
 export default function RecommendationDbContent() {
   return (
     <article className="prose max-w-none">
-      <h1 className="text-3xl font-extrabold text-brown mb-6 border-b-2 border-brown pb-2">ADHD就醫家長推薦資料庫</h1>    <img src={`${import.meta.env.BASE_URL}assets/map-preview.png`} alt="ADHD 就醫家長推薦資料庫預覽" loading="lazy" decoding="async" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />    <ul className="list-disc pl-6 my-4 space-y-2 text-brown">
+      <h1 className="text-3xl font-extrabold text-brown mb-6 border-b-2 border-brown pb-2">ADHD就醫家長推薦資料庫</h1>    <img src={`${import.meta.env.BASE_URL}assets/map-preview.png`} alt="ADHD 就醫家長推薦資料庫預覽" loading="lazy" decoding="async" width={1170} height={230} className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />    <ul className="list-disc pl-6 my-4 space-y-2 text-brown">
     <li className="leading-relaxed">ADHD 醫療資料庫  快捷鍵及使用聲明   ←請點我</li>
-    </ul>    <h1 className="text-3xl font-extrabold text-brown mb-6 border-b-2 border-brown pb-2">ADHD 醫療資料庫  使用教學</h1>
+    </ul>    <h2 className="text-3xl font-extrabold text-brown mb-6 border-b-2 border-brown pb-2">ADHD 醫療資料庫  使用教學</h2>
     <p className="text-brown leading-relaxed my-4">💬 使用聲明</p>
     <p className="text-brown leading-relaxed my-4">「ADHD 醫療地圖」內的資訊來自 ADHD 患者與家長的個人經驗分享進行推薦，僅供參考。本網站不對資料的完整性、準確性或時效性做出保證，亦不為任何一位醫生背書。</p>
     <h3 className="text-xl font-semibold text-brown mt-6 mb-3">(可直接按下面快捷鍵、往下滑跳過)</h3>    <h2 className="text-2xl font-bold text-brown mt-8 mb-4">「推薦醫師及醫院資訊快捷」及各項快捷</h2>
@@ -18,9 +18,9 @@ export default function RecommendationDbContent() {
     <ul className="list-disc pl-6 my-4 space-y-2 text-brown">
     <li className="leading-relaxed">資料庫使用教學  ←請點我</li>
     </ul>
-    <h1 className="text-3xl font-extrabold text-brown mb-6 border-b-2 border-brown pb-2">使用教學資料庫部分</h1>
+    <h2 className="text-3xl font-extrabold text-brown mb-6 border-b-2 border-brown pb-2">使用教學資料庫部分</h2>
     <h2 className="text-2xl font-bold text-brown mt-8 mb-4">在醫師姓名處有個開啟按紐，點擊後即可進入完整頁面查看完整內容。(如圖)</h2>
-    <img src={`${import.meta.env.BASE_URL}assets/map-guide-search.jpg`} alt="推薦資料庫關鍵字搜尋操作示範" loading="lazy" decoding="async" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
+    <img src={`${import.meta.env.BASE_URL}assets/map-guide-search.jpg`} alt="推薦資料庫關鍵字搜尋操作示範" loading="lazy" decoding="async" width={374} height={244} className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
     <hr className="border-t-2 border-brown my-8" />
     <ul className="list-disc pl-6 my-4 space-y-2 text-brown">
     <li className="leading-relaxed">地圖使用教學 ←請點我</li>
@@ -32,7 +32,7 @@ export default function RecommendationDbContent() {
     <p className="text-brown leading-relaxed my-4">🔹 瀏覽完整資料庫：向下滑動，點擊 資料庫總表，可檢視完整推薦名單。</p>
     <p className="text-brown leading-relaxed my-4">🔹 搜尋特定地區：在右上角的 搜尋欄 輸入 新北 或其他縣市名稱，即可篩選當地的推薦醫師。</p>
     <p className="text-brown leading-relaxed my-4">🔹 查閱詳細資訊：點擊 醫師名稱，可查看推薦者提供的評價、推薦理由等詳細內容。</p>
-    <p className="text-brown leading-relaxed my-4">可以進入資料庫後，按搜尋，來搜尋需要的資訊。</p>    <h1 className="text-3xl font-extrabold text-brown mb-6 border-b-2 border-brown pb-2">ADHD 醫療資料庫（地圖）謝誌與歷程說明</h1>
+    <p className="text-brown leading-relaxed my-4">可以進入資料庫後，按搜尋，來搜尋需要的資訊。</p>    <h2 className="text-3xl font-extrabold text-brown mb-6 border-b-2 border-brown pb-2">ADHD 醫療資料庫（地圖）謝誌與歷程說明</h2>
     <p className="text-brown leading-relaxed my-4">大家好，我是大A哥哥林彥宇，本身為成人 ADHD。</p>
     <p className="text-brown leading-relaxed my-4">ADHD 醫療資料庫（地圖）旨在協助家長及成人 ADHD 尋找合適的醫師與醫療資源。</p>
     <p className="text-brown leading-relaxed my-4">「醫療地圖」的概念最初由 ADHD 大孩子 Elyse 在 113 年的合作企劃中提出，我們希望透過蒐集醫師資訊，建立手機應用程式及網路平台，讓家長能夠有所依循。然而，因為種種因素，該企劃當時暫時擱置。</p>
@@ -51,7 +51,7 @@ export default function RecommendationDbContent() {
     <hr className="border-t-2 border-brown my-8" />
     <h2 className="text-2xl font-bold text-brown mt-8 mb-4">↓依照地區可直接點下面↓</h2>
     <p className="text-brown leading-relaxed my-4">各縣市的推薦名單已整合進站內的 <a className="font-bold underline" href={`${import.meta.env.BASE_URL}map`}>ADHD 就醫家長推薦地圖</a>，可直接依地區篩選查閱。</p>
-    <img src={`${import.meta.env.BASE_URL}assets/map-guide-filter.jpg`} alt="推薦資料庫條件篩選操作示範" loading="lazy" decoding="async" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
+    <img src={`${import.meta.env.BASE_URL}assets/map-guide-filter.jpg`} alt="推薦資料庫條件篩選操作示範" loading="lazy" decoding="async" width={1170} height={230} className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
     <iframe
       src="https://www.google.com/maps/d/embed?mid=1evABqI3MGLvGXp3lUAPR2_5TBZdAaGY&ehbc=2E312F"
       title="ADHD 就醫推薦地圖"

@@ -2,7 +2,7 @@
 export default function TermsContent() {
   return (
     <article className="prose max-w-none">
-      <h1 className="text-3xl font-extrabold text-brown mb-6 border-b-2 border-brown pb-2">ADHD社群入門！常見名詞初步認識</h1>    <img src={`${import.meta.env.BASE_URL}assets/terms-dalle.webp`} alt="ADHD 社群常見名詞主題插圖" loading="lazy" decoding="async" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" /> 本圖片由ChatGPT生成，若有版權問題還請告知，會立即撤除。    <h2 className="text-2xl font-bold text-brown mt-8 mb-4">這篇文介紹的是社群裡面常出現的名詞，也就是ADHD常見的共病，瞭解這些以後看大家發言聊天就不會霧煞煞啦！而且也可以很快知道自己的狀態，在需要自我介紹的時候可以讓社群快速的瞭解狀況，適切給予幫助喔！</h2>
+      <h1 className="text-3xl font-extrabold text-brown mb-6 border-b-2 border-brown pb-2">ADHD社群入門！常見名詞初步認識</h1>    <img src={`${import.meta.env.BASE_URL}assets/terms-dalle.webp`} alt="ADHD 社群常見名詞主題插圖" loading="lazy" decoding="async" width={1024} height={1024} className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" /> 本圖片由ChatGPT生成，若有版權問題還請告知，會立即撤除。    <h2 className="text-2xl font-bold text-brown mt-8 mb-4">這篇文介紹的是社群裡面常出現的名詞，也就是ADHD常見的共病，瞭解這些以後看大家發言聊天就不會霧煞煞啦！而且也可以很快知道自己的狀態，在需要自我介紹的時候可以讓社群快速的瞭解狀況，適切給予幫助喔！</h2>
     <h2 className="text-2xl font-bold text-brown mt-8 mb-4">例如：</h2>
     <p className="text-brown leading-relaxed my-4">「我是成人ADD，女生，沒有衝動從小很文靜，所以沒有治療。長大後才發現的。」</p>
     <p className="text-brown leading-relaxed my-4">「我是媽媽，孩子現在十一歲，有ADD+AS。」</p>

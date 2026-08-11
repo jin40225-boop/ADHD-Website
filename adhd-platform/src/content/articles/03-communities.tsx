@@ -2,12 +2,12 @@
 export default function CommunitiesContent() {
   return (
     <article className="prose max-w-none">
-      <h1 className="text-3xl font-extrabold text-brown mb-6 border-b-2 border-brown pb-2">網路社群與LINE群組</h1>    <img src={`${import.meta.env.BASE_URL}assets/communities-dalle.webp`} alt="ADHD 社群交流主題插圖" loading="lazy" decoding="async" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" /> 先說明，本篇只介紹我接觸過、認識的社群網站和實體單位！我知道有非常多優秀的社群我沒有提到，歡迎大家留言告訴我體驗和推薦，我會更新到正文中。    <p className="text-brown leading-relaxed my-4">##</p>
+      <h1 className="text-3xl font-extrabold text-brown mb-6 border-b-2 border-brown pb-2">網路社群與LINE群組</h1>    <img src={`${import.meta.env.BASE_URL}assets/communities-dalle.webp`} alt="ADHD 社群交流主題插圖" loading="lazy" decoding="async" width={1024} height={1024} className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" /> 先說明，本篇只介紹我接觸過、認識的社群網站和實體單位！我知道有非常多優秀的社群我沒有提到，歡迎大家留言告訴我體驗和推薦，我會更新到正文中。    <p className="text-brown leading-relaxed my-4">##</p>
     <p className="text-brown leading-relaxed my-4">首先要介紹的！</p>
     <p className="text-brown leading-relaxed my-4">是對我而言非常重要的FB社群：「台灣ADHD(注意力不足過動症)交流園地」(https://www.facebook.com/groups/ADHDTW)，基本上所有家長、大A所需要的訊息都可以在這裡找到。</p>
     <p className="text-brown leading-relaxed my-4">許多家長的疑問，都可以在這裡找到前人的提問，以及許多經典又專業的回答，重點是這些回答都非常的「踏實、切合現實狀況」，是由家長或大A自己去經驗探索總結出來的經驗，對於尋求經驗交流的人來說是一個好去處。</p>
     <p className="text-brown leading-relaxed my-4">此外也有內建即時聊天室，可以即時聊天喔！</p>
-    <img src={`${import.meta.env.BASE_URL}assets/communities-line.jpg`} alt="ADHD LINE 社群畫面" loading="lazy" decoding="async" className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
+    <img src={`${import.meta.env.BASE_URL}assets/communities-line.jpg`} alt="ADHD LINE 社群畫面" loading="lazy" decoding="async" width={738} height={363} className="w-full h-auto rounded-2xl border-2 border-brown shadow-warm my-6" />
     <h2 className="text-2xl font-bold text-brown mt-8 mb-4">創始人黃爸是一個很溫柔而有結構的人，在這些年裡幫助了我很多，群組的管理團隊更是穩定、專業，是絕對推薦家長前往的社群！</h2>
     <p className="text-brown leading-relaxed my-4">延伸閱讀：</p>
     <p className="text-brown leading-relaxed my-4">https://www.parenting.com.tw/article/5079467【育兒互助會1】創台灣最大ADHD臉書交流社團   黃瑞佳：我們最懂彼此的痛</p>
