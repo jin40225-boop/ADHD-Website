@@ -330,6 +330,15 @@ function slotLabel(session: SessionSlot) {
   return new Date(session.startsAt).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
+/**
+ * 哪些服務線允許一人多場（`session_ids` 複選＝正常狀態，不是要收斂的候選時段）。
+ * 判準刻意用欄位組配置、不 runtime 判 slug／`seat_policy`／`capacity`：
+ * `parent` 與 `peer-group` 的 `seat_policy` 同為 `on_submit` 卻要不同行為，用它必判錯；
+ * `capacity` 是後台可隨手改的顯示用數字，把行為掛上去等於重蹈覆轍。
+ * 這裡是「哪些線允許一人多場」這件事唯一住的地方，頁面層的警告都依它跳過。
+ */
+export const MULTI_SESSION_SLUGS = ['peer-group'];
+
 /** 確定場次：直接在格內換場次，走原子移轉。 */
 const sessionSelectColumn: RegistrationColumn = {
   key: 'sessionPick',
@@ -347,11 +356,15 @@ const sessionSelectColumn: RegistrationColumn = {
       (session) => held.has(session.id) || session.id === row.session?.id
         || (session.status !== 'done' && session.status !== 'cancelled'),
     );
+    // capacityReleasedAt 有值＝名額在寫入當下就已釋放（例如職場諮詢的申請制，
+    // seat_policy='on_confirm'），這種情況勾多個候選時段根本沒佔著名額，
+    // 「佔用」是不實敘述，措辭要跟著這個事實走。
+    const released = Boolean(row.registration.capacityReleasedAt);
     // 收斂動作沿用同一顆下拉——挑一個時段本來就是下拉的事，不必為這個情況換一種控制項。
     // 下拉的 onChange 一直都是 setSessions([一個 id])，本來就會收斂；缺的只是「看得出佔了幾個」。
     if (multi) {
       return <div className="ops-multi-slot">
-        <span className="ops-multi-slot__warn">⚠ 佔用 {row.heldSessions.length} 個時段</span>
+        <span className="ops-multi-slot__warn">{released ? `勾了 ${row.heldSessions.length} 個候選時段` : `⚠ 佔用 ${row.heldSessions.length} 個時段`}</span>
         <select
           className="ops-cell-select ops-cell-select--red"
           value=""
@@ -367,6 +380,44 @@ const sessionSelectColumn: RegistrationColumn = {
         <small className="ops-multi-slot__list">目前佔住：{row.heldSessions.map(slotLabel).join('、')}</small>
       </div>;
     }
+    return <select
+      className={`ops-cell-select ops-cell-select--${row.session ? 'green' : 'gray'}`}
+      value={row.session?.id ?? ''}
+      disabled={row.busy}
+      onChange={(e) => row.setSessions(e.target.value ? [e.target.value] : [])}
+    >
+      <option value="">未指定</option>
+      {options.map((session) => <option key={session.id} value={session.id}>
+        {new Date(session.startsAt).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}｜{session.title}
+        {session.status === 'done' ? '（已完成）' : session.status === 'cancelled' ? '（已取消）' : ''}
+      </option>)}
+    </select>;
+  },
+};
+
+/**
+ * 場次欄（同儕聚會用）：一人多場對這條線是正常狀態，不是要收斂的錯誤——多場時中性列出
+ * 參加場數與清單，不給紅色警告、不給收斂下拉（收斂下拉的 onChange 會把其餘場次全部
+ * 移除，對「本來就該有好幾場」的報名等於誤刪）。要加減場次，走姓名抽屜的「場次移轉」
+ * 勾選面板（本來就是多選、走原子移轉），這裡的格子不塞多選。
+ * 單場時維持與 `sessionSelectColumn` 相同的換場次下拉——換場次本身跟「要不要收斂」無關，
+ * 對同儕一樣有用。
+ */
+const multiSessionColumn: RegistrationColumn = {
+  key: 'sessionPick',
+  header: '🕐 場次',
+  cell: (row) => {
+    if (row.heldSessions.length > 1) {
+      return <div className="ops-multi-slot">
+        <span className="ops-status ops-status--gray">參加 {row.heldSessions.length} 場</span>
+        <small className="ops-multi-slot__list">{row.heldSessions.map(slotLabel).join('、')}</small>
+      </div>;
+    }
+    const held = new Set(row.heldSessions.map((session) => session.id));
+    const options = row.projectSessions.filter(
+      (session) => held.has(session.id) || session.id === row.session?.id
+        || (session.status !== 'done' && session.status !== 'cancelled'),
+    );
     return <select
       className={`ops-cell-select ops-cell-select--${row.session ? 'green' : 'gray'}`}
       value={row.session?.id ?? ''}
@@ -425,7 +476,7 @@ export const PARENT_COLUMNS = [
 /** 同儕聚會分頁（03_v4）。聚會是統計性質，沒有審核狀態欄。 */
 export const PEER_COLUMNS = [
   withHeader(nameColumn, 'Aa 姓名／稱呼'),
-  withHeader(sessionSelectColumn, '場次（可改）'),
+  withHeader(multiSessionColumn, '場次（可改）'),
   emailColumn,
   answerColumn('phone', '📱 手機'),
   answerColumn('note', '想聊的話題'),

@@ -9,7 +9,7 @@ import { createCaseFromRegistration, getAppSettings, importGmailHistory, listCon
 import type { ContactRecord, InternalNote, OperationalRegistration, WorkPriority } from '../operations/types';
 import { EmptyPanel, InlineSpinner, OpsNotice, PageHeader, SavingIndicator } from '../operations/components';
 import {
-  CAREER_COLUMNS, DEFAULT_COLUMNS, MailOverrideEditor, MailStatusTag, NAVIGATOR_COLUMNS, PARENT_COLUMNS, PEER_COLUMNS, RegistrationTable, STATUS_LABEL, STATUS_OPTIONS,
+  CAREER_COLUMNS, DEFAULT_COLUMNS, MailOverrideEditor, MailStatusTag, MULTI_SESSION_SLUGS, NAVIGATOR_COLUMNS, PARENT_COLUMNS, PEER_COLUMNS, RegistrationTable, STATUS_LABEL, STATUS_OPTIONS,
   toLocalInput, type RegistrationColumn, type RegistrationPatch, type RowContext,
 } from '../operations/RegistrationTable';
 
@@ -219,11 +219,12 @@ export default function RegistrationsOperationsPage() {
     <PageHeader eyebrow="受理與審核" title="報名工作台" description="依專案分頁；表格內的狀態、勾選、時段可直接改，點姓名開詳情。" />
     {notice ? <OpsNotice tone="success">{notice}</OpsNotice> : null}{error ? <OpsNotice tone="danger">{error}</OpsNotice> : null}
     {/* 多佔名額的總覽。逐列的紅色標記要滑到才看得到，這一行是為了「一眼知道有沒有事要處理」。
-        統計對象刻意是**目前分頁篩選後**的清單，跟你眼前看到的表格一致，不會出現
-        「說有 3 筆、表上卻找不到」。 */}
-    {overHeld.count ? <OpsNotice tone="warning">
+        統計對象是這條服務線**未經篩選**的清單（`inTab`），不受上方篩選影響，不會出現
+        「說有 3 筆、表上卻找不到」。同儕聚會一人多場是正常狀態，不是要收斂的問題，
+        所以這條線的分頁不顯示這個橫幅——見 MULTI_SESSION_SLUGS。 */}
+    {overHeld.count && !MULTI_SESSION_SLUGS.includes(activeTab.slug) ? <OpsNotice tone="warning">
       ⚠ 這條服務線有 <strong>{overHeld.count}</strong> 筆報名各自佔住多個時段，合計多佔了 <strong>{overHeld.extra}</strong> 個名額（<strong>不受上方篩選影響</strong>）。
-      這些名額對外會顯示成「已額滿」，別人報不進來。請在「確定場次」欄的下拉選定實際錄取的那一場，多的會自動釋放。
+      多佔的時段各自扣了一個名額；該場是否額滿要看該場自己的剩餘名額。請在「確定場次」欄的下拉選定實際錄取的那一場，多的會自動釋放。
     </OpsNotice> : null}
     {seatAudit.mismatch ? <OpsNotice tone="danger">
       ⚠ 名額對不上：場次記錄佔用 <strong>{seatAudit.booked}</strong> 個席次，但這條服務線看得到的報名只認領 <strong>{seatAudit.claimed}</strong> 個
@@ -313,9 +314,18 @@ export default function RegistrationsOperationsPage() {
             </div>
           </article>
           <article className="ops-panel"><div className="ops-panel-header"><div><h2>完整表單內容</h2><p>可補正缺漏資訊；所有欄位完整保留。</p></div></div>{answerEntries.length ? <div className="ops-form-grid">{answerEntries.map(([key, value]) => <Textarea key={key} label={ANSWER_LABEL[key] ?? key} value={Array.isArray(value) ? value.map((v) => typeof v === 'string' ? v : JSON.stringify(v)).join('\n') : typeof value === 'string' ? value : JSON.stringify(value)} onChange={(e) => setAnswers({ ...answers, [key]: Array.isArray(value) ? e.target.value.split('\n').filter(Boolean) : e.target.value })} />)}</div> : <EmptyPanel title="這筆報名沒有表單內容" />}</article>
-          <article className="ops-panel"><div className="ops-panel-header"><div><h2>場次移轉</h2>{current.registration.sessionIds.length > 1
-            ? <p style={{ color: '#973d2c', fontWeight: 700 }}>⚠ 這筆報名目前佔住 {current.registration.sessionIds.length} 個時段，每一個都各扣了一個名額。確認要哪一場之後，請只勾那一場再送出，其餘會自動釋放。</p>
-            : null}</div></div><div className="ops-list">{sessions.filter((s) => s.projectId === current.registration.projectId && ((draft.sessionIds ?? []).includes(s.id) || (s.status !== 'done' && s.status !== 'cancelled'))).map((session) => <label className="ops-list-row" key={session.id}><span><input type="checkbox" checked={(draft.sessionIds ?? []).includes(session.id)} onChange={() => toggleSession(session.id)} /> <strong>{new Date(session.startsAt).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false })}</strong> {session.title}</span><small>{session.bookedCount}/{session.capacity}</small></label>)}</div><WarmButton onClick={() => void saveSessions()}>確認移轉場次</WarmButton></article>
+          <article className="ops-panel"><div className="ops-panel-header"><div><h2>場次移轉</h2>{
+            /* 同儕聚會一人多場是正常狀態，不是要收斂的問題，這條線不顯示此警告——見 MULTI_SESSION_SLUGS。
+               佔不佔名額要看 capacityReleasedAt：職場諮詢是申請制（seat_policy='on_confirm'），
+               寫入當下就釋放名額，勾多個候選時段根本沒佔著，寫「佔住」是不實敘述。 */
+            current.registration.sessionIds.length > 1 && !MULTI_SESSION_SLUGS.includes(current.registration.projectSlug ?? '')
+              ? <p style={{ color: '#973d2c', fontWeight: 700 }}>
+                {current.registration.capacityReleasedAt
+                  ? `⚠ 這筆報名勾了 ${current.registration.sessionIds.length} 個候選時段（名額已釋放，未佔用）。確認要哪一場之後，請只勾那一場再送出。`
+                  : `⚠ 這筆報名目前佔住 ${current.registration.sessionIds.length} 個時段，每一個都各扣了一個名額。確認要哪一場之後，請只勾那一場再送出，其餘會自動釋放。`}
+              </p>
+              : null
+          }</div></div><div className="ops-list">{sessions.filter((s) => s.projectId === current.registration.projectId && ((draft.sessionIds ?? []).includes(s.id) || (s.status !== 'done' && s.status !== 'cancelled'))).map((session) => <label className="ops-list-row" key={session.id}><span><input type="checkbox" checked={(draft.sessionIds ?? []).includes(session.id)} onChange={() => toggleSession(session.id)} /> <strong>{new Date(session.startsAt).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false })}</strong> {session.title}</span><small>{session.bookedCount}/{session.capacity}</small></label>)}</div><WarmButton onClick={() => void saveSessions()}>確認移轉場次</WarmButton></article>
           <article className="ops-panel"><div className="ops-panel-header"><h2>內部註記</h2></div><div className="ops-form-grid"><Select label="類型" value={noteType} onChange={(e) => setNoteType(e.target.value as typeof noteType)}><option value="general">一般</option><option value="eligibility">資格審核</option><option value="handoff">交接</option><option value="risk">風險</option></Select><div className="ops-full"><Textarea label="註記內容" rows={4} value={note} onChange={(e) => setNote(e.target.value)} /></div></div><WarmButton onClick={() => void addNote()}>新增註記</WarmButton>{notes.map((item) => <div className="ops-note" key={item.id}><p>{item.content}</p><small>{item.noteType} · 第 {item.revision} 版 · {new Date(item.createdAt).toLocaleString('zh-TW')}</small></div>)}</article>
           <article className="ops-panel"><div className="ops-panel-header"><div><h2>轉為持續服務個案</h2><p>保留原報名、人物、活動和信件關聯。</p></div></div><Textarea label="轉案摘要" value={caseSummary} onChange={(e) => setCaseSummary(e.target.value)} /><WarmButton onClick={() => void createCase()}>建立個案</WarmButton></article>
         </div>
