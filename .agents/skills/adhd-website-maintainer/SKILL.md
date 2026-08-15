@@ -32,7 +32,8 @@ Use the deployed GitHub Pages version as the starting truth, then make changes i
 - Content/UI/frontend only: work on a feature branch from current `origin/main`.
 - SQL, RLS, Storage, Auth, Edge Functions, secrets, Gmail, Calendar, Meet, or CAPTCHA: apply the extra data and integration gates in the reference.
 - Never put real personal data, email contents, credentials, tokens, private migration contents, or production exports in Git, chat, logs, screenshots, or test fixtures.
-- Use the read-only `maintenance_auditor` subagent for bounded inventory or regression review when parallel QA saves time. The main agent owns edits and release decisions.
+- Use the workspace-write `content_maintainer` subagent for bounded content, accessibility, responsive UI, or frontend implementation. It must not commit, push, deploy, or touch backend/integration boundaries.
+- Use the read-only `maintenance_auditor` subagent for bounded inventory or regression review when parallel QA saves time. The main agent owns diff integration, commits, releases, backend work, and final decisions.
 
 ### 3. Implement narrowly
 

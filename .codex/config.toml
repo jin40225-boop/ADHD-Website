@@ -1,2 +1,4 @@
+service_tier = "fast"
+
 [agents]
 max_concurrent_threads_per_session = 3

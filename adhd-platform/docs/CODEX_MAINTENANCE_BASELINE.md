@@ -26,7 +26,7 @@
 - Migration：53 個本地版本與 53 個 linked remote 版本逐筆成對，沒有漂移。
 - Edge Functions：遠端實查 13 支，皆為 `ACTIVE`；本 repo 有 12 個函式目錄加 `_shared`。`line-webhook` 與 `reminder-cron` 顯示來自共用 LINE 助理發布流，不能由本網站 repo 擅自覆蓋。
 - GitHub Actions secrets 已有 `VITE_SUPABASE_URL` 與 `VITE_SUPABASE_ANON_KEY`；僅核對鍵名存在，未讀取或記錄值。
-- 維運工具：Git 2.53.0、GitHub CLI 2.89.0、Node 24.14.0、npm 11.9.0、Deno 2.7.13、Python 3.12.10、Codex CLI 0.118.0。
+- 維運工具：Git 2.53.0、GitHub CLI 2.89.0、Node 24.14.0、npm 11.9.0、Deno 2.7.13、Python 3.12.10。全域 Codex CLI 仍為 0.118.0；已用不改系統環境的 `npx @openai/codex@0.147.0` 實際啟動 Luna 唯讀代理成功。
 
 ## 3. 接管前驗證
 
@@ -47,8 +47,10 @@ supabase functions list                     PASS（13 ACTIVE）
 ## 4. 代理與 Skill
 
 - 專案 Skill：`.agents/skills/adhd-website-maintainer/`，規定版本對齊、分層測試、隱私、GitHub Pages 與 Supabase 發布界線。
+- 低成本內容代理：`.codex/agents/content-maintainer.toml`，使用 `gpt-5.6-luna`、medium reasoning、workspace-write；只處理有邊界的內容、無障礙、響應式 UI 與前端實作，禁止 commit/push/deploy 與後端異動。
 - 低成本 QA 代理：`.codex/agents/maintenance-auditor.toml`，使用 `gpt-5.6-luna`、medium reasoning、read-only sandbox。
-- 寫入、整合、發布與最終驗收仍由主代理負責，不把生產異動交給低成本子代理。
+- 差異整合、commit、發布、Supabase/外部整合與最終驗收仍由主代理負責。
+- 實際啟動證據：Codex CLI 0.147.0 已原生召喚 `content_maintainer`，正確解析首頁為 `adhd-platform/src/pages/public/HomePage.tsx`，並在 no-edit 測試前後保持 Git 差異不變。
 
 ## 5. 維運最短流程
 
@@ -66,6 +68,7 @@ supabase functions list                     PASS（13 ACTIVE）
 2. 本機沒有 production env 值，所以本機 Vite bundle hash 不與 CI 產品直接比較；正式對齊以 GitHub Actions 成功與線上路由實測為準。
 3. 原私人 `cairn/` 沒有在公開 Git 內；本 checkout 已重建最小私人 ROADMAP/LOG，但不伪稱恢復了舊私人內容。
 4. Dependency 漏洞升級要單獨開分支處理，並完整驗收 React Router 行為與 Vite 部署。
+5. 全域 Codex CLI 0.118.0 太舊，且全域 config 的 `service_tier = "default"` 已過期。專案 config 已指定 `fast`；未經使用者明示核可，不全域升級或覆寫個人 config。CLI 需要時可先使用已驗證的 `npx -y @openai/codex@0.147.0`。
 
 ## 7. 不可混為同一狀態的五個檢查點
 
