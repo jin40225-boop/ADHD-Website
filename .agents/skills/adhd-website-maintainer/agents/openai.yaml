@@ -1,0 +1,4 @@
+interface:
+  display_name: "ADHD Website Maintainer"
+  short_description: "Maintain and safely release the ADHD website"
+  default_prompt: "Use $adhd-website-maintainer to inspect, update, validate, and safely deploy the ADHD website."

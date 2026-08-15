@@ -1,6 +1,6 @@
 # ADHD 家長支持平台：正式基準、目前狀態與重啟指南
 
-基準更新日期：2026-08-10（Asia/Taipei）
+基準更新日期：2026-08-15（Asia/Taipei）
 狀態：正式上線，後續維運
 本文件定位：專案技術狀態的單一事實來源。每次正式發布、資料庫結構變更或外部整合狀態改變後，更新本文件並在最下方新增一筆紀錄。
 
@@ -10,26 +10,26 @@
 |---|---|
 | GitHub repository | `jin40225-boop/ADHD-Website` |
 | 正式 branch | `main` |
-| 正式程式 commit | `ae6cd52` |
-| Commit 主旨 | `feat: fold the sessions into month cards, and give them their fold-open back` |
+| 正式程式 commit | `7564622` |
+| Commit 主旨 | `fix: two numbers that invite someone to break them` |
 | 正式網站 | <https://jin40225-boop.github.io/ADHD-Website/> |
-| GitHub Pages workflow | <https://github.com/jin40225-boop/ADHD-Website/actions/runs/31353349436> |
+| GitHub Pages workflow | <https://github.com/jin40225-boop/ADHD-Website/actions/runs/31459031668> |
 | Workflow 結果 | `completed / success`（含 `check:operations`、`check:site` 兩道守門） |
-| 正式前端資源識別 | `assets/index-BmVIshdb.js`（本機 build 產出 hash 相同，版本對齊已實證） |
+| 正式前端資源識別 | `assets/index-V-YSIL9W.js`（線上實測；無 production env 的本機 build 不用來比 hash） |
 | Supabase project ref | `sssseazkhiswjhtmbluh` |
-| Supabase migration | 45 支，local／remote 全對齊，未套用 0（最新 `20260810000033`） |
+| Supabase migration | 53 支，local／remote 全對齊，未套用 0（最新 `20260811000041`） |
 | Production base | `/ADHD-Website/` |
 
-正式程式 commit 與「文件更新 commit」是兩個不同概念。此頁所稱正式程式基準指目前 GitHub Pages 實際部署的 `ae6cd52`；若後續只有文件異動，不得誤記為已部署新版功能。
+正式程式 commit 與「文件更新 commit」是兩個不同概念。此頁所稱正式程式基準指 2026-08-15 接管前 GitHub Pages 實際部署的 `7564622`；若後續只有文件或維運工具異動，不得誤記為新功能。Codex 作業快照另見 `CODEX_MAINTENANCE_BASELINE.md`。
 
-**版本對齊的判準**：正式站載入的 `assets/index-*.js` hash 必須與本機 `npm run build` 產出的同名檔一致。不一致就代表在看舊版，任何「改好了」的結論都不成立。
+**版本對齊的判準**：有與 CI 相同 production env 時，可比對正式站與本機 `assets/index-*.js` hash；沒有 production env 時，則必須用 GitHub Actions run 的 source SHA、成功狀態、線上 bundle 與受影響路由實測交叉驗證。任何一條證據對不上，都不得聲稱「正式站已改好」。
 
 ## 2. 權威 checkout 與副本邊界
 
-正式 checkout 已於 2026-08-04 遷出 OneDrive，唯一位置為：
+歷史正式 checkout 於 2026-08-04 記錄為 `D:\ADHD-Website-release`。2026-08-15 接管時該路徑不可用，因此已從 GitHub `main` 建立一份不在 OneDrive 的乾淨維運 checkout：
 
 ```text
-D:\ADHD-Website-release\       ← Git root
+C:\Dev\ADHD-Website-maintenance\  ← Git root
 └─ adhd-platform\              ← React／Supabase app
 ```
 
@@ -38,14 +38,14 @@ D:\ADHD-Website-release\       ← Git root
 開始工作前必須驗證：
 
 ```powershell
-Set-Location "D:\ADHD-Website-release"
+Set-Location "C:\Dev\ADHD-Website-maintenance"
 git rev-parse --show-toplevel
 git remote get-url origin
 git status -sb
 git log -1 --format="%H %s"
 ```
 
-預期 remote 為 `https://github.com/jin40225-boop/ADHD-Website.git`。OneDrive 專案資料夾內的 `adhd-platform/`、`_codex_maintenance/` 與 `antigravity-staging/` 是歷史副本，不是正式來源，不可直接覆蓋正式 checkout。
+預期 remote 為 `https://github.com/jin40225-boop/ADHD-Website.git`。版本權威來自 GitHub `origin/main` 與最後一次成功 Pages 部署，不再只靠本機路徑名稱判定。OneDrive 內的歷史副本與設計資料不可直接覆蓋維運 checkout；舊 D 槽 checkout 與私人備份若後續出現，也不得未經比對就刪除或合併。
 
 推送注意：`.github/workflows/` 的變更需要 token 具備 `workflow` scope。本 repo 的 git 憑證已設為走 GitHub CLI（`credential.https://github.com.helper = !gh auth git-credential`），若換機器需重新設定，否則 Windows 認證管理員的 token 會因缺 scope 而被拒。
 
@@ -170,7 +170,7 @@ npm audit --omit=dev       0 high vulnerabilities
 ### A. 先恢復事實
 
 ```powershell
-Set-Location "D:\ADHD-Website-release"
+Set-Location "C:\Dev\ADHD-Website-maintenance"
 git status -sb
 git remote -v
 git fetch origin
@@ -938,3 +938,12 @@ T1 `max-w-2xl`（表單／流程頁）、T2 `max-w-4xl`（敘事與卡片內容�
 - 同儕聚會 10–12 月在後台仍是 `closed`，首頁看不到（首頁未傳 `includeUnpublished`）。
 - `parent` 專案殘留 `【測試】E2E 專用場次（勿用，測完刪除）`，`status='open'`。
 - 8/16 同儕場的主題／來賓／介紹尚未填入（AI 無後台帳號）。
+
+## 25. 2026-08-15 Codex 維運接管
+
+- 使用者裁決目前線上版本為最新，不進行 Sites 或其他平台搬遷。
+- 從 GitHub `main` @ `7564622` 重新 clone 乾淨 checkout 到 `C:\Dev\ADHD-Website-maintenance`；舊 D 槽路徑在接管時不可用，未進行刪除或覆蓋。
+- GitHub Pages run `31459031668` 成功，正式站根目錄、`/admin`、`/admin/inbox` 皆為 HTTP 200，載入 `assets/index-V-YSIL9W.js`。
+- 53 個 migration 在 linked project 本地／遠端全對齊；遠端 13 支 Edge Functions 為 ACTIVE。
+- 新增專案 Skill 與唯讀低成本維運稽核代理；細節與風險見 `CODEX_MAINTENANCE_BASELINE.md`。
+- 本次只建立維運基礎，沒有改網站 UI、業務功能、migration、Function 或正式資料。
