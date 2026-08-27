@@ -1,6 +1,6 @@
 # ADHD 家長支持平台：正式基準、目前狀態與重啟指南
 
-基準更新日期：2026-08-15（Asia/Taipei）
+基準更新日期：2026-08-27（Asia/Taipei）
 狀態：正式上線，後續維運
 本文件定位：專案技術狀態的單一事實來源。每次正式發布、資料庫結構變更或外部整合狀態改變後，更新本文件並在最下方新增一筆紀錄。
 
@@ -10,14 +10,15 @@
 |---|---|
 | GitHub repository | `jin40225-boop/ADHD-Website` |
 | 正式 branch | `main` |
-| 正式程式 commit | `7564622` |
-| Commit 主旨 | `fix: two numbers that invite someone to break them` |
+| 正式程式 commit | `18276d7` |
+| Commit 主旨 | `feat: 後台重構與前台優化（十一個工作包）` |
+| 重構前的落點（備份） | tag `pre-rebuild-baseline-2026-08-27` → `0d06342`，已推上 GitHub |
 | 正式網站 | <https://jin40225-boop.github.io/ADHD-Website/> |
-| GitHub Pages workflow | <https://github.com/jin40225-boop/ADHD-Website/actions/runs/31459031668> |
+| GitHub Pages workflow | <https://github.com/jin40225-boop/ADHD-Website/actions/runs/33053852677> |
 | Workflow 結果 | `completed / success`（含 `check:operations`、`check:site` 兩道守門） |
-| 正式前端資源識別 | `assets/index-V-YSIL9W.js`（線上實測；無 production env 的本機 build 不用來比 hash） |
+| 正式前端資源識別 | `assets/index-CHPcILmZ.js`（線上實測；無 production env 的本機 build 不用來比 hash） |
 | Supabase project ref | `sssseazkhiswjhtmbluh` |
-| Supabase migration | 53 支，local／remote 全對齊，未套用 0（最新 `20260811000041`） |
+| Supabase migration | 58 支，local／remote 全對齊，未套用 0（最新 `20260827000046`） |
 | Production base | `/ADHD-Website/` |
 
 正式程式 commit 與「文件更新 commit」是兩個不同概念。此頁所稱正式程式基準指 2026-08-15 接管前 GitHub Pages 實際部署的 `7564622`；若後續只有文件或維運工具異動，不得誤記為新功能。Codex 作業快照另見 `CODEX_MAINTENANCE_BASELINE.md`。
@@ -25,6 +26,8 @@
 **版本對齊的判準**：有與 CI 相同 production env 時，可比對正式站與本機 `assets/index-*.js` hash；沒有 production env 時，則必須用 GitHub Actions run 的 source SHA、成功狀態、線上 bundle 與受影響路由實測交叉驗證。任何一條證據對不上，都不得聲稱「正式站已改好」。
 
 ## 2. 權威 checkout 與副本邊界
+
+**2026-08-27 更正**：`D:\ADHD-Website-release` 現在可用，而且是這一輪十一個工作包的實際施工位置；`C:\Dev\ADHD-Website-maintenance`（2026-08-15 建立的那份）**已不存在**。權威 checkout 回到 `D:\ADHD-Website-release`。以下為 2026-08-15 當時的記載，保留供追溯：
 
 歷史正式 checkout 於 2026-08-04 記錄為 `D:\ADHD-Website-release`。2026-08-15 接管時該路徑不可用，因此已從 GitHub `main` 建立一份不在 OneDrive 的乾淨維運 checkout：
 
@@ -947,3 +950,60 @@ T1 `max-w-2xl`（表單／流程頁）、T2 `max-w-4xl`（敘事與卡片內容�
 - 53 個 migration 在 linked project 本地／遠端全對齊；遠端 13 支 Edge Functions 為 ACTIVE。
 - 新增專案 Skill 與唯讀低成本維運稽核代理；細節與風險見 `CODEX_MAINTENANCE_BASELINE.md`。
 - 本次只建立維運基礎，沒有改網站 UI、業務功能、migration、Function 或正式資料。
+
+## 26. 2026-08-27 後台重構與前台優化（`18276d7`）
+
+十一個工作包，41 檔、+3495／−725，5 支 migration。前端 CI run `33053852677` 成功，
+正式站 bundle `assets/index-CHPcILmZ.js`。重構前的落點已打 tag `pre-rebuild-baseline-2026-08-27` → `0d06342`。
+
+### 26-1 上線後的線上實測（渲染後量測，不是看 HTTP 狀態碼）
+
+| 項目 | 前 | 後 |
+|---|---|---|
+| 手機版首頁總高（375px） | 17,207px | **9,324px**（−46%） |
+| 職場諮詢頁底 CTA（八月全滿） | 「前往填寫報名表」 | **「目前時段已滿・仍可送出候補申請」** |
+| 文章卡片摘要 | 五篇共用一句寫死佔位文 | 五篇各自節錄自本人內文 |
+| 就醫推薦 | 136 筆全攤開、同機構重複 | 136 筆 → **105 家機構**，分段載入，一筆未少 |
+| 同儕 9–12 月主題 | 四場皆「神秘驚喜！」 | 四場主題／來賓／介紹已填 |
+| 動畫 hero 歷程 overlay | — | 點得開，iframe 指向 `journey-integration-v4.html` |
+
+### 26-2 後台
+
+場次名冊彙整抽屜（名冊／彙整／寄信三分頁，依 slug 自動分流逐人或整批寄信；報名審核與場次管理**共用同一顆元件**，
+掛載時零新查詢）；信件往來就地可讀（報名抽屜與個案台，收件匣行為零改動）；完整表單內容改讀 `form_schemas` 的
+欄位標題、場次欄唯讀化並導向場次移轉；文件產生中心六型文件一對一、跨場次彙整可用、生成草稿可檢視全文、
+移除從未接線的「收件對象」下拉；信件範本 10 → 20 封並依 `project_id` 分組；後台十八頁收斂至同一套 `ops-*` 外殼。
+
+### 26-3 資料庫（migration 42–46，已套用並以匿名可讀的 `sessions_public` 實測驗證）
+
+- `20260827000043` 修掉八封既有範本的單括號佔位。替換引擎的正則只認 `{{}}`，`{稱呼}` 等 31 處寄出去會原樣帶括號。
+  偵測刻意用**通用式**（脫掉 `{{}}` 後還有 `{` 就整支回滾），不用列舉式——列舉會漏。
+- `20260827000044` 新增 `sessions.allow_waitlist`，**每個場次自己決定額滿後收不收候補**。
+  同時修正申請制原本 `status = 'open'` 連 `full` 也擋掉、與自身註解「不判額滿」相矛盾的行為。
+  ⚠ **只對 `on_confirm` 生效**：`on_submit` 允許一人多場，而 `capacity_released_at` 是每筆報名一個，
+  表達不了「A 場佔位、B 場候補」，強行放行會讓名額算錯。後台該開關對先到先得線停用並附說明。
+- `20260827000045` 同儕下半年四場內容補齊 ＋ `guest_url`／`attachments` 欄位與 `sessions_public` 暴露。
+  UPDATE 的 where 要求三欄皆空才寫、**整列跳過**，之後在後台手改過的內容不會被重跑蓋掉。
+- `20260827000046` 三個新欄位納入 `log_session_admin_edit` 稽核（施工代理因規則禁止動 security definer
+  而主動申報「這個洞我刻意沒補」，由協調者補上）。
+
+### 26-4 三個被擋下的錯誤判斷（記錄以免重演）
+
+1. **「`journey-integration-v4.html` 站內零連結」是錯的**——從未 grep 就下斷言。它是 `JourneyIntegrationHero`
+   overlay 的 iframe 內容來源（`src={BASE}journey-integration-v4.html#journey`）。原計畫要搬走它並加一條
+   「dist 不得含該檔」的 CI 斷言，那會**把正式站的歷程導覽永久釘死**。施工代理查證後拒絕執行、自行回滾。
+   **該檔維持原狀，不得下架。**
+2. **「講師頁角色標籤紅紫混用」是錯的**——實測三張卡同一個 class、computed color 相同、全頁零紫色。
+   施工代理拒絕做憑空的視覺變更。
+3. **候補機制第一版是一刀切**（申請制一律可候補），協調者自查時發現多場次 × 單一名額旗標的表達力缺口，
+   改為場次級開關並限縮適用範圍。
+
+### 26-5 已知缺口（未修，留待）
+
+- **候補申請在後台沒有身分標記**：`allow_waitlist` 讓額滿場次繼續收件，但收進來的報名在工作台與名冊裡
+  與正取長得一模一樣，只能靠報名時間推。三連跑與抽驗都抓不到，**只有真實候補出現那天才會浮現**。
+  修法：submit trigger 知道自己走了 waitlist 分支，補一個 `via_waitlist` 標記欄＋名冊小標即可。
+- 手機首頁 9,324px 未達原訂 ≤9,000px；最大宗仍是「活動軌跡・已完成場次」單塊約 3,273px。
+- 十封新範本仍為 `review_status='draft'`，**須逐封人工審閱改核可才算上線**。
+- `registrations.has_unread_reply` 只在「首次建立討論串」時被 gmail-sync 寫入，之後不再更新、也不會被清除。
+  WP6 已改為由訊息的 `is_read` 推導未讀，該欄位形同過期旗標。
