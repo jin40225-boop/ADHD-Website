@@ -5,7 +5,10 @@ import articlesIndex from '../../data/articles-index.json';
 interface ArticleMeta {
   slug: string;
   title: string;
+  /** 保留欄位：目前五篇同為「入門文章」，卡片不顯示，待日後真的分類再啟用。 */
   category: string;
+  /** 節錄自該篇內文的第一段實質敘述；沒有時退回通用提示文字。 */
+  excerpt?: string;
   order: number;
 }
 
@@ -33,12 +36,9 @@ export default function ArticlesPage() {
               className="bg-white border-2 border-brown rounded-2xl p-6 shadow-warm hover:translate-y-[-3px] transition-all flex flex-col justify-between"
             >
               <div className="space-y-2">
-                <span className="inline-block bg-teal/30 border border-brown text-xs font-bold px-2.5 py-0.5 rounded-md">
-                  {art.category || '專欄心得'}
-                </span>
                 <h3 className="text-xl font-extrabold">{art.title}</h3>
                 <p className="text-sm text-brown/80 leading-relaxed">
-                  {'點擊閱讀完整圖文與經驗探索...'}
+                  {art.excerpt || '點擊閱讀完整圖文與經驗探索...'}
                 </p>
               </div>
               <div className="mt-4 pt-3 border-t border-brown/10 flex items-center justify-between text-sm font-bold text-highlight">

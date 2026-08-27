@@ -3,30 +3,35 @@
     "slug": "knowledge-meetup",
     "title": "系列活動：線上知識交流會",
     "category": "入門文章",
+    "excerpt": "一直以來，我和來自不同背景的大A夥伴與家長們，透過LINE群組持續交流生活中的酸甜苦辣，分享我們與ADHD共處多年的實戰經驗，一起摸索出調適與突破的方式……",
     "order": 1
   },
   {
     "slug": "recommendation-db",
     "title": "ADHD就醫家長推薦資料庫",
     "category": "入門文章",
+    "excerpt": "「ADHD 醫療地圖」內的資訊來自 ADHD 患者與家長的個人經驗分享進行推薦，僅供參考。本網站不對資料的完整性、準確性或時效性做出保證，亦不為任何一位醫生背書……",
     "order": 2
   },
   {
     "slug": "communities",
     "title": "網路社群與LINE群組",
     "category": "入門文章",
+    "excerpt": "先說明，本篇只介紹我接觸過、認識的社群網站和實體單位！我知道有非常多優秀的社群我沒有提到，歡迎大家留言告訴我體驗和推薦，我會更新到正文中……",
     "order": 3
   },
   {
     "slug": "organizations",
     "title": "ADHD服務機構(可以尋求幫助的實體處所)",
     "category": "入門文章",
+    "excerpt": "目前台灣有很多人與單位致力於讓ADHD族群過得更好，其中位於台北的社團法人台灣赤子心過動症協會總會！(北部)我接觸最多……",
     "order": 4
   },
   {
     "slug": "terms",
     "title": "ADHD社群入門！常見名詞初步認識",
     "category": "入門文章",
+    "excerpt": "這篇文介紹的是社群裡面常出現的名詞，也就是ADHD常見的共病，瞭解這些以後看大家發言聊天就不會霧煞煞啦……",
     "order": 5
   }
 ]

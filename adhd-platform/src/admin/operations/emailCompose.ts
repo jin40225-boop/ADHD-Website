@@ -50,6 +50,9 @@ export function letterKindOf(template: { letterKind?: LetterKind | null; name: s
   if (name.includes('催覆') || name.includes('出席確認')) return 'follow_up';
   if (name.includes('回絕') || name.includes('婉拒')) return 'reject';
   if (name.includes('講師') || name.includes('客座')) return 'instructor';
+  // 「改期確認信」含「確認信」，落到下一行就會被當成 confirm 而掛上出席確認按鈕——
+  // 但那是一封只想跟對方商量新時間的信，附「我確認出席」等於問錯問題。所以改期先判。
+  if (name.includes('改期') || name.includes('改時間') || name.includes('挪動')) return 'notice';
   if (name.includes('確認信') || name.includes('確認時段') || name.includes('報名成功')) return 'confirm';
   if (name.includes('宣傳') || name.includes('群發')) return 'bulk';
   if (name.includes('通知') || name.includes('聯繫')) return 'notice';

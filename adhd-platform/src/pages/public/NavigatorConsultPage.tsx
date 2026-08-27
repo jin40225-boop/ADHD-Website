@@ -4,13 +4,9 @@ import { UpcomingSessions } from '@/components/UpcomingSessions';
 import { NavigatorSlotSummary } from '@/components/NavigatorSlotSummary';
 import { SessionHistory } from '@/components/SessionHistory';
 import { AboutFounder } from '@/components/AboutFounder';
+import { RegisterCta } from '@/components/RegisterCta';
 import { DonateFooter } from '@/components/DonateFooter';
 import { LineContact } from '@/components/LineContact';
-
-const BASE = import.meta.env.BASE_URL;
-const LINKS = {
-  LINK_1: `${BASE}navigator/register`,
-};
 
 export default function NavigatorConsultPage() {
   return (
@@ -66,16 +62,13 @@ export default function NavigatorConsultPage() {
                     </div>
 </div>
 <div className="mt-2 w-full">
-<a className="btn-warm py-5 px-6 bg-accent-pink text-brown w-full text-2xl md:text-3xl shadow-warm animate-pulse-slow flex flex-col items-center justify-center border-4 border-brown" href={LINKS.LINK_1} target="_blank" rel="noopener noreferrer">
-<span>📝 前往填寫報名表</span>
-<span className="text-base font-bold mt-2 opacity-80 bg-white/40 px-3 py-1 rounded-full border border-brown/20">重要報名連結</span>
-</a>
+<RegisterCta slug="navigator" />
 </div>
 </div>
 <SessionHistory projects={[{ slug: 'navigator' }]} title="👣 服務軌跡・已完成場次" description="已完成的導航計畫諮詢場次永久留存，讓新朋友看見這項服務的累積。" />
 </section></div>
 
-<AboutFounder />
+<AboutFounder variant="collapsed" />
 <LineContact />
 <DonateFooter />
     </div>

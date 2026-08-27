@@ -1,4 +1,5 @@
 import { Award } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import instructorsData from '../../data/instructors.json';
 
 interface Instructor {
@@ -17,10 +18,17 @@ export default function InstructorsPage() {
         <div className="bg-base-yellow border-2 border-brown rounded-3xl p-8 shadow-warm">
           <h1 className="text-3xl font-extrabold flex items-center gap-3">
             <Award className="w-8 h-8 text-highlight" />
-            倡議團隊與合作講師
+            核心團隊
           </h1>
           <p className="mt-2 text-sm md:text-base">
             由過來人大 A、專業心理師、特教老師與身障中心社工共同建構的公益服務團隊。
+          </p>
+          <p className="mt-2 text-sm md:text-base">
+            本頁只列固定投入的核心成員；各場次的客座講師與合作單位，請見
+            <Link to="/co-host" className="font-bold underline underline-offset-2 hover:text-highlight">
+              協辦活動
+            </Link>
+            頁。
           </p>
         </div>
 

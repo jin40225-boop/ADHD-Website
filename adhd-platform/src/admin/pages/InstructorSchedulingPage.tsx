@@ -22,6 +22,7 @@ import {
 import { isSupabaseReady } from '@/lib/supabase';
 import { WarmButton } from '@/components/ui/WarmButton';
 import DemoDataNotice from '../DemoDataNotice';
+import { InlineSpinner, OpsNotice, PageHeader } from '../operations/components';
 
 function toLocalInput(value: string): string {
   const date = new Date(value);
@@ -225,7 +226,8 @@ export default function InstructorSchedulingPage() {
   };
 
   return (
-    <div>
+    <section className="ops-section">
+      <PageHeader eyebrow="人員與服務" title="講師與邀約" description="建立候選時段、寄送邀請、彙整講師回覆，並在時段確定後成立正式場次。" />
       {!live ? <DemoDataNotice /> : null}
       <div className="mb-5 flex flex-wrap items-center gap-3 rounded-xl border-2 border-brown/40 bg-accent-teal/20 px-4 py-3 text-sm">
         <label className="font-bold" htmlFor="instructor-project">專案</label>
@@ -266,28 +268,30 @@ export default function InstructorSchedulingPage() {
         </WarmButton>
       </div>
 
-      {notice ? <p role="status" className="mb-4 rounded-xl border-2 border-brown/40 bg-accent-blue/30 px-4 py-2.5 text-sm">{notice}</p> : null}
-      {error ? <p role="alert" className="mb-4 rounded-xl border-2 border-alert-red bg-alert-red/10 px-4 py-2.5 text-sm font-bold">{error}</p> : null}
+      {notice ? <OpsNotice tone="success" role="status">{notice}</OpsNotice> : null}
+      {error ? <OpsNotice tone="danger" role="alert">{error}</OpsNotice> : null}
 
       {loading ? (
-        <p className="p-8 text-center text-brown/60">載入講師邀約中…</p>
+        <InlineSpinner label="載入講師邀約中…" />
       ) : workbenchPoll ? (
-        <InstructorScheduling
-          key={`${workbenchPoll.id}-${workbenchPoll.createdAt}`}
-          poll={workbenchPoll}
-          instructors={instructors}
-          busy={busy}
-          onSavePoll={(slots, instructorIds) => void handleSavePoll(slots, instructorIds)}
-          onSendInvites={() => void handleSendInvites()}
-          onReply={(instructorId, slotId, answer) => void handleReply(instructorId, slotId, answer)}
-          onConfirmSession={(slot) => void handleConfirmSession(slot)}
-        />
+        <article className="ops-panel">
+          <InstructorScheduling
+            key={`${workbenchPoll.id}-${workbenchPoll.createdAt}`}
+            poll={workbenchPoll}
+            instructors={instructors}
+            busy={busy}
+            onSavePoll={(slots, instructorIds) => void handleSavePoll(slots, instructorIds)}
+            onSendInvites={() => void handleSendInvites()}
+            onReply={(instructorId, slotId, answer) => void handleReply(instructorId, slotId, answer)}
+            onConfirmSession={(slot) => void handleConfirmSession(slot)}
+          />
+        </article>
       ) : (
         <div className="rounded-xl border-2 border-dashed border-brown/35 bg-white p-10 text-center">
           <p className="font-bold">這個專案尚無講師邀約。</p>
           <p className="mt-1 text-sm text-brown/60">建立第一份邀約，加入候選時段與講師。</p>
         </div>
       )}
-    </div>
+    </section>
   );
 }

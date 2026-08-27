@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, ArrowUpRight, BookOpen, CalendarClock, Clock, Database, Edit3, Flag, Info, MapPin, PlayCircle, Sparkles, Users, Video } from 'lucide-react';
 import { UpcomingSessions } from '@/components/UpcomingSessions';
+import { CollapsibleSection } from '@/components/CollapsibleSection';
+import { RegisterCta, type RegisterCtaSlug } from '@/components/RegisterCta';
 import { SessionHistory } from '@/components/SessionHistory';
 import { NavigatorSlotSummary } from '@/components/NavigatorSlotSummary';
 import { DonateFooter } from '@/components/DonateFooter';
@@ -22,6 +24,31 @@ const LINKS = {
   LINK_7: `${BASE}parent/register`,
 };
 
+/**
+ * 首頁服務卡的行動版摘要（WP9）。只在手機寬度渲染：標題、一句話、誠實報名鈕、
+ * 前往專頁。文字逐字取自卡內原文，一個字都沒新寫。
+ *
+ * 這裡刻意不再掛一份 UpcomingSessions：完整的場次表就在下面那一按之內（以及各自的
+ * 專頁），而「現在還能不能報名」已經由 RegisterCta 誠實講出來——WP8 之後那顆按鈕
+ * 本身就是即時名額。多掛一份等於同一個專案在同一頁跑兩個即時元件，也會把 WP9 想省
+ * 下來的高度原地加回去（實測每張卡多 600～900px）。
+ */
+function ServiceSummary({ title, lead, slug }: { title: string; lead: string; slug: RegisterCtaSlug }) {
+  return (
+    <>
+      <h3 className="text-2xl font-black text-brown">{title}</h3>
+      <p className="leading-relaxed text-lg font-medium text-justify text-brown">{lead}</p>
+      <RegisterCta slug={slug} />
+      <Link
+        className="btn-warm py-3 px-4 bg-white text-brown text-base font-bold justify-center border-2 border-brown shadow-warm"
+        to={`/${slug}`}
+      >
+        前往專頁看完整說明
+      </Link>
+    </>
+  );
+}
+
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-cream text-brown font-body">
@@ -40,15 +67,41 @@ export default function HomePage() {
                         </p></div><div className="p-6 bg-[#FFF3E0]"><a className="btn-warm w-full py-4 bg-[#FF9E80] text-white hover:scale-[1.02] shadow-warm border-brown" href={LINKS.LINK_4} target="_blank" rel="noopener noreferrer">
                             前往資料庫查詢 <ArrowRight className="w-5 h-5 ml-2"></ArrowRight></a></div></div></div></section><section id="groups"><div className="text-center mb-12"><span className="inline-block bg-base-yellow border-2 border-brown px-8 py-4 rounded-full font-black text-brown text-4xl md:text-5xl shadow-warm transform -rotate-1 mb-4">
                     🚀 現在啟動 115 年計畫！
-                </span></div><div className="bg-white border-2 border-brown rounded-3xl p-6 md:p-10 mb-10 relative shadow-[8px_8px_0_rgba(93,64,55,0.15)] flex flex-col gap-8"><div className="space-y-4 text-brown"><h3 className="text-2xl font-black mb-4">【大A彥宇】115年度成人ADHD線上互助聚會</h3><p className="leading-relaxed text-lg font-medium text-justify">
+                </span></div><div className="bg-white border-2 border-brown rounded-3xl p-6 md:p-10 mb-10 relative shadow-[8px_8px_0_rgba(93,64,55,0.15)] flex flex-col gap-8">
+<CollapsibleSection
+  label="看完整介紹"
+  collapseLabel="收合介紹"
+  summary={
+    <ServiceSummary
+      title="【大A彥宇】115年度成人ADHD線上互助聚會"
+      lead="✨ 無需準備、不必讀書、帶著好奇心就能參加！ ✨"
+      slug="peer-group"
+    />
+  }
+>
+<div className="space-y-4 text-brown"><h3 className="text-2xl font-black mb-4">【大A彥宇】115年度成人ADHD線上互助聚會</h3><p className="leading-relaxed text-lg font-medium text-justify">
                         各位大A夥伴大家好，我是彥宇！👋<br/>
                         這是我自辦的線上聚會，歡迎各位嗨咖一起同樂，害羞的朋友也不必擔心，我們邀請了很有特色的來賓，讓大家有玩又有學習！<br/>
                         來賓們都是對我們ADHD生活很有幫助的專業人員，但這絕對不是嚴肅的講座，而是開心快樂的ADHD分享聚會~<br/><br/>
                         給我個機會，來參加一次吧！讓我能認識更多的大A夥伴！<br/>
                         新的一年（115年）到來，很開心又能與大家繼續前行。今年邀請了幾位專業的講師好朋友，準備了一系列貼近我們生活的主題。<br/></p><div className="text-center mt-6 py-4"><span className="inline-block bg-[#FFF9C4] px-6 py-3 rounded-full font-black text-xl border-2 border-brown shadow-sm transform -rotate-1 text-highlight">✨ 無需準備、不必讀書、帶著好奇心就能參加！ ✨</span></div></div><div className="bg-[#E0F7FA] border-l-8 border-accent-teal p-6 rounded-r-2xl"><h4 className="font-bold text-[#006064] text-xl mb-3 flex items-center gap-2"><Video className="w-6 h-6"></Video> 參加須知
-                    </h4><ul className="text-[#006064] space-y-2 font-bold list-disc list-inside text-lg"><li>一律採用 <strong className="text-[#004D40] bg-[#B2EBF2] px-1 rounded">GOOGLE MEET 視訊</strong></li><li>可<strong className="text-[#004D40] bg-[#B2EBF2] px-1 rounded">不開鏡頭</strong>，害羞的朋友也不用擔心喔！</li><li>表單是預先統計人數用的！沒報名也可以當天直接參加！</li></ul></div><div className="mt-2 w-full"><a className="btn-warm py-5 px-6 bg-accent-orange text-brown w-full text-2xl md:text-3xl shadow-warm animate-pulse-slow flex flex-col items-center justify-center border-4 border-brown" href={LINKS.LINK_5} target="_blank" rel="noopener noreferrer"><span>📝 立即填寫報名表</span><span className="text-base font-bold mt-2 opacity-80 bg-white/40 px-3 py-1 rounded-full border border-brown/20">預先報名讓我們更好準備喔！</span></a></div></div>
+                    </h4><ul className="text-[#006064] space-y-2 font-bold list-disc list-inside text-lg"><li>一律採用 <strong className="text-[#004D40] bg-[#B2EBF2] px-1 rounded">GOOGLE MEET 視訊</strong></li><li>可<strong className="text-[#004D40] bg-[#B2EBF2] px-1 rounded">不開鏡頭</strong>，害羞的朋友也不用擔心喔！</li><li>表單是預先統計人數用的！沒報名也可以當天直接參加！</li></ul></div><div className="mt-2 w-full"><a className="btn-warm py-5 px-6 bg-base-yellow text-brown w-full text-2xl md:text-3xl shadow-warm animate-pulse-slow flex flex-col items-center justify-center border-4 border-brown" href={LINKS.LINK_5} target="_blank" rel="noopener noreferrer"><span>📝 立即填寫報名表</span><span className="text-base font-bold mt-2 opacity-80 bg-white/40 px-3 py-1 rounded-full border border-brown/20">預先報名讓我們更好準備喔！</span></a></div>
+</CollapsibleSection>
+</div>
 
 <div className="bg-white border-2 border-brown rounded-3xl p-6 md:p-10 mb-10 relative shadow-[8px_8px_0_rgba(93,64,55,0.15)] flex flex-col gap-8">
+<CollapsibleSection
+  label="看完整介紹"
+  collapseLabel="收合介紹"
+  summary={
+    <ServiceSummary
+      title="【ADHD 導航計畫】免費公益線上諮詢：大A彥宇 × 諮商心理師鏡子 🌿"
+      lead="今年，大A彥宇與諮商心理師宋致靜（鏡子）攜手合作，為 ADHD 族群推出專屬的免費公益諮詢服務。"
+      slug="navigator"
+    />
+  }
+>
+
 <div className="space-y-4 text-brown">
 <h3 className="text-2xl font-black mb-4">【ADHD 導航計畫】免費公益線上諮詢：大A彥宇 × 諮商心理師鏡子 🌿</h3>
 <p className="leading-relaxed text-lg font-medium text-justify">
@@ -83,14 +136,28 @@ export default function HomePage() {
                     </div>
 </div>
 <div className="mt-2 w-full">
-<a className="btn-warm py-5 px-6 bg-accent-pink text-brown w-full text-2xl md:text-3xl shadow-warm animate-pulse-slow flex flex-col items-center justify-center border-4 border-brown" href={LINKS.LINK_6} target="_blank" rel="noopener noreferrer">
+<a className="btn-warm py-5 px-6 bg-base-yellow text-brown w-full text-2xl md:text-3xl shadow-warm animate-pulse-slow flex flex-col items-center justify-center border-4 border-brown" href={LINKS.LINK_6} target="_blank" rel="noopener noreferrer">
 <span>📝 前往填寫報名表</span>
 <span className="text-base font-bold mt-2 opacity-80 bg-white/40 px-3 py-1 rounded-full border border-brown/20">重要報名連結</span>
 </a>
 </div>
+</CollapsibleSection>
+
 </div>
 
 <div className="bg-white border-2 border-brown rounded-3xl p-6 md:p-10 mb-10 relative shadow-[8px_8px_0_rgba(93,64,55,0.15)] flex flex-col gap-8">
+<CollapsibleSection
+  label="看完整介紹"
+  collapseLabel="收合介紹"
+  summary={
+    <ServiceSummary
+      title="【ADHD 家長諮詢服務】免費公益線上諮詢：前兒少社工陪你找出教養新解方 🌿"
+      lead="✨ 彥宇不是樣樣都懂，但大A臥虎藏龍！我會盡力回應前來的家長 ✨"
+      slug="parent"
+    />
+  }
+>
+
 <div className="space-y-4 text-brown">
 <h3 className="text-2xl font-black mb-4">【ADHD 家長諮詢服務】免費公益線上諮詢：前兒少社工陪你找出教養新解方 🌿</h3>
 <p className="leading-relaxed text-lg font-medium text-justify">
@@ -139,16 +206,29 @@ export default function HomePage() {
                     </div>
 </div>
 <div className="mt-2 w-full">
-<a className="btn-warm py-5 px-6 bg-accent-blue text-brown w-full text-2xl md:text-3xl shadow-warm animate-pulse-slow flex flex-col items-center justify-center border-4 border-brown" href={LINKS.LINK_7} target="_blank" rel="noopener noreferrer">
+<a className="btn-warm py-5 px-6 bg-base-yellow text-brown w-full text-2xl md:text-3xl shadow-warm animate-pulse-slow flex flex-col items-center justify-center border-4 border-brown" href={LINKS.LINK_7} target="_blank" rel="noopener noreferrer">
 <span>📝 前往填寫報名表</span>
 <span className="text-base font-bold mt-2 opacity-80 bg-white/40 px-3 py-1 rounded-full border border-brown/20">報名連結</span>
 </a>
 </div>
+</CollapsibleSection>
+
 </div>
 
 {/* 成人職場及生活適應專業諮詢（2026-08-10 新增）。首頁只放摘要與入口，細節在專頁——
     首頁已經有三整塊服務說明，再複製兩份會讓這一頁長到沒人滑得完。 */}
 <div className="bg-white border-2 border-brown rounded-3xl p-6 md:p-10 mb-10 relative shadow-[8px_8px_0_rgba(93,64,55,0.15)] flex flex-col gap-6">
+<CollapsibleSection
+  label="看完整介紹"
+  collapseLabel="收合介紹"
+  summary={
+    <ServiceSummary
+      title="【成人職場及生活適應專業諮詢】免費公益線上諮詢：把卡住的地方，一起拆成可以開始的步驟 🌿"
+      lead="能力沒問題，卻總在行政事務、作息轉換、時間與生活結構上卡關？"
+      slug="career"
+    />
+  }
+>
   <div className="space-y-3 text-brown">
     <h3 className="text-2xl font-black">【成人職場及生活適應專業諮詢】免費公益線上諮詢：把卡住的地方，一起拆成可以開始的步驟 🌿</h3>
     <p className="leading-relaxed text-lg font-medium text-justify">
@@ -164,6 +244,7 @@ export default function HomePage() {
     <Link className="btn-warm py-4 px-6 bg-accent-blue text-brown flex-1 text-lg font-black justify-center border-2 border-brown shadow-warm" to="/career">看服務說明</Link>
     <Link className="btn-warm py-4 px-6 bg-white text-brown flex-1 text-lg font-bold justify-center border-2 border-brown shadow-warm" to="/career/register">前往填寫報名表</Link>
   </div>
+</CollapsibleSection>
 </div>
 
 {/* 協辦活動綜合專欄（2026-08-10 新增）。這裡刻意只放入口與感謝，不把合作案內容
@@ -186,6 +267,7 @@ export default function HomePage() {
 <div className="border-t-4 border-dashed border-brown/20 pt-8"><div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6"><div className="space-y-1"><h3 className="text-2xl font-bold text-brown flex items-center gap-2"><span className="bg-accent-teal text-brown px-2 py-1 rounded text-lg border border-brown">辦理</span>
                             ADHD 成人同儕線上團體-場次說明
                         </h3><p className="text-gray-600 font-medium">(點開有詳細介紹喔！)</p></div></div><UpcomingSessions showTopic />
+<CollapsibleSection label="👣 活動軌跡・已完成場次" collapseLabel="收合活動軌跡">
 <SessionHistory
   title="👣 活動軌跡・已完成場次"
   description="這些是我們過去美好的回憶！各項服務的場次全部永久留存，讓新朋友看見這個社群的累積。"
@@ -197,7 +279,10 @@ export default function HomePage() {
     { slug: 'co-host', label: '協辦活動' },
   ]}
 />
-<div className="relative flex items-center py-8"><div className="flex-grow border-t-2 border-dashed border-brown/30"></div><span className="flex-shrink-0 mx-4 text-gray-500 font-bold bg-[#FFFDE7] px-2">籌備中與即將推出</span><div className="flex-grow border-t-2 border-dashed border-brown/30"></div></div><div className="construction-card"><div className="construction-badge"><MapPin className="w-3 h-3"></MapPin> 場地確認中
+</CollapsibleSection>
+<div className="relative flex items-center py-8"><div className="flex-grow border-t-2 border-dashed border-brown/30"></div><span className="flex-shrink-0 mx-4 text-gray-500 font-bold bg-[#FFFDE7] px-2">籌備中與即將推出</span><div className="flex-grow border-t-2 border-dashed border-brown/30"></div></div>
+<CollapsibleSection label="看籌備中與即將推出的活動" collapseLabel="收合">
+<div className="construction-card"><div className="construction-badge"><MapPin className="w-3 h-3"></MapPin> 場地確認中
                     </div><div className="flex items-start gap-4"><div className="w-12 h-12 bg-[#FFCCBC] rounded-full flex items-center justify-center border-2 border-brown flex-shrink-0"><Users className="w-6 h-6 text-brown"></Users></div><div className="flex-grow"><h3 className="text-xl font-bold text-brown mb-3">成人ADHD實體活動 <span className="text-sm font-normal text-gray-500">(預計兩場)</span></h3><div className="space-y-4"><div className="bg-white p-3 rounded-lg border border-brown/10"><h4 className="font-bold text-brown mb-1">🐣 新手大A場</h4><p className="text-gray-600 text-xs leading-relaxed">
                                         你是近年來診斷ADHD的大A嗎？是否有很多疑問或是徬徨，嘿！我們有一群「老」A也走過很多挫折，累積了一些經驗。歡迎來報名大A新手場，讓我們老手帶新手，一起成為A咖！
                                         <br/><span className="text-[#FF9E80] font-bold">欸！資深大A也別走啊，一起來啦~</span></p></div><div className="bg-white p-3 rounded-lg border border-brown/10"><h4 className="font-bold text-brown mb-1">🎭 大A實驗室-一人一故事劇場演出過動人生</h4><p className="text-gray-600 text-xs leading-relaxed">
@@ -205,7 +290,9 @@ export default function HomePage() {
                                     </p></div></div></div></div></div><div className="construction-card"><div className="construction-badge"><CalendarClock className="w-3 h-3"></CalendarClock> 預計11月
                     </div><div className="flex items-start gap-4"><div className="w-12 h-12 bg-[#C5E1A5] rounded-full flex items-center justify-center border-2 border-brown flex-shrink-0"><BookOpen className="w-6 h-6 text-brown"></BookOpen></div><div><h3 className="text-xl font-bold text-brown mb-2">家長向-親職教育講座</h3><p className="text-gray-600 text-sm leading-relaxed">
                                 預計11月會有一場，地點待訂。
-                            </p></div></div></div></div></section></div><LineContact />
+                            </p></div></div></div>
+</CollapsibleSection>
+</div></section></div><LineContact />
 <DonateFooter />
     </div>
   );

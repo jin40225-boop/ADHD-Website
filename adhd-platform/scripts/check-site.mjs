@@ -4,6 +4,15 @@ import { resolve } from 'node:path';
 const root = resolve(import.meta.dirname, '..');
 const dist = resolve(root, 'dist');
 const siteUrl = 'https://jin40225-boop.github.io/ADHD-Website/';
+
+// 這支檢查驗的是「部署後」的狀態：404.html／.nojekyll／各深層路由的 index.html
+// 全部由 scripts/deploy-pages.mjs 產生，單純 npm run build 不會有。
+// 沒有這道守衛的話，build 後直接跑會噴十幾個「缺少 dist/…」，看起來像改壞了。
+if (!existsSync(resolve(dist, '.nojekyll'))) {
+  console.error('✗ dist 尚未經 npm run deploy 產生部署產物；本檢查驗的是部署後狀態，請先 deploy 再跑。');
+  process.exit(1);
+}
+
 const siteMeta = JSON.parse(readFileSync(resolve(root, 'src/data/site-meta.json'), 'utf8'));
 const articleIndex = JSON.parse(readFileSync(resolve(root, 'src/data/articles-index.json'), 'utf8'));
 const routes = [
@@ -59,10 +68,10 @@ const integrationRequirements = [
   ['src/pages/public/RecommendationMapPage.tsx', ['getPublicRecommendations', '內建備份（2026-07-11）']],
   ['src/admin/pages/RecommendationsPage.tsx', ['adminSaveRecommendation', 'getPublicRecommendations']],
   ['src/admin/pages/TemplatesPage.tsx', ['adminSaveEmailTemplate', 'adminDeleteEmailTemplate']],
-  ['src/admin/pages/CasesPage.tsx', ['adminListCasesWithRecords', 'adminAddServiceRecord']],
+  ['src/admin/pages/CasesOperationsPage.tsx', ['listOperationalCases', 'saveServiceRecord']],
   ['src/admin/pages/InstructorSchedulingPage.tsx', ['adminListAvailabilityPolls', 'invokeSendInstructorInvite', 'adminConfirmAvailabilityPoll']],
   ['src/pages/InstructorAvailabilityPage.tsx', ['getAvailabilityPoll', 'saveAvailabilityReply']],
-  ['src/admin/AdminLayout.tsx', ['applyPageMetadata']],
+  ['src/admin/AdminShell.tsx', ['applyPageMetadata']],
   ['src/admin/AdminLogin.tsx', ['applyPageMetadata']],
   ['supabase/functions/mcp/index.ts', ['list_services', 'list_upcoming_sessions', 'search_recommendations', 'list_public_resources', 'sessions_public']],
 ];

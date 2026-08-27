@@ -4,13 +4,47 @@ import { ListPlus, Mail, NotebookPen, Pencil } from 'lucide-react';
 import { TextInput, Textarea, Select } from '@/components/ui/FormField/FormField';
 import { WarmButton } from '@/components/ui/WarmButton/WarmButton';
 import { Modal } from '@/components/ui/Modal/Modal';
+import type { SessionSlot } from '@contracts/types';
+import { adminListSessions } from '@/lib/api';
 import { isSupabaseReady } from '@/lib/supabase';
-import { importGmailHistory, listContacts, listNotes, saveNote, saveTask, updateContact } from '../operations/api';
-import type { ContactRecord, InternalNote, NoteType, WorkPriority } from '../operations/types';
+import { importGmailHistory, listContacts, listNotes, saveNote, saveTask, transitionRegistration, updateContact } from '../operations/api';
+import type { ContactRecord, InternalNote, NoteType, OperationalRegistration, WorkPriority } from '../operations/types';
 import { EmptyPanel, InlineSpinner, OpsNotice, PageHeader, StatusPill } from '../operations/components';
+import { sessionDateText, sessionTimeText } from '../operations/SessionTable';
 
 const STATUS_LABELS: Record<ContactRecord['status'], string> = { active: '持續聯繫', inactive: '暫停聯繫', do_not_contact: '請勿聯繫', archived: '已封存' };
 const NOTE_LABELS: Record<NoteType, string> = { general: '一般註記', contact: '聯繫摘要', eligibility: '資格／需求', handoff: '交接事項', risk: '重要提醒' };
+
+interface ContactEditValues { displayName: string; primaryEmail: string; phone: string; status: ContactRecord['status']; tags: string; noBulkEmail: boolean }
+
+/** 場次已過去：狀態已結束，或結束時間已過。 */
+function isSessionPast(session: SessionSlot, now: number) {
+  return session.status === 'done' || session.status === 'cancelled' || new Date(session.endsAt).getTime() < now;
+}
+
+/**
+ * 封存這個人時，還被他佔著、而且還沒過去的場次名額。
+ *
+ * 判準只看 `capacityReleasedAt`：沒值＝這筆還佔著 `sessionIds` 裡每一場的名額。
+ * **不從狀態推**——狀態與名額是兩件事，用狀態推正好會漏掉「人已經不來了、名額還鎖著」
+ * 這個唯一需要被問的情況。查不到的場次一律跳過：不知道它是不是未來場次，就不該
+ * 拿它去嚇使用者。
+ */
+export function heldFutureSessions(
+  registrations: OperationalRegistration[],
+  sessionById: Map<string, SessionSlot>,
+  now = Date.now(),
+): { registration: OperationalRegistration; sessions: SessionSlot[] }[] {
+  return registrations
+    .filter((registration) => !registration.capacityReleasedAt)
+    .map((registration) => ({
+      registration,
+      sessions: registration.sessionIds
+        .map((id) => sessionById.get(id))
+        .filter((session): session is SessionSlot => Boolean(session) && !isSessionPast(session as SessionSlot, now)),
+    }))
+    .filter((item) => item.sessions.length > 0);
+}
 
 export default function PeoplePage() {
   const navigate = useNavigate();
@@ -29,11 +63,22 @@ export default function PeoplePage() {
   // 確認做在頁面裡而不是 window.confirm：原生對話框在自動化瀏覽器裡會被自動取消，
   // 等於把所有代驗擋在門外。破壞性動作仍然要確認，只是確認要驗得到。
   const [confirmingImport, setConfirmingImport] = useState(false);
+  const [sessions, setSessions] = useState<SessionSlot[]>([]);
+  /**
+   * 封存前的釋額詢問。同一個 local `confirming` 兩段式寫法（照 FeedbackPage／SettingsTables），
+   * 不用原生 `confirm()`——原生對話框在自動化瀏覽器裡會被自動取消，代驗就永遠做不到。
+   */
+  const [archivePrompt, setArchivePrompt] = useState<{
+    values: ContactEditValues;
+    holds: { registration: OperationalRegistration; sessions: SessionSlot[] }[];
+  }>();
+  const [archiveBusy, setArchiveBusy] = useState(false);
 
   const reload = useCallback(async () => {
     if (!isSupabaseReady) { setLoading(false); return; }
     try {
-      const rows = await listContacts();
+      const [rows, nextSessions] = await Promise.all([listContacts(), adminListSessions()]);
+      setSessions(nextSessions);
       setContacts(rows);
       setSelectedId((current) => current && rows.some((item) => item.id === current) ? current : rows[0]?.id);
       setError(undefined);
@@ -47,6 +92,10 @@ export default function PeoplePage() {
     if (requested && contacts.some((item) => item.id === requested)) setSelectedId(requested);
   }, [contacts, searchParams]);
   const selected = contacts.find((item) => item.id === selectedId);
+  // 切換選中對象時把待確認的封存丟掉：按了「封存」再切到別人，下一下就會封錯人。
+  // 換一個人就把所有兩段式確認收回來——否則按下「確認匯入」後切到別人，
+  // 按鈕仍停在確認狀態，下一下就對錯的人執行了。
+  useEffect(() => { setArchivePrompt(undefined); setConfirmingImport(false); }, [selectedId]);
   useEffect(() => {
     if (!selectedId || !isSupabaseReady) { setNotes([]); return; }
     void listNotes({ contactId: selectedId }).then(setNotes).catch((err) => setError(err instanceof Error ? err.message : '讀取註記失敗'));
@@ -61,12 +110,46 @@ export default function PeoplePage() {
     });
   }, [contacts, query, statusFilter]);
 
-  async function handleContactSave(values: { displayName: string; primaryEmail: string; phone: string; status: ContactRecord['status']; tags: string; noBulkEmail: boolean }) {
+  const sessionById = useMemo(() => new Map(sessions.map((session) => [session.id, session])), [sessions]);
+
+  async function writeContact(values: ContactEditValues) {
     if (!selected) return;
+    await updateContact(selected.id, { displayName: values.displayName, primaryEmail: values.primaryEmail, phone: values.phone, status: values.status, noBulkEmail: values.noBulkEmail, tags: values.tags.split(/[、,，]/).map((item) => item.trim()).filter(Boolean) });
+  }
+
+  /**
+   * 封存一個人不會自動退出他的報名，於是他還佔著的未來場次名額會一直鎖著，
+   * 而那筆報名同時從工作台消失（封存的人不列出來）——名額對不上的最常見成因。
+   * 因此改成「已封存」前先問；沒佔著任何未來場次就什麼都不問，直接存。
+   */
+  async function handleContactSave(values: ContactEditValues) {
+    if (!selected) return;
+    if (values.status === 'archived' && selected.status !== 'archived') {
+      const holds = heldFutureSessions(selected.registrations, sessionById);
+      if (holds.length) { setEditOpen(false); setArchivePrompt({ values, holds }); return; }
+    }
     try {
-      await updateContact(selected.id, { displayName: values.displayName, primaryEmail: values.primaryEmail, phone: values.phone, status: values.status, noBulkEmail: values.noBulkEmail, tags: values.tags.split(/[、,，]/).map((item) => item.trim()).filter(Boolean) });
+      await writeContact(values);
       setEditOpen(false); setNotice('人員主檔已更新，跨活動關聯不受影響。'); await reload();
     } catch (err) { setError(err instanceof Error ? err.message : '更新失敗'); }
+  }
+
+  /** `release` 為真時，逐筆走 `transitionRegistration(..., 'withdrawn')` 讓 RPC 自己釋額。 */
+  async function handleArchiveDecision(release: boolean) {
+    if (!archivePrompt || !selected) return;
+    setArchiveBusy(true);
+    try {
+      if (release) {
+        for (const hold of archivePrompt.holds) await transitionRegistration(hold.registration.id, 'withdrawn');
+      }
+      await writeContact(archivePrompt.values);
+      setArchivePrompt(undefined);
+      setNotice(release
+        ? `已封存，並退出 ${archivePrompt.holds.length} 筆報名、釋放其名額。`
+        : '已封存；名額維持原狀，未來場次仍為他保留。');
+      await reload();
+    } catch (err) { setError(err instanceof Error ? err.message : '封存失敗'); }
+    finally { setArchiveBusy(false); }
   }
 
   /**
@@ -122,6 +205,20 @@ export default function PeoplePage() {
             {selected ? <>
               <div className="ops-detail-header"><div><h2>{selected.displayName}</h2><p>{selected.primaryEmail || '未提供 Email'}{selected.phone ? `　·　${selected.phone}` : ''}</p></div><StatusPill tone={selected.status === 'active' ? 'green' : 'gray'}>{STATUS_LABELS[selected.status]}</StatusPill></div>
               <div className="ops-button-row"><WarmButton size="sm" icon={Mail} onClick={() => { const reg = selected.registrations[0]; if (reg) navigate(`/admin/inbox?registration=${reg.id}`); }} disabled={!selected.registrations.length}>撰寫信件</WarmButton><WarmButton size="sm" variant="secondary" icon={NotebookPen} onClick={() => setNoteOpen(true)}>新增註記</WarmButton><WarmButton size="sm" variant="secondary" icon={ListPlus} onClick={() => setTaskOpen(true)} disabled={!selected.registrations.length}>建立任務</WarmButton><WarmButton size="sm" variant="secondary" icon={Pencil} onClick={() => setEditOpen(true)}>編輯主檔</WarmButton>{confirmingImport ? <><WarmButton size="sm" onClick={() => void handleImportHistory()}>確認匯入 {selected.primaryEmail} 的全部往來</WarmButton><WarmButton size="sm" variant="secondary" onClick={() => setConfirmingImport(false)}>取消</WarmButton></> : <WarmButton size="sm" variant="secondary" icon={Mail} onClick={() => setConfirmingImport(true)} disabled={!selected.primaryEmail}>匯入這個人的歷史往來</WarmButton>}</div>
+              {archivePrompt ? <OpsNotice tone="warning" role="alert">
+                <strong>封存前先決定名額：</strong>這個人還佔著 {archivePrompt.holds.reduce((total, hold) => total + hold.sessions.length, 0)} 個尚未過去的場次名額。
+                封存之後這些報名會從工作台消失，名額卻仍然鎖著。
+                <ul className="ops-list-meta" style={{ display: 'block', margin: '.5rem 0' }}>
+                  {archivePrompt.holds.flatMap((hold) => hold.sessions.map((session) => <li key={`${hold.registration.id}-${session.id}`}>
+                    {session.title}｜{sessionDateText(session.startsAt)} {sessionTimeText(session.startsAt)}–{sessionTimeText(session.endsAt)}
+                  </li>))}
+                </ul>
+                <div className="ops-button-row">
+                  <WarmButton size="sm" disabled={archiveBusy} onClick={() => void handleArchiveDecision(true)}>一併退出並釋放名額</WarmButton>
+                  <WarmButton size="sm" variant="secondary" disabled={archiveBusy} onClick={() => void handleArchiveDecision(false)}>只封存，名額不動</WarmButton>
+                  <WarmButton size="sm" variant="secondary" disabled={archiveBusy} onClick={() => setArchivePrompt(undefined)}>取消封存</WarmButton>
+                </div>
+              </OpsNotice> : null}
               <section className="ops-section"><h3>跨活動服務歷程</h3>{selected.registrations.length ? <div className="ops-table-wrap"><table className="ops-table"><thead><tr><th>服務／活動</th><th>報名時間</th><th>狀態</th><th>下一步</th></tr></thead><tbody>{selected.registrations.map((reg) => <tr key={reg.id}><td><Link to={`/admin/registrations?registration=${reg.id}`}>{reg.projectName || reg.projectId}</Link></td><td>{formatDate(reg.createdAt)}</td><td><StatusPill tone={reg.hasUnreadReply ? 'coral' : 'blue'}>{reg.status}</StatusPill></td><td>{reg.nextActionAt ? formatDate(reg.nextActionAt) : '尚未設定'}</td></tr>)}</tbody></table></div> : <EmptyPanel title="尚無報名紀錄" />}</section>
               <section className="ops-section"><div className="ops-panel-header"><div><h3>內部註記</h3><p>與對外信件分開，所有修改保留版本。</p></div><WarmButton size="sm" variant="secondary" onClick={() => setNoteOpen(true)}>新增</WarmButton></div>{notes.length ? notes.map((note) => <article className="ops-note" key={note.id}><header><StatusPill tone={note.noteType === 'risk' ? 'red' : 'yellow'}>{NOTE_LABELS[note.noteType]}</StatusPill><small>第 {note.revision} 版 · {formatDate(note.updatedAt || note.createdAt)}</small></header><p>{note.content}</p></article>) : <EmptyPanel title="尚無內部註記" description="聯繫摘要、資格判斷與交接事項都可留在這裡。" />}</section>
             </> : <EmptyPanel title="請選擇一位人員" />}
@@ -135,7 +232,7 @@ export default function PeoplePage() {
   );
 }
 
-function ContactEditModal({ open, contact, onClose, onSave }: { open: boolean; contact: ContactRecord; onClose: () => void; onSave: (values: { displayName: string; primaryEmail: string; phone: string; status: ContactRecord['status']; tags: string; noBulkEmail: boolean }) => void }) {
+function ContactEditModal({ open, contact, onClose, onSave }: { open: boolean; contact: ContactRecord; onClose: () => void; onSave: (values: ContactEditValues) => void }) {
   const [displayName, setDisplayName] = useState(contact.displayName); const [primaryEmail, setPrimaryEmail] = useState(contact.primaryEmail ?? ''); const [phone, setPhone] = useState(contact.phone ?? ''); const [status, setStatus] = useState(contact.status); const [tags, setTags] = useState(contact.tags.join('、')); const [noBulkEmail, setNoBulkEmail] = useState(Boolean(contact.noBulkEmail));
   useEffect(() => { setDisplayName(contact.displayName); setPrimaryEmail(contact.primaryEmail ?? ''); setPhone(contact.phone ?? ''); setStatus(contact.status); setTags(contact.tags.join('、')); setNoBulkEmail(Boolean(contact.noBulkEmail)); }, [contact]);
   return <Modal open={open} onClose={onClose} title="編輯人員主檔" footer={<><WarmButton variant="secondary" onClick={onClose}>取消</WarmButton><WarmButton onClick={() => onSave({ displayName, primaryEmail, phone, status, tags, noBulkEmail })} disabled={!displayName.trim()}>儲存主檔</WarmButton></>}><div className="ops-form-grid"><TextInput label="顯示姓名" name="contact-name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} /><TextInput label="主要 Email" type="email" name="contact-email" value={primaryEmail} onChange={(e) => setPrimaryEmail(e.target.value)} /><TextInput label="電話" name="contact-phone" value={phone} onChange={(e) => setPhone(e.target.value)} /><Select label="聯繫狀態" name="contact-status-edit" value={status} onChange={(e) => setStatus(e.target.value as ContactRecord['status'])} options={Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label }))} /><div className="ops-full"><TextInput label="標籤" name="contact-tags" value={tags} helpText="以逗號或頓號分隔，例如：家長、需回電" onChange={(e) => setTags(e.target.value)} /></div><div className="ops-full"><label className="ops-inline-check"><input type="checkbox" checked={noBulkEmail} onChange={(e) => setNoBulkEmail(e.target.checked)} />不接收群發（一對一往來不受影響——退出群發不等於斷絕聯絡）</label></div></div></Modal>;

@@ -9,6 +9,7 @@ import { DataTable } from '@/components/ui';
 import type { DataTableColumn } from '@/components/ui';
 import { adminDeleteFeedback, adminListFeedback } from '@/lib/api';
 import { isSupabaseReady } from '@/lib/supabase';
+import { InlineSpinner, OpsNotice, PageHeader } from '../operations/components';
 
 function formatDate(iso: string) {
   const d = new Date(iso);
@@ -101,15 +102,12 @@ export default function FeedbackPage() {
   ];
 
   return (
-    <div>
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <div>
-          <h1 className="font-heading text-2xl font-bold">
-            活動回饋{live && !loading && !error ? `（${rows.length} 筆）` : ''}
-          </h1>
-          <p className="text-sm text-brown/70">民眾透過 /feedback 送出的活動回饋留言，最新在前。</p>
-        </div>
-        {live ? (
+    <section className="ops-section">
+      <PageHeader
+        eyebrow="內容與系統"
+        title={`活動回饋${live && !loading && !error ? `（${rows.length} 筆）` : ''}`}
+        description="民眾透過 /feedback 送出的活動回饋留言，最新在前。"
+        actions={live ? (
           <button
             type="button"
             onClick={() => void reload()}
@@ -117,31 +115,31 @@ export default function FeedbackPage() {
           >
             重新整理
           </button>
-        ) : null}
-      </div>
+        ) : undefined}
+      />
 
       {!live ? (
-        <p className="rounded-xl border-2 border-brown/40 bg-base-yellow/60 px-4 py-3 text-sm">
+        <OpsNotice tone="warning">
           目前為離線／骨架模式（未連接 Supabase），無法讀取回饋資料。
-        </p>
+        </OpsNotice>
       ) : error ? (
-        <p role="alert" className="mb-4 rounded-xl border-2 border-alert-red bg-alert-red/10 px-4 py-2.5 text-sm font-bold">
-          {error}
-        </p>
+        <OpsNotice tone="danger" role="alert">{error}</OpsNotice>
       ) : null}
 
       {live && loading ? (
-        <p className="p-6 text-center text-brown/60">載入回饋資料中…</p>
+        <InlineSpinner label="載入回饋資料中…" />
       ) : live && !error ? (
-        <DataTable
-          rows={rows}
-          columns={columns}
-          getRowKey={(r) => r.id}
-          pageSize={20}
-          emptyTitle="目前還沒有回饋"
-          emptyDescription="民眾送出活動回饋後，會顯示在這裡。"
-        />
+        <article className="ops-panel">
+          <DataTable
+            rows={rows}
+            columns={columns}
+            getRowKey={(r) => r.id}
+            pageSize={20}
+            emptyTitle="目前還沒有回饋"
+            emptyDescription="民眾送出活動回饋後，會顯示在這裡。"
+          />
+        </article>
       ) : null}
-    </div>
+    </section>
   );
 }

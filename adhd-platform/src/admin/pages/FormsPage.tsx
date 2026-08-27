@@ -8,10 +8,10 @@ import { Save } from 'lucide-react';
 import type { FormSchema, Project } from '@contracts/types';
 import { SchemaFormEditor } from '@/features/form-engine';
 import { ApiError, adminListProjects, adminSaveFormSchema, getFormSchema } from '@/lib/api';
-import { LoadingState } from '@/components/ui/LoadingState';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Select } from '@/components/ui/FormField';
 import { WarmButton } from '@/components/ui/WarmButton';
+import { InlineSpinner, OpsNotice, PageHeader } from '../operations/components';
 
 export default function FormsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -90,57 +90,53 @@ export default function FormsPage() {
     }
   };
 
-  if (loading) return <LoadingState label="載入專案清單…" />;
-  if (!projects.length) {
-    return <EmptyState title="沒有可編輯的專案" description={error ?? '請先於資料庫建立專案。'} />;
-  }
-
   return (
-    <div>
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-        <div className="min-w-64">
-          <Select
-            label="選擇專案報名表"
-            name="form-project"
-            value={projectId}
-            onChange={(event) => {
-              // 有未存變更就先問，而且問在頁面裡：window.confirm 在自動化瀏覽器裡會被自動取消，
-              // 於是「切換專案」在代驗時永遠等於按了取消，這條路徑就再也驗不到。
-              if (dirty && event.target.value !== projectId) { setPendingProjectId(event.target.value); return; }
-              setProjectId(event.target.value);
-            }}
-            options={projects.map((p) => ({ value: p.id, label: p.name }))}
-          />
-        </div>
-        {pendingProjectId ? (
-          <p role="alert" className="w-full rounded-xl border-2 border-alert-red/60 bg-alert-red/10 px-4 py-2.5 text-sm">
-            切換到「{projects.find((p) => p.id === pendingProjectId)?.name ?? '另一個專案'}」會捨棄尚未儲存的變更。
-            <button type="button" className="ml-3 font-bold underline" onClick={() => { setProjectId(pendingProjectId); setPendingProjectId(undefined); }}>捨棄變更並切換</button>
-            <button type="button" className="ml-3 underline" onClick={() => setPendingProjectId(undefined)}>取消</button>
-          </p>
-        ) : null}
-        <WarmButton icon={Save} disabled={!dirty || saving || schemaLoading} onClick={handleSave}>
-          {saving ? '儲存中…' : dirty ? '儲存變更' : '已是最新'}
-        </WarmButton>
-      </div>
-      {notice ? (
-        <p role="status" className="mb-4 rounded-xl border-2 border-brown/40 bg-accent-blue/30 px-4 py-2.5 text-sm">
-          {notice}
-        </p>
-      ) : null}
-      {error ? (
-        <p role="alert" className="mb-4 rounded-xl border-2 border-highlight bg-accent-orange/25 px-4 py-2.5 text-sm font-bold">
-          {error}
-        </p>
-      ) : null}
-      {schemaLoading || !schema ? (
-        <LoadingState label="載入表單定義…" />
+    <section className="ops-section">
+      <PageHeader eyebrow="活動營運" title="報名表設定" description="選定專案後編輯報名欄位；儲存後前台報名頁即刻採用新的欄位定義。" />
+      {loading ? <InlineSpinner label="載入專案清單…" /> : !projects.length ? (
+        <EmptyState title="沒有可編輯的專案" description={error ?? '請先於資料庫建立專案。'} />
       ) : (
-        <SchemaFormEditor
-          value={schema}
-          onChange={(next) => { setSchema(next); setDirty(true); setNotice(undefined); }}
-        />
+        <>
+          <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+            <div className="min-w-64">
+              <Select
+                label="選擇專案報名表"
+                name="form-project"
+                value={projectId}
+                onChange={(event) => {
+                  // 有未存變更就先問，而且問在頁面裡：window.confirm 在自動化瀏覽器裡會被自動取消，
+                  // 於是「切換專案」在代驗時永遠等於按了取消，這條路徑就再也驗不到。
+                  if (dirty && event.target.value !== projectId) { setPendingProjectId(event.target.value); return; }
+                  setProjectId(event.target.value);
+                }}
+                options={projects.map((p) => ({ value: p.id, label: p.name }))}
+              />
+            </div>
+            <WarmButton icon={Save} disabled={!dirty || saving || schemaLoading} onClick={handleSave}>
+              {saving ? '儲存中…' : dirty ? '儲存變更' : '已是最新'}
+            </WarmButton>
+          </div>
+          {pendingProjectId ? (
+            <OpsNotice tone="warning" role="alert">
+              切換到「{projects.find((p) => p.id === pendingProjectId)?.name ?? '另一個專案'}」會捨棄尚未儲存的變更。
+              <button type="button" className="ml-3 font-bold underline" onClick={() => { setProjectId(pendingProjectId); setPendingProjectId(undefined); }}>捨棄變更並切換</button>
+              <button type="button" className="ml-3 underline" onClick={() => setPendingProjectId(undefined)}>取消</button>
+            </OpsNotice>
+          ) : null}
+          {notice ? <OpsNotice tone="success" role="status">{notice}</OpsNotice> : null}
+          {error ? <OpsNotice tone="danger" role="alert">{error}</OpsNotice> : null}
+          {schemaLoading || !schema ? (
+            <InlineSpinner label="載入表單定義…" />
+          ) : (
+            <article className="ops-panel">
+              <SchemaFormEditor
+                value={schema}
+                onChange={(next) => { setSchema(next); setDirty(true); setNotice(undefined); }}
+              />
+            </article>
+          )}
+        </>
       )}
-    </div>
+    </section>
   );
 }

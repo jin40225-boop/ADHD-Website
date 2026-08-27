@@ -117,12 +117,71 @@ function restoreNames(text: string, redaction: Redaction) {
   return out;
 }
 
+/**
+ * 文件類型 → 提示詞。UI 的六個選項與這裡的六個新鍵**一對一**：先前六個選項壓成三個鍵，
+ * 三個選項按下去產出的是同一份東西，等於選單有一半是裝飾。
+ *
+ * 舊四鍵（session_summary／attendance_sheet／followup_notes／monthly_report）保留不刪：
+ * 既有 `generated_documents` 的 `doc_type` 還存著那四個值，拿掉它們只會讓歷史紀錄變成
+ * 認不得的類型。它們不再出現在 UI，但仍可被直接呼叫。
+ */
 const DOC_PROMPTS: Record<string, string> = {
+  // --- 舊四鍵：保留給既有紀錄，UI 已不再列出 ---
   session_summary: '請依提供的場次資料，撰寫一份給團隊內部使用的場次摘要：時間、主題、報名概況、需要注意的事項。',
   attendance_sheet: '請依提供的報名資料，整理一份簽到／出席確認清單的文字版，每位一行，含代號與時段。',
   followup_notes: '請依提供的往來摘要，整理每位報名者的後續追蹤重點，一人一段，標明待辦。',
   monthly_report: '請依提供的場次與報名資料，撰寫一份月度服務摘要，供對外報告使用。',
+  // --- 03_v4 六型：與 UI 的六個選項一對一 ---
+  monthly_notice: '請依提供的下月場次清單，撰寫一封寄給家長的月度活動宣傳與通知信：開頭一段說明這個月的主題方向，接著逐場列出時間與剩餘名額，最後一段說明怎麼報名。語氣親切、不誇大、不承諾療效。',
+  pre_event_reminder: '請依提供的場次資料與報名名冊，撰寫一封寄給該場全部報名者的行前提醒信：時間、參加方式、需要事先準備的事、當天流程重點。名冊只是讓你理解這群人的處境，信裡不要逐一點名，也不要複述任何一位的個別狀況。',
+  event_plan: '請依提供的場次資料，撰寫一份可對外提供的活動計畫書：活動名稱、辦理時間、對象與人數規模、主題與講者、目的與內容大綱、預期效益。這份文件會給合作單位看，不得出現任何個別報名者的資訊。',
+  social_post: '請依提供的場次清單，撰寫一則 FB／網路宣傳短文：300 字以內、口語、有畫面感，開頭先講中家長的處境，結尾附一句明確的報名導流句。',
+  annual_report: '請依提供的統計數字，撰寫一份年度成果彙整：辦理場次數、報名筆數、各服務線的辦理概況與觀察。只使用提供的數字，不得推估、不得補充未提供的成果。',
+  custom: '請依「補充指示」描述的需求，使用下方資料撰寫文件。指示沒有提到的事實一律不要自行補上。',
 };
+
+/**
+ * 這三型本質上就是跨場次的彙整，選單一場次對它們沒有意義——真的照著單一場次做，
+ * 產出與 UI 上寫的類型就對不起來了。這裡一律忽略 `sessionId`，讓素材與落庫的
+ * scope／target 永遠一致（UI 那邊同樣不讓這三型選場次）。
+ */
+const AGGREGATE_ONLY = ['monthly_notice', 'social_post', 'annual_report'];
+
+/**
+ * 議題欄。原本讀的是 `answers.topic ?? answers.question`——這兩個 key 在任何一份現行
+ * form_schema 裡都不存在，所以這一欄從來只印得出「未填」。真正存在的是 `issueDesc`
+ * （困擾議題簡述，親職／導航／職涯三份表單都有）與 `consultTopics`（可複選）。
+ */
+function issueText(answers: Row): string {
+  const topics = answers?.consultTopics;
+  const joined = Array.isArray(topics)
+    ? topics.filter((item) => typeof item === 'string' && item.trim()).join('、')
+    : typeof topics === 'string' ? topics : '';
+  const candidates = [
+    typeof answers?.issueDesc === 'string' ? answers.issueDesc : '',
+    joined,
+    typeof answers?.topic === 'string' ? answers.topic : '',
+    typeof answers?.question === 'string' ? answers.question : '',
+  ];
+  return candidates.find((value) => value.trim())?.trim() ?? '未填';
+}
+
+/**
+ * 孩子欄。舊平面 key 是 `childName`，新表單改成可增減的 `children[]`（代號欄位 `alias`）。
+ * 原本只讀 `childName`，用新形狀報名的那些人整欄會直接消失。形狀判斷與 `collectNames`
+ * 對齊——那邊已經在收 `children[].alias` 了，這裡沒理由讀不到。
+ */
+function childText(answers: Row): string {
+  if (Array.isArray(answers?.children)) {
+    const aliases = answers.children
+      .filter((child: unknown) => child && typeof child === 'object')
+      .map((child: Row) => child.alias)
+      .filter((value: unknown): value is string => typeof value === 'string' && value.trim().length > 0)
+      .map((value: string) => value.trim());
+    if (aliases.length) return aliases.join('、');
+  }
+  return typeof answers?.childName === 'string' ? answers.childName.trim() : '';
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -145,27 +204,139 @@ Deno.serve(async (req) => {
     const instruction = String(body.instruction ?? '').trim();
     const preview = body.preview === true;
     if (!DOC_PROMPTS[docType]) return jsonResponse({ error: 'UNKNOWN_DOC_TYPE' }, 400);
+    // 自訂需求沒有指示就無從產起：與其送一份「請依補充指示」但補充指示是空的提示詞過去，
+    // 不如當場擋下來。擋在素材查詢之前，不白讀資料。
+    if (docType === 'custom' && !instruction) return jsonResponse({ error: 'INSTRUCTION_REQUIRED' }, 400);
 
     // ---- 素材 ----------------------------------------------------------------
+    const targetSessionId = AGGREGATE_ONLY.includes(docType) ? undefined : sessionId;
+    // 沒指定場次就退回彙整素材，對這些類型是錯的產出而不是次好的產出：
+    // 「該場全部報名者的行前提醒信」拿一份跨場次清單來寫，寫出來的信寄給誰都不對。
+    // 寧可擋下來講清楚，也不要產一份看起來像成品的東西。
+    if (!targetSessionId && !AGGREGATE_ONLY.includes(docType) && docType !== 'custom') {
+      return jsonResponse({ error: 'SESSION_REQUIRED' }, 400);
+    }
     const materials: string[] = [];
     const parentNames: string[] = [];
     const childNames: string[] = [];
-    if (sessionId) {
-      const { data: session } = await admin.from('sessions').select('title, starts_at, ends_at, capacity, booked_count, topic, guest').eq('id', sessionId).maybeSingle();
-      if (session) materials.push(`場次：${session.title}\n時間：${session.starts_at} ~ ${session.ends_at}\n名額：${session.booked_count}/${session.capacity}\n主題：${session.topic ?? '未定'}\n來賓：${session.guest ?? '未定'}`);
-      const { data: regs } = await admin
-        .from('registrations')
-        .select('status, email, answers, contacts(display_name)')
-        .contains('session_ids', [sessionId]);
-      for (const reg of (regs ?? []) as Row[]) {
-        const name = reg.contacts?.display_name ?? reg.answers?.name ?? '';
-        if (name) parentNames.push(String(name));
-        // 姓名一律先收集再整段替換，所以自由填答（議題、家庭型態…）裡出現的同一個名字也會一起被換掉。
-        const [answerParents, answerChildren] = collectNames(reg.answers ?? {});
-        parentNames.push(...answerParents);
-        childNames.push(...answerChildren);
-        const child = reg.answers?.childName ? `／孩子：${reg.answers.childName}` : '';
-        materials.push(`報名：${name}（${reg.status}）${child}\n議題：${reg.answers?.topic ?? reg.answers?.question ?? '未填'}`);
+    /** 彙整型文件的統計區間（例 `2025-09~2026-08`），同時當作落庫的 target_id。 */
+    let rangeText = '';
+
+    if (targetSessionId) {
+      const { data: session } = await admin.from('sessions')
+        .select('title, starts_at, ends_at, capacity, booked_count, topic, guest, description, projects(name, description)')
+        .eq('id', targetSessionId).maybeSingle();
+      if (session) {
+        const project = ((session as Row).projects ?? null) as Row | null;
+        materials.push([
+          `場次：${session.title}`,
+          `時間：${session.starts_at} ~ ${session.ends_at}`,
+          `名額：${session.booked_count}/${session.capacity}`,
+          `主題：${session.topic ?? '未定'}`,
+          `來賓：${session.guest ?? '未定'}`,
+          `場次介紹：${session.description ?? '未填'}`,
+          `服務線：${project?.name ?? '未標示'}`,
+          `服務線說明：${project?.description ?? '未填'}`,
+        ].join('\n'));
+      }
+      if (docType === 'event_plan') {
+        // 計畫書是給合作單位看的：只給得出「幾個人報名」，一位報名者的資料都不進素材。
+        const { count } = await admin.from('registrations')
+          .select('id', { count: 'exact', head: true })
+          .contains('session_ids', [targetSessionId]);
+        materials.push(`報名人數：${count ?? 0} 人（本類型不提供個別報名者資料）`);
+      } else {
+        const { data: regs } = await admin
+          .from('registrations')
+          .select('status, email, answers, contacts(display_name)')
+          .contains('session_ids', [targetSessionId]);
+        for (const reg of (regs ?? []) as Row[]) {
+          const name = reg.contacts?.display_name ?? reg.answers?.name ?? '';
+          if (name) parentNames.push(String(name));
+          // 姓名一律先收集再整段替換，所以自由填答（議題、家庭型態…）裡出現的同一個名字也會一起被換掉。
+          const [answerParents, answerChildren] = collectNames(reg.answers ?? {});
+          parentNames.push(...answerParents);
+          childNames.push(...answerChildren);
+          const childNote = childText(reg.answers ?? {});
+          const child = childNote ? `／孩子：${childNote}` : '';
+          materials.push(`報名：${name}（${reg.status}）${child}\n議題：${issueText(reg.answers ?? {})}`);
+        }
+      }
+    } else {
+      // 沒有指定場次不再直接失敗——彙整型文件本來就沒有「單一場次」可選，
+      // 舊版在這裡回 NO_MATERIAL，等於預設選項按下去必定錯。
+      const now = new Date();
+      // 場次時間是台北時間，用 UTC 切月會把 1 號早上的場次算進上個月。
+      const TAIPEI = 8 * 60 * 60 * 1000;
+      const monthStart = (offset: number) => {
+        const local = new Date(now.getTime() + TAIPEI);
+        return new Date(Date.UTC(local.getUTCFullYear(), local.getUTCMonth() + offset, 1) - TAIPEI);
+      };
+      const ym = (date: Date) => {
+        const local = new Date(date.getTime() + TAIPEI);
+        return `${local.getUTCFullYear()}-${String(local.getUTCMonth() + 1).padStart(2, '0')}`;
+      };
+
+      if (docType === 'annual_report') {
+        const from = monthStart(-11);
+        rangeText = `${ym(from)}~${ym(now)}`;
+        const { data: rows } = await admin.from('sessions')
+          .select('id, title, starts_at, project_id, projects(name)')
+          .eq('status', 'done')
+          .gte('starts_at', from.toISOString())
+          .lte('starts_at', now.toISOString())
+          .order('starts_at');
+        const done = (rows ?? []) as Row[];
+        if (done.length) {
+          // 年度彙整只送統計。報名這裡只讀 project_id 一欄——answers 一個字都不讀，
+          // 因為成果報告用不到任何一位報名者的內容，讀了就是白白把個資送進提示詞。
+          const { data: regRows } = await admin.from('registrations')
+            .select('project_id')
+            .overlaps('session_ids', done.map((row) => String(row.id)));
+          const regs = (regRows ?? []) as Row[];
+          const perProject = new Map<string, { name: string; sessions: number; regs: number }>();
+          for (const row of done) {
+            const key = String(row.project_id);
+            const entry = perProject.get(key) ?? { name: String((row.projects as Row | null)?.name ?? '未標示'), sessions: 0, regs: 0 };
+            entry.sessions += 1;
+            perProject.set(key, entry);
+          }
+          for (const reg of regs) {
+            const entry = perProject.get(String(reg.project_id));
+            if (entry) entry.regs += 1;
+          }
+          materials.push(`統計期間：${rangeText}\n完成場次總數：${done.length} 場\n報名總筆數：${regs.length} 筆`);
+          for (const entry of perProject.values()) {
+            materials.push(`服務線：${entry.name}\n完成場次：${entry.sessions} 場\n報名筆數：${entry.regs} 筆`);
+          }
+          materials.push(`已完成場次清單：\n${done.map((row) => `・${String(row.starts_at).slice(0, 10)}　${row.title}`).join('\n')}`);
+        }
+      } else {
+        // monthly_notice／social_post 看下個月；custom 沒指定場次時看本月起半年。
+        const span = docType === 'custom' ? { from: 0, to: 6 } : { from: 1, to: 2 };
+        const from = monthStart(span.from);
+        const to = monthStart(span.to);
+        rangeText = `${ym(from)}~${ym(monthStart(span.to - 1))}`;
+        const { data: rows } = await admin.from('sessions')
+          .select('title, starts_at, capacity, booked_count, project_id, projects(name, description)')
+          .in('status', ['open', 'full'])
+          .gte('starts_at', from.toISOString())
+          .lt('starts_at', to.toISOString())
+          .order('starts_at');
+        const upcoming = (rows ?? []) as Row[];
+        const seen = new Set<string>();
+        for (const row of upcoming) {
+          const project = (row.projects ?? null) as Row | null;
+          const key = String(row.project_id);
+          if (project && !seen.has(key)) {
+            seen.add(key);
+            materials.push(`服務線：${project.name}\n說明：${project.description ?? '未填'}`);
+          }
+        }
+        for (const row of upcoming) {
+          const left = Math.max(Number(row.capacity ?? 0) - Number(row.booked_count ?? 0), 0);
+          materials.push(`場次：${row.title}\n時間：${row.starts_at}\n剩餘名額：${left}`);
+        }
       }
     }
     if (!materials.length) return jsonResponse({ error: 'NO_MATERIAL' }, 400);
@@ -200,7 +371,9 @@ Deno.serve(async (req) => {
       output_config: { effort: 'medium' },
       system: '你是社工實務的文件助理。只根據提供的資料撰寫，不得補充未提供的事實。代號（〔家長1〕〔信箱1〕等）一律原樣保留。輸出使用繁體中文。',
       messages: [{ role: 'user', content: prompt }],
-    });
+      // SDK 0.68.0 的型別還沒有 `output_config`（Opus 5 的 effort 參數），但 API 收得下。
+      // 用斷言放行而不是刪掉它——刪掉會靜默改變送出的參數，那不是型別問題該付的代價。
+    } as Anthropic.MessageCreateParamsNonStreaming);
 
     // 安全分類器可能擋下請求：這時 content 是空的，直接讀 content[0] 會炸。
     if (message.stop_reason === 'refusal') {
@@ -213,9 +386,11 @@ Deno.serve(async (req) => {
     // AI 永遠只寫草稿。寄不寄、寄給誰，是人的決定。
     const { data: saved, error } = await admin.from('generated_documents').insert({
       doc_type: docType,
-      scope: 'single',
-      target_type: sessionId ? 'session' : null,
-      target_id: sessionId ?? null,
+      // 舊版不論素材是什麼都寫 'single'，於是彙整型文件在紀錄裡看起來像是某一場的文件，
+      // 而「範圍」欄根本查不到那一場。scope 一律跟著素材走。
+      scope: targetSessionId ? 'single' : 'aggregate',
+      target_type: targetSessionId ? 'session' : 'range',
+      target_id: targetSessionId ?? rangeText,
       title: `${docType}｜${new Date().toISOString().slice(0, 10)}`,
       content,
       status: 'draft',

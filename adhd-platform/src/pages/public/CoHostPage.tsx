@@ -57,7 +57,7 @@ export default function CoHostPage() {
         <CoHostActivities />
       </div>
 
-      <AboutFounder />
+      <AboutFounder variant="collapsed" />
       <LineContact />
       <DonateFooter />
     </div>

@@ -194,6 +194,44 @@ export function UpcomingSessions({
           </div>
         ) : null;
 
+        // 延伸連結：認識來賓的連結（guest_url）＋ 連結型附件（attachments）。
+        // 兩者都沒有時整塊不出現——不留一個「延伸連結：」的空標題假裝底下有東西。
+        // 這一輪只做連結型：檔案上傳需要 Storage bucket 與權限設計，不在本包。
+        // 外部連結一律 target="_blank" rel="noopener noreferrer"：這個站踩過
+        // 「開新分頁沒有切斷 opener」的坑，新加的連結不重演。
+        const attachments = first.attachments ?? [];
+        const linksBlock = first.guestUrl || attachments.length ? (
+          <div>
+            <h4 className="font-bold text-brown mb-2 border-l-4 border-accent-orange pl-2">延伸連結：</h4>
+            <ul className="space-y-1">
+              {first.guestUrl ? (
+                <li>
+                  <a
+                    className="font-bold text-brown underline hover:text-highlight"
+                    href={first.guestUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    認識來賓 ↗
+                  </a>
+                </li>
+              ) : null}
+              {attachments.map((item) => (
+                <li key={`${item.label}-${item.url}`}>
+                  <a
+                    className="font-bold text-brown underline hover:text-highlight"
+                    href={item.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {item.label} ↗
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null;
+
         if (first.slotOptions?.length) {
           // 導航計畫：每月僅一筆 record，slotOptions 是整個月的候選窗口而非單一場次
           // 時間，直接印 startsAt～endsAt 會變成「20:00 - 10:00」這種跨日怪值——
@@ -237,6 +275,7 @@ export function UpcomingSessions({
                       <p className="text-brown font-bold">客座嘉賓：{mystery(first.guest)}</p>
                     ) : null}
                     {descriptionBlock}
+                    {linksBlock}
                   </div>
                 </div>
               </div>
@@ -309,6 +348,7 @@ export function UpcomingSessions({
                     <p className="text-brown font-bold">客座嘉賓：{mystery(first.guest)}</p>
                   ) : null}
                   {descriptionBlock}
+                  {linksBlock}
                 </div>
               </div>
             </div>

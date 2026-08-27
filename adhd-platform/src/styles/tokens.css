@@ -249,3 +249,43 @@
   align-items: center;
   gap: 4px;
 }
+
+/* collapsible-*：行動版摺疊區塊（WP9）。機制沿用 session-content 的
+   grid-template-rows 0fr↔1fr：天生無截斷、內容高度變化自動跟隨。
+   桌機恆展開的卡片根本不會渲染這些包裝（見 CollapsibleSection.tsx）。 */
+.collapsible-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.collapsible-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.3s ease-out;
+}
+.collapsible-body.open {
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 0.5s ease-in;
+}
+.collapsible-body > .collapsible-body-inner {
+  overflow: hidden;
+  min-height: 0;
+  visibility: hidden;
+  transition: visibility 0.3s;
+}
+.collapsible-body.open > .collapsible-body-inner { visibility: visible; transition: visibility 0s; }
+/* 展開後內容間距：對齊服務卡原本的 gap-8（2rem）。 */
+.collapsible-body-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+/* 尊重系統偏好：不做展開動畫，但摺疊功能照常可用。 */
+@media (prefers-reduced-motion: reduce) {
+  .collapsible-body,
+  .collapsible-body.open,
+  .collapsible-body > .collapsible-body-inner,
+  .collapsible-body.open > .collapsible-body-inner {
+    transition: none;
+  }
+}

@@ -468,4 +468,361 @@ for (const dir of CONTENT_DIRS) {
     }
   }
 }
+// WP2：五頁收斂進 ops 外殼。這五頁是第一代後台的殘留（07-14 建、07-23 沒跟著搬），
+// 進去看不到頁首、外層也不是 ops 版面，使用者看到的「區塊不對稱」就是這個。
+// 斷言外殼與頁首兩件事：少了任何一個就代表這一頁又掉回第一代版型。
+for (const page of ['TemplatesPage', 'FormsPage', 'FeedbackPage', 'RecommendationsPage', 'InstructorSchedulingPage']) {
+  requireText(`src/admin/pages/${page}.tsx`, ['ops-section', '<PageHeader']);
+}
 console.log('Admin operations structural checks passed.');
+
+// WP1 —— 共用場次名冊抽屜 ＋ 個人／團體分流 ＋ 匯出 ＋ 封存釋額。
+// 這幾條斷言守的都是「文字一旦被刪掉，功能就靜靜變成裝飾品」的地方：分流的兩種說明、
+// 已結束場次的關閉說明、彙整可貼進哪裡的提示，全都是使用者唯一看得到的行為說明。
+requireText('src/admin/operations/SessionRosterDrawer.tsx', [
+  'GROUP_SESSION_SLUGS',
+  // 個人場逐人寄／群體場整批寄：兩句說明各自對應一種入口，少一句就有一種場次沒有人知道該怎麼寄。
+  '一人一封', '整批寄',
+  // 已結束的場次不該再有群發入口，但名冊與匯出要留著（歷史名冊仍要查得到）。
+  '場次已結束，群發入口已關閉',
+  // 彙整分頁的用途提示；沒有它，那兩顆複製鈕只是兩段沒有去處的文字。
+  '可直接貼進',
+]);
+// 場次詳情的「報名概況」要真的掛上共用面板，而不是又退回只列一行姓名。
+requireText('src/admin/pages/SessionsPage.tsx', ['SessionRosterPanel']);
+// 封存一個還佔著未來場次名額的人時，必須問過才動名額——這是兩個選項裡會打 RPC 的那一個。
+requireText('src/admin/pages/PeoplePage.tsx', ['一併退出並釋放']);
+// 群組欄位（親職的 children）的題目住在 subFields；少了這層遞迴，孩子那一段只剩英文 key。
+requireText('src/admin/operations/answerLabels.ts', ['subFields']);
+// CSV 少了 BOM，Excel 開中文一定亂碼——使用者對匯出的第一印象就是「壞了」。
+requireText('src/admin/operations/exportCsv.ts', [String.raw`\uFEFF`]);
+// 名冊面板不得自己抓資料：它會被掛到報名審核頁，一旦自己查詢就是每個宿主各多一份請求。
+if (withoutComments(read('src/admin/operations/SessionRosterDrawer.tsx')).includes("from '@/lib/api'")) {
+  throw new Error('SessionRosterDrawer.tsx queries on its own; all data must arrive as props from the host page.');
+}
+console.log('WP1 session roster checks passed.');
+
+// WP5：信件範本依服務線分組 ＋ 十封新範本。
+//
+// 分組不新增欄位，用的是既有的 email_templates.project_id；擋的是「範本又退回一長串平名單」
+// 與「十封新範本被改名或漏掉」。名稱是使用者要逐封審的東西，改名等於改掉他要找的那封。
+// WP5
+const WP5_MIGRATION = 'supabase/migrations/20260827000042_template_groups_and_new_seeds.sql';
+requireText(WP5_MIGRATION, [
+  '收件通知・職場版', '確認信・職場版', '行前通知・職場版', '改期確認信・職場版',
+  '改期確認信・親職版', '改期確認信・導航版', '行前通知・同儕版', '場次異動通知・同儕版',
+  '講師確認信', '協辦活動公告信',
+  'review_status', "'draft'",
+]);
+// WP5：新範本一律以草稿種入，審閱後才由使用者改 approved。少了這個條件，十封 AI 起草的信
+// 會直接以 approved 出現在清單裡，看不出哪些還沒被人讀過。
+if (!/review_status\s*\)\s*[\s\S]*?'draft'/.test(read(WP5_MIGRATION))) {
+  throw new Error(`${WP5_MIGRATION} does not seed the new templates as review_status='draft'.`);
+}
+// WP5：回填段只准碰 project_id。name／subject／body／letter_kind 是使用者定稿的十封，
+// 一旦被 update 到就會連稽核紀錄一起改寫，且無從還原。
+if (/update\s+public\.email_templates[\s\S]{0,400}?set\s+(name|subject|body|letter_kind)\s*=/.test(read(WP5_MIGRATION))) {
+  throw new Error(`${WP5_MIGRATION} rewrites a finalized template field; the backfill may only set project_id.`);
+}
+// WP5：冪等的兩道保險——回填看「現在對齊幾封」而不是「這次改了幾封」，種入靠同名 not exists。
+requireText(WP5_MIGRATION, ['not exists (select 1 from public.email_templates t where t.name = v.name)', 'raise exception']);
+// WP5：分組函式與清單頁的接線。groupTemplates 消失＝分組又變回一長串平名單。
+requireText('src/admin/operations/templateGroups.ts', ['export function groupTemplates', 'GENERIC_GROUP_LABEL']);
+requireText('src/admin/pages/TemplatesPage.tsx', ['groupTemplates(templates, projects)', 'groups={groups}']);
+requireText('src/features/email-templates/EmailTemplateManager.tsx', ['EmailTemplateGroup', 'email-template-group__label']);
+console.log('WP5 template grouping checks passed.');
+
+// WP4：文件產生中心。六個選項先前壓成三個 docType，三個選項按下去產出同一份東西；
+// 預設的「整個下半年」則沒有彙整素材可用，一按必定 NO_MATERIAL。六型與彙整分支
+// 因此逐一列為斷言——少掉任何一個，選單就又開始承諾它做不到的事。
+requireText('supabase/functions/generate-document/index.ts', [
+  'monthly_notice', 'pre_event_reminder', 'event_plan', 'social_post', 'annual_report',
+  'INSTRUCTION_REQUIRED',
+]);
+// 議題欄原本讀的兩個 key 在任何一份 form_schema 裡都不存在，於是永遠印「未填」；
+// 孩子欄只讀舊平面 key，用 children[] 報名的人整欄消失。兩個 fallback 都必須在。
+requireText('supabase/functions/generate-document/index.ts', ['issueDesc', 'consultTopics', 'children']);
+// 落庫的 scope 一律跟著素材走；寫死 'single' 會讓彙整型文件在紀錄裡指向一場查不到的場次。
+requireText('supabase/functions/generate-document/index.ts', ["scope: targetSessionId ? 'single' : 'aggregate'"]);
+// 停用的理由要寫出來：按鈕灰掉而不說為什麼，跟按下去失敗一樣沒用。
+requireText('src/admin/pages/DocumentsPage.tsx', [
+  '行前提醒信必須選定單一場次', '到下方範本群發區選名單', 'useSearchParams',
+]);
+// 「收件對象」下拉從來沒被送進 invokeGenerateDocument，選什麼對產出零影響——
+// 假控制項比缺功能更糟，因為它讓人以為自己做了決定。不准回來。
+if (withoutComments(read('src/admin/pages/DocumentsPage.tsx')).includes('收件對象')) {
+  throw new Error('DocumentsPage.tsx brings back the audience dropdown; it never reaches invokeGenerateDocument.');
+}
+// 生成紀錄要看得到內容：mapping 少了 content，抽屜就只能開出一片空白。
+requireText('src/admin/operations/api.ts', ['content: row.content', 'targetId: row.target_id']);
+console.log('WP4 document-centre checks passed.');
+
+// WP3：收尾包——把前四包接起來，並終結後台的英文代碼與 UUID 亂碼。
+// WP3
+// 「完整表單內容」的標題必須查報名表定義（WP1 的索引），不能再回到只有兩個 key 有中文的
+// 寫死對照。ANSWER_LABEL 只准留報名頁注入、schema 裡沒有的那兩個 key，當 fallback 用。
+requireText('src/admin/pages/RegistrationsOperationsPage.tsx', [
+  'buildAnswerLabelIndex', 'answerLabel(labelIndex,', 'adminListFormSchemas()',
+]);
+if (withoutComments(read('src/admin/pages/RegistrationsOperationsPage.tsx')).includes('ANSWER_LABEL[key] ??')) {
+  throw new Error('RegistrationsOperationsPage.tsx still reads labels straight from ANSWER_LABEL; it must query the form-schema index first.');
+}
+// 場次欄唯讀 ＋ 指路。兩個編輯入口會互相打架，而只有「場次移轉」會正確結清名額。
+requireText('src/admin/pages/RegistrationsOperationsPage.tsx', ['formatAnswerValue(', '要改場次請用下方']);
+// 報名審核端的名冊入口：掛的必須是場次管理用的同一顆面板，不是另做一份。
+requireText('src/admin/pages/RegistrationsOperationsPage.tsx', ['SessionRosterPanel', '這一場的名冊與寄信']);
+// 名冊入口不得自己查資料：roster／project／sessions／schemas 全部來自本頁已載入的 state。
+requireText('src/admin/pages/RegistrationsOperationsPage.tsx', ['roster={rosterOf(rosterSession.id)}', 'adminListProjects()']);
+// 兩處範本下拉都要分組。分組消失＝四條線的信又混成一長串，最容易拿錯隔壁線的同名信。
+requireText('src/admin/pages/RegistrationsOperationsPage.tsx', ['optgroup', 'groupTemplates(templates, projects, current?.registration.projectSlug)']);
+requireText('src/admin/pages/DocumentsPage.tsx', ['optgroup', 'groupTemplates(templates, projects)']);
+// 文件中心：類型欄與錯誤碼都要中文化；範圍欄早在 WP4 就接上 targetId，裸 scope 不准回來。
+requireText('src/admin/pages/DocumentsPage.tsx', [
+  'docTypeText(document.docType)', 'docTypeText(viewing.docType)',
+  'session_summary:', 'attendance_sheet:', 'followup_notes:', 'monthly_report:',
+  'SESSION_REQUIRED:', 'NO_MATERIAL:', 'INSTRUCTION_REQUIRED:', 'MODEL_REFUSED:', 'EMPTY_RESULT:',
+  'docErrorText(e.message)',
+]);
+if (withoutComments(read('src/admin/pages/DocumentsPage.tsx')).includes('{document.scope}')) {
+  throw new Error('DocumentsPage.tsx prints the raw scope column again; it must resolve target_id into a session or period.');
+}
+// 群發時的場次語境：三個變數對同一場的所有收件人是同一個值，補在呼叫端而不是改 buildBulkContext。
+requireText('src/admin/pages/DocumentsPage.tsx', ['bulkSession.meetUrl']);
+// 新建範本沒有 letter_kind，就只能靠名稱猜；「改期確認信」含「確認信」會被猜成 confirm
+// 而掛上出席確認按鈕。三處修補缺一不可：payload 要送、編輯器要選得到、名稱判斷要先看改期。
+// review_status 只寫在 insert 分支且寫死 'draft'：新建的範本沒有人審過。刻意不讀
+// template.reviewStatus——那既會讓呼叫端能帶 'approved' 繞過人審，也會撞上上面那條
+// 「adminSaveEmailTemplate 不得寫 review_status（改錯字不該翻掉審閱狀態）」的守門。
+requireText('src/lib/api.ts', ['letter_kind: template.letterKind ?? null', "review_status: 'draft'"]);
+{
+  const save = read('src/lib/api.ts').split('adminSaveEmailTemplate')[1] ?? '';
+  const update = save.slice(save.indexOf('.update('));
+  if (update.includes('review_status')) {
+    throw new Error('adminSaveEmailTemplate now writes review_status on update; editing a template would silently change its review state.');
+  }
+}
+requireText('src/features/email-templates/EmailTemplateManager.tsx', ['LETTER_KINDS', 'letterKind:']);
+requireText('src/admin/operations/emailCompose.ts', ["name.includes('改期')"]);
+// 改期必須判在「確認信」之前，否則插了等於沒插。
+{
+  const source = read('src/admin/operations/emailCompose.ts');
+  if (source.indexOf("name.includes('改期')") > source.indexOf("name.includes('確認信')")) {
+    throw new Error("emailCompose.ts checks 改期 after 確認信; 改期確認信 would still be classified as confirm.");
+  }
+}
+// 分組標題套的是 operations.css 既有的類，不新寫 CSS；全文檢視放開高度只准用新增的 class。
+requireText('src/features/email-templates/EmailTemplateManager.tsx', ['ops-nav-label']);
+requireText('src/admin/operations/operations.css', ['.ops-willsend--full{max-height:none}']);
+if (!/\.ops-willsend\{[^}]*max-height:16rem/.test(read('src/admin/operations/operations.css'))) {
+  throw new Error('operations.css changed the existing .ops-willsend rule; WP3 may only append a new class.');
+}
+console.log('WP3 wrap-up checks passed.');
+
+// WP6：信件往來在地化——寄了信要能在原地看到對方回了什麼，不必整頁跳到收件匣再找回來。
+// WP6
+// 報名抽屜要有真的訊息面板（不是連結），未讀看過就消——與收件匣同一套規則。
+requireText('src/admin/pages/RegistrationsOperationsPage.tsx', ['ops-message-list', 'markThreadRead']);
+// 面板排在寄信面板正上方：往來在上、回信在下，這就是原地回信。順序反了等於又要捲上去找。
+{
+  const source = read('src/admin/pages/RegistrationsOperationsPage.tsx');
+  if (source.indexOf('📨 信件往來') > source.indexOf('✍️ 寄信')) {
+    throw new Error('RegistrationsOperationsPage.tsx puts the mail thread panel below the compose panel; it must sit directly above it.');
+  }
+}
+// 這半邊零新查詢：訊息只能讀 listContacts() 已攤平好的 messages，不准為了顯示往來再撈一次。
+requireText('src/admin/pages/RegistrationsOperationsPage.tsx', ['current?.registration.messages ?? []']);
+if (read('src/admin/pages/RegistrationsOperationsPage.tsx').includes('listCaseMail')) {
+  throw new Error('RegistrationsOperationsPage.tsx calls listCaseMail; the drawer already has the messages in memory and must not re-query.');
+}
+// 未讀不得只認 registrations.has_unread_reply——那個欄位全庫沒有寫入者，只認它紅點永遠不亮。
+// 兩半邊都要從訊息自己的 is_read（inbound）推導，也就是收件匣清的同一個欄位。
+requireText('src/admin/pages/RegistrationsOperationsPage.tsx', ['hasUnreadMail', "message.direction === 'inbound' && !message.isRead"]);
+requireText('src/admin/operations/api.ts', ["message.direction === 'inbound' && !message.isRead"]);
+// 個案台：目標式撈取＋沒有關聯聯絡人時的明講。
+requireText('src/admin/pages/CasesOperationsPage.tsx', ['listCaseMail', '沒有可顯示的信件往來', 'ops-message-list']);
+// 唯讀檢視不得動狀態：個案台不准清未讀。
+if (read('src/admin/pages/CasesOperationsPage.tsx').includes('markThreadRead')) {
+  throw new Error('CasesOperationsPage.tsx clears unread state; the case desk is read-only and must leave markThreadRead to the inbox and the registration drawer.');
+}
+// 瘦查詢的形狀：用 contact_id（一個人可能有多筆報名），mapping 重用同檔的 mapMessage。
+requireText('src/admin/operations/api.ts', ["export async function listCaseMail", ".eq('contact_id'"]);
+{
+  const source = read('src/admin/operations/api.ts');
+  const fn = source.slice(source.indexOf('export async function listCaseMail'));
+  const body = fn.slice(0, fn.indexOf('\nexport '));
+  if (!body.includes('mapMessage')) {
+    throw new Error('listCaseMail does not reuse mapMessage; message mapping must stay single-source.');
+  }
+  if (body.includes('listContacts')) {
+    throw new Error('listCaseMail falls back to listContacts; the case desk must not load every contact to read one person.');
+  }
+}
+console.log('WP6 mail-in-place checks passed.');
+
+// WP8：誠實 CTA——頁底那顆大按鈕讀跟 UpcomingSessions 同一份資料，滿了就說滿了。
+// WP8
+// 三態判斷必須是「抄」UpcomingSessions 而不是另發明一套；兩邊講的必須是同一件事。
+requireText('src/components/RegisterCta.tsx', [
+  "session.status === 'full' || remaining === 0", "session.status === 'closed'",
+  'notYetOpen ? false : isSessionFull ? false : true',
+]);
+// 額滿文案兩款：職場談是申請制（頁面本來就承諾候補），其餘三項是月度場次。
+requireText('src/components/RegisterCta.tsx', [
+  '目前時段已滿・仍可送出候補申請', '本月已額滿・新場次公布後開放',
+]);
+// 四頁同一顆、同一色：站內報名橫幅本來就是黃的，「黃＝報名」已是既成語彙。不寫新 CSS。
+requireText('src/components/RegisterCta.tsx', ['bg-base-yellow']);
+for (const forbidden of ['bg-accent-blue', 'bg-accent-pink', 'bg-accent-orange']) {
+  if (read('src/components/RegisterCta.tsx').includes(forbidden)) {
+    throw new Error(`RegisterCta.tsx uses ${forbidden}; the four register buttons must share one colour (bg-base-yellow).`);
+  }
+}
+// 最重要的一條：載入中／查詢失敗／沒有場次一律退回静態按鈕（原樣文案、可點）。
+// 寧可顯示過時文案，也不能讓想報名的人點不到；額滿時按鈕也仍然可點。
+requireText('src/components/RegisterCta.tsx', [
+  'sessions.length > 0 && !bookable',
+  // 查詢失敗時兩個狀態都要收乾淨：只清 isFull 會讓上一次算出的候補文案殘留，
+  // 變成「查不到資料卻說得出這一場收不收候補」。
+  'setIsFull(false); setWaitlistOpen(false);',
+  // 額滿的說法必須逐場讀 allow_waitlist——與後端 enforce_session_capacity 同一個來源。
+  // 寫死成「某條線一律可候補」會在使用者把單場候補關掉時變成謊話。
+  'session.allowWaitlist === true',
+  'waitlistOpen ? copy.waitlistLabel : copy.fullLabel',
+]);
+{
+  const source = withoutComments(read('src/components/RegisterCta.tsx'));
+  if (/disabled|pointer-events-none/.test(source)) {
+    throw new Error('RegisterCta.tsx disables the button; a full session list must never block the registration path.');
+  }
+}
+// 四個服務頁都換成同一顆；舊的寫死連結不得殘留（殘留就是又一頁永遠喊可報名）。
+const registerCtaPages = [
+  ['src/pages/public/CareerConsultPage.tsx', 'career'],
+  ['src/pages/public/ParentConsultPage.tsx', 'parent'],
+  ['src/pages/public/PeerGroupPage.tsx', 'peer-group'],
+  ['src/pages/public/NavigatorConsultPage.tsx', 'navigator'],
+];
+for (const [page, slug] of registerCtaPages) {
+  requireText(page, [`<RegisterCta slug="${slug}" />`]);
+  const source = withoutComments(read(page));
+  if (source.includes('btn-warm py-5 px-6')) {
+    throw new Error(`${page} still hard-codes the old static register button; it must render <RegisterCta />.`);
+  }
+}
+console.log('WP8 honest-CTA checks passed.');
+
+// WP9：首頁收攏＋自介收斂——手機版首頁 17,207px 降到 8,824px（375px 實測），內容零刪除。
+// WP9
+// 桌機恆展開的機制是「連包裝都不生成」：CollapsibleSection 在桌機直接回傳 children，
+// 所以 #groups 的 DOM 與改版前逐位元組相同。少了這一行就會變成 CSS 隱藏，
+// 摘要裡的 UpcomingSessions／RegisterCta 會在桌機無聲掛載並各打一輪 Supabase。
+requireText('src/components/CollapsibleSection.tsx', [
+  'expandedOnDesktop', 'return <>{children}</>', "matchMedia", '(max-width: 767px)',
+]);
+// 摺疊只准是「收起來」，不准是「拿掉」：內容一律照原樣傳進 children。
+if (withoutComments(read('src/components/CollapsibleSection.tsx')).includes('display: none')) {
+  throw new Error('CollapsibleSection.tsx hides content with display:none; collapsed content must stay in the DOM and expand verbatim.');
+}
+// 尊重系統偏好：reduce 時不做展開動畫，但摺疊功能照常（只關 transition，不關功能）。
+requireText('src/styles/tokens.css', ['prefers-reduced-motion: reduce', '.collapsible-body', '.collapsible-body-stack']);
+{
+  const source = read('src/styles/tokens.css');
+  const at = source.indexOf('@media (prefers-reduced-motion: reduce)');
+  if (at < 0 || !source.slice(at, at + 400).includes('transition: none')) {
+    throw new Error('tokens.css has no prefers-reduced-motion rule that disables the collapsible transition.');
+  }
+}
+// 首頁「115年計畫」區收攏；自我介紹在首頁仍是完整版（那裡是第一次見面）。
+requireText('src/pages/public/HomePage.tsx', ['<CollapsibleSection', '<ServiceSummary', 'id="groups"']);
+if (withoutComments(read('src/pages/public/HomePage.tsx')).includes('<AboutFounder')) {
+  throw new Error('HomePage.tsx now renders <AboutFounder />; the home page must keep its own full-length introduction.');
+}
+// 一個字都不准刪：卡內原文必須還在檔案裡，只是被收進摺疊。
+requireText('src/pages/public/HomePage.tsx', [
+  '各位大A夥伴大家好，我是彥宇！',
+  '如果你覺得生活有些卡關，想釐清自己目前的心理狀態',
+  '在陪伴 ADHD 孩子的路上，您是否時常感到心力交瘁',
+  '⚠️ 【重要提醒：這樣才算報名成功！】',
+]);
+// 同一段自我介紹原本在首頁與四個服務頁各出現一次全文；服務頁改成兩行引言＋展開全文。
+for (const page of [
+  'src/pages/public/CareerConsultPage.tsx',
+  'src/pages/public/ParentConsultPage.tsx',
+  'src/pages/public/PeerGroupPage.tsx',
+  'src/pages/public/NavigatorConsultPage.tsx',
+]) {
+  requireText(page, ['<AboutFounder variant="collapsed" />']);
+}
+// 預設仍是完整版：既有呼叫端（協辦活動頁）不改也不會變。
+requireText('src/components/AboutFounder.tsx', ["variant = 'full'", "variant === 'collapsed'"]);
+console.log('WP9 home-page consolidation checks passed.');
+
+// WP10：場次內容補齊 ＋ 延伸連結機制。
+// WP10
+// 前台：延伸連結真的讀 guest_url／attachments，而且外部連結一定切斷 opener。
+// 這個站踩過「十個連結開新分頁沒有切斷 opener」，新加的連結不重演。
+requireText('src/components/UpcomingSessions.tsx', ['guestUrl', 'rel="noopener noreferrer"']);
+{
+  const source = withoutComments(read('src/components/UpcomingSessions.tsx'));
+  // 沒有 guest_url 也沒有 attachments 時整塊不出現——不留一個空標題。
+  if (!source.includes('first.guestUrl || attachments.length ?')) {
+    throw new Error('UpcomingSessions.tsx renders the links block unconditionally; a session with no guest_url and no attachments must show nothing at all.');
+  }
+  // target="_blank" 的數量必須等於 rel="noopener noreferrer" 的數量。少一個就是漏一個。
+  const blanks = (source.match(/target="_blank"/g) ?? []).length;
+  const rels = (source.match(/rel="noopener noreferrer"/g) ?? []).length;
+  if (blanks !== rels) {
+    throw new Error(`UpcomingSessions.tsx opens ${blanks} new tabs but only ${rels} carry rel="noopener noreferrer".`);
+  }
+}
+// 後台：附件要編得到，而且走既有的 adminSaveSession（不另開寫入路徑）。
+requireText('src/admin/pages/SessionsPage.tsx', ['attachments', 'parseAttachments(attachmentsText)', 'draft.guestUrl']);
+// 檔案上傳不在本包：Storage bucket 與權限設計還沒做，先讓連結型能用。
+{
+  const source = withoutComments(read('src/admin/pages/SessionsPage.tsx'));
+  if (/type="file"|storage\.from\(/.test(source)) {
+    throw new Error('SessionsPage.tsx wires a file upload; WP10 ships link-type attachments only (Storage bucket and its permissions are out of scope).');
+  }
+}
+// 候補開關（2026-08-27 裁決）：額滿後還收不收，改成每個場次自己決定。
+// 停用的控制項必須配一句說得出原因的文字——停用而不說原因，下一個人只會以為是壞掉了。
+requireText('src/admin/pages/SessionsPage.tsx', [
+  '額滿後仍接受候補報名',
+  '先到先得的服務線暫不支援候補',
+  "seatPolicy === 'on_confirm'",
+  'disabled: !waitlistSupported',
+]);
+// 資料層：view 與 payload 兩邊都要有這幾欄，否則後台存得進去、前台讀不到。
+requireText('src/lib/api.ts', [
+  'guest_url, attachments, allow_waitlist', 'guest_url: session.guestUrl',
+  'attachments: session.attachments ?? []', 'allow_waitlist: session.allowWaitlist ?? false',
+]);
+// migration：四場的主題逐字存在——這支的價值就是那四段文字，改字等於改內容。
+{
+  const migration = 'supabase/migrations/20260827000045_seed_peer_group_h2_content.sql';
+  requireText(migration, [
+    '我獨自工作：一人工作室的經營分享',
+    '從興趣走向事業：科學教育與公司經營經驗',
+    '握緊方向盤的自信：行車安全與駕駛經驗',
+    '聊聊理財這件事：從經驗分享到專業建議',
+  ]);
+  const source = read(migration);
+  // sessions_public 只在尾端追加這三欄；meet_url 至今刻意不在這個 view 裡，匿名前台拿不到。
+  // allow_waitlist 的欄位在 20260827000044 建立，但 view 的改動集中在這一支——同一支 view
+  // 只能在一個地方 create or replace，兩支各改一次會互相把對方的欄位蓋掉。
+  if (!source.includes('s.guest_url, s.attachments, s.allow_waitlist')) {
+    throw new Error(`${migration} does not expose guest_url/attachments/allow_waitlist through sessions_public; the public page reads that view.`);
+  }
+  if (/select[\s\S]*s\.meet_url/.test(source)) {
+    throw new Error(`${migration} adds meet_url to a public view; the Meet link is deliberately never exposed to anonymous readers.`);
+  }
+  // 重跑不得覆蓋使用者事後在後台手改的內容：三欄都還是空的才寫。
+  if (!source.includes("coalesce(btrim(s.topic), '') = ''")) {
+    throw new Error(`${migration} overwrites session content unconditionally; re-running it must skip rows an admin has already edited.`);
+  }
+  // 台北時區換算：DB 存 UTC，直接比日期會差一天。
+  if (!source.includes("at time zone 'Asia/Taipei')::date")) {
+    throw new Error(`${migration} matches sessions by raw UTC date; the four dates must be compared in Asia/Taipei.`);
+  }
+}
+console.log('WP10 session-content checks passed.');

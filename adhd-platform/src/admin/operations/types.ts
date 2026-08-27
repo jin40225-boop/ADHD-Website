@@ -81,8 +81,12 @@ export interface GeneratedDocumentRecord {
   docType: string;
   scope: 'single' | 'batch' | 'aggregate';
   title: string;
+  /** 草稿全文。查詢本來就 `select('*')`，只是沒 map 出來，於是列表看得到紀錄卻看不到內容。 */
+  content: string;
   status: 'draft' | 'reviewed' | 'sent' | 'discarded';
   redacted: boolean;
+  /** `single` 是場次 id；彙整型是統計區間字串（例 `2025-09~2026-08`）。 */
+  targetId?: string;
   createdAt: string;
 }
 

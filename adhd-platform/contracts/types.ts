@@ -55,6 +55,12 @@ export interface Project {
   description?: string;
   /** 是否於前台公開報名。 */
   isPublic: boolean;
+  /**
+   * 名額扣抵時機（對映 `projects.seat_policy`）。
+   * `on_submit`＝先到先得（送出即佔位）；`on_confirm`＝申請制（確認才佔位）。
+   * 未提供時視同 `on_submit`——與 DB 的欄位預設值一致。
+   */
+  seatPolicy?: 'on_submit' | 'on_confirm';
   createdAt: string;
 }
 
@@ -231,6 +237,17 @@ export interface FormSchema {
 
 export type SessionStatus = 'open' | 'full' | 'closed' | 'done' | 'cancelled';
 
+/**
+ * 場次的延伸連結／附件（對映 `sessions.attachments` 的一筆）。
+ * `kind` 目前只會是 `'link'`；`'file'` 保留給之後接 Storage 的檔案型附件，
+ * 那需要 bucket 與權限設計，本輪不做。
+ */
+export interface SessionAttachment {
+  label: string;
+  url: string;
+  kind: 'link' | 'file';
+}
+
 /** 活動/諮詢場次（對映 `sessions`）。額滿由 bookedCount ≥ capacity 自動判斷。 */
 export interface SessionSlot {
   id: string;
@@ -249,6 +266,17 @@ export interface SessionSlot {
   guest?: string;
   /** 場次介紹（前台展開層「我們聊什麼：」段落）。留空則前台不顯示該段。 */
   description?: string;
+  /** 認識來賓的外部連結（前台「延伸連結」區塊）。留空則不顯示該列。 */
+  guestUrl?: string;
+  /** 延伸連結／附件；空陣列或未設定時前台不顯示「延伸連結」整塊。 */
+  attachments?: SessionAttachment[];
+  /**
+   * 額滿後是否仍接受報名（候補）。true＝收得到但不佔名額；false＝額滿即不再收。
+   * ⚠ 只對申請制（`seatPolicy === 'on_confirm'`）生效；先到先得線允許一人多場，
+   * 而名額旗標是每筆報名一個，表達不了「A 場佔位、B 場候補」，故不支援。
+   * 未提供時視同 false——與 DB 的欄位預設值一致，也是比較保守的那一邊。
+   */
+  allowWaitlist?: boolean;
   /** 報名截止時間（親職＝前一週 23:59；導航＝前月 20 日 23:59）。 */
   registrationDeadline?: string;
   /** 導航計畫的候選時段（每月 1 位名額，5 個候選共用）。 */

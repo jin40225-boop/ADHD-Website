@@ -110,3 +110,6 @@
 .ops-link-button--danger{color:#b3402c;font-weight:800}
 .ops-cell-danger{color:#b3402c;display:block;margin-top:.25rem}
 .ops-group-new{background:#fffaf1;border:1px solid #e2cda8;border-radius:12px;display:grid;gap:.5rem;margin-bottom:.8rem;padding:.75rem}
+/* WP3：生成紀錄的全文檢視。沿用 .ops-willsend 的外觀，只放開高度——抽屜本身就會捲，
+   一份要逐字審的草稿再擠進 16rem 的框裡，等於要在兩層捲軸之間讀它。既有規則不動。 */
+.ops-willsend--full{max-height:none}

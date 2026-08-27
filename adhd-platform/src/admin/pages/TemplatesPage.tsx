@@ -1,18 +1,24 @@
 /** 信件範本管理：已連線時使用 Supabase CRUD；未設定時保留示意資料。 */
-import { useCallback, useEffect, useState } from 'react';
-import type { EmailTemplate } from '@contracts/types';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { EmailTemplate, Project } from '@contracts/types';
 import { EmailTemplateManager, mockTemplates } from '@/features/email-templates';
 import {
   adminDeleteEmailTemplate,
   adminListEmailTemplates,
+  adminListProjects,
   adminSaveEmailTemplate,
 } from '@/lib/api';
 import { isSupabaseReady } from '@/lib/supabase';
 import DemoDataNotice from '../DemoDataNotice';
+import { InlineSpinner, OpsNotice, PageHeader } from '../operations/components';
+import { groupTemplates } from '../operations/templateGroups';
 
 export default function TemplatesPage() {
   const live = isSupabaseReady;
   const [templates, setTemplates] = useState<EmailTemplate[]>(live ? [] : mockTemplates);
+  // 分組標題要顯示服務線的名稱，所以清單頁也得知道有哪些專案。讀不到專案不算錯誤——
+  // groupTemplates 會把全部範本歸到「通用範本」，清單只是不分組，不會有範本消失。
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(live);
   const [notice, setNotice] = useState<string>();
   const [error, setError] = useState<string>();
@@ -20,7 +26,9 @@ export default function TemplatesPage() {
   const reload = useCallback(async () => {
     if (!live) return;
     try {
-      setTemplates(await adminListEmailTemplates());
+      const [nextTemplates, nextProjects] = await Promise.all([adminListEmailTemplates(), adminListProjects()]);
+      setTemplates(nextTemplates);
+      setProjects(nextProjects);
       setError(undefined);
     } catch (err) {
       setError(err instanceof Error ? err.message : '讀取信件範本失敗');
@@ -28,6 +36,8 @@ export default function TemplatesPage() {
       setLoading(false);
     }
   }, [live]);
+
+  const groups = useMemo(() => groupTemplates(templates, projects), [templates, projects]);
 
   useEffect(() => {
     void reload();
@@ -79,17 +89,18 @@ export default function TemplatesPage() {
   };
 
   return (
-    <div>
+    <section className="ops-section">
+      <PageHeader eyebrow="活動營運" title="信件範本" description="建立與維護對外信件範本；已連線資料庫時，新增、編輯與刪除都直接寫回 Supabase。" />
       {live ? (
-        <p className="mb-4 rounded-xl border-2 border-brown/40 bg-accent-teal/20 px-4 py-2.5 text-sm">
-          <strong>真實資料模式</strong>：範本新增、編輯與刪除皆受 Supabase RLS 權限保護。
-        </p>
+        <OpsNotice tone="info"><strong>真實資料模式</strong>：範本新增、編輯與刪除皆受 Supabase RLS 權限保護。</OpsNotice>
       ) : <DemoDataNotice />}
-      {notice ? <p role="status" className="mb-4 rounded-xl border-2 border-brown/40 bg-accent-blue/30 px-4 py-2.5 text-sm">{notice}</p> : null}
-      {error ? <p role="alert" className="mb-4 rounded-xl border-2 border-alert-red bg-alert-red/10 px-4 py-2.5 text-sm font-bold">{error}</p> : null}
-      {loading ? <p className="p-6 text-center text-brown/60">載入信件範本中…</p> : (
-        <EmailTemplateManager key={templates.map((item) => item.id).join('|')} templates={templates} onSave={handleSave} onDelete={handleDelete} />
+      {notice ? <OpsNotice tone="success" role="status">{notice}</OpsNotice> : null}
+      {error ? <OpsNotice tone="danger" role="alert">{error}</OpsNotice> : null}
+      {loading ? <InlineSpinner label="載入信件範本中…" /> : (
+        <article className="ops-panel">
+          <EmailTemplateManager key={templates.map((item) => item.id).join('|')} templates={templates} groups={groups} onSave={handleSave} onDelete={handleDelete} />
+        </article>
       )}
-    </div>
+    </section>
   );
 }

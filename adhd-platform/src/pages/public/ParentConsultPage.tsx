@@ -3,13 +3,9 @@ import { Clock, Edit3, Info } from 'lucide-react';
 import { UpcomingSessions } from '@/components/UpcomingSessions';
 import { SessionHistory } from '@/components/SessionHistory';
 import { AboutFounder } from '@/components/AboutFounder';
+import { RegisterCta } from '@/components/RegisterCta';
 import { DonateFooter } from '@/components/DonateFooter';
 import { LineContact } from '@/components/LineContact';
-
-const BASE = import.meta.env.BASE_URL;
-const LINKS = {
-  LINK_1: `${BASE}parent/register`,
-};
 
 export default function ParentConsultPage() {
   return (
@@ -73,16 +69,13 @@ export default function ParentConsultPage() {
                     </div>
 </div>
 <div className="mt-2 w-full">
-<a className="btn-warm py-5 px-6 bg-accent-blue text-brown w-full text-2xl md:text-3xl shadow-warm animate-pulse-slow flex flex-col items-center justify-center border-4 border-brown" href={LINKS.LINK_1} target="_blank" rel="noopener noreferrer">
-<span>📝 前往填寫報名表</span>
-<span className="text-base font-bold mt-2 opacity-80 bg-white/40 px-3 py-1 rounded-full border border-brown/20">報名連結</span>
-</a>
+<RegisterCta slug="parent" />
 </div>
 </div>
 <SessionHistory projects={[{ slug: 'parent' }]} title="👣 服務軌跡・已完成場次" description="上半年度已完成的親職諮詢場次永久留存，讓新朋友看見這項服務的累積。" />
 </section></div>
 
-<AboutFounder />
+<AboutFounder variant="collapsed" />
 <LineContact />
 <DonateFooter />
     </div>

@@ -82,7 +82,7 @@ export default function SettingsPage() {
   const saveDays = async () => {
     const value = Number(daysDraft);
     if (!Number.isInteger(value) || value < 0 || value > 60) { setError('逾期門檻請填 0–60 的整數天數。'); return; }
-    await run('settings', () => updateAppSettings({ followUpDays: value }), `逾期門檻已存為 ${value} 天（Phase 4 狀態機接線後生效）。`);
+    await run('settings', () => updateAppSettings({ followUpDays: value }), `逾期門檻已存為 ${value} 天，即刻生效：之後寄出的信用這個值算回覆期限；既有信件的期限在寄出時就定了，不會回頭重算。`);
   };
   const saveSince = async () => {
     await run('sync-since', () => updateAppSettings({ syncSince: sinceDraft || null }),

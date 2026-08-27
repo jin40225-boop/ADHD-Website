@@ -8,21 +8,19 @@ import { supabase } from './supabase';
 import type {
   AvailabilityAnswer,
   AvailabilityPoll,
-  Case,
   CandidateSlot,
   CoHostInfo,
   EmailTemplate,
   EventFeedback,
   Recommendation,
-  ServiceRecord,
   FormSchema,
   Instructor,
   Project,
   PublicActivity,
   Registration,
   RecommendationSubmission,
+  SessionAttachment,
   SessionSlot,
-  StatusFlow,
 } from '@contracts/types';
 
 export class ApiError extends Error {
@@ -52,6 +50,7 @@ function mapProject(r: Row): Project {
     slug: r.slug as string,
     description: (r.description as string) ?? undefined,
     isPublic: r.is_public as boolean,
+    seatPolicy: (r.seat_policy as Project['seatPolicy']) ?? 'on_submit',
     createdAt: r.created_at as string,
   };
 }
@@ -70,26 +69,19 @@ function mapSession(r: Row): SessionSlot {
     topic: (r.topic as string) || undefined,
     guest: (r.guest as string) || undefined,
     description: (r.description as string) || undefined,
+    guestUrl: (r.guest_url as string) || undefined,
+    // DB 端是 `jsonb not null default '[]'`，正常一定是陣列；用 Array.isArray 收尾是為了
+    // 「migration 還沒套用」與「有人手動塞了物件」這兩種情況——前台會直接 .map()，
+    // 拿到非陣列就是白畫面，而白畫面的成本遠高於這一行。
+    attachments: Array.isArray(r.attachments) ? (r.attachments as SessionAttachment[]) : undefined,
+    // 欄位還沒套用 migration 時退回 false＝「額滿就擋」。保守的那一邊：寧可少收一筆
+    // 候補，也不要在資料庫還擋著的時候讓前台先喊「仍可送出候補申請」。
+    allowWaitlist: (r.allow_waitlist as boolean) ?? false,
     registrationDeadline: (r.registration_deadline as string) ?? undefined,
     slotOptions: (r.slot_options as SessionSlot['slotOptions']) ?? undefined,
     meetUrl: (r.meet_url as string) ?? undefined,
     instructorIds: (r.instructor_ids as string[]) ?? [],
     calendarEventId: (r.calendar_event_id as string) ?? undefined,
-  };
-}
-
-function mapRegistration(r: Row): Registration {
-  return {
-    id: r.id as string,
-    projectId: r.project_id as string,
-    sessionIds: (r.session_ids as string[]) ?? [],
-    answers: (r.answers as Registration['answers']) ?? {},
-    status: r.status as string,
-    email: r.email as string,
-    createdAt: r.created_at as string,
-    updatedAt: (r.updated_at as string) ?? undefined,
-    threadId: (r.thread_id as string) ?? undefined,
-    hasUnreadReply: (r.has_unread_reply as boolean) ?? false,
   };
 }
 
@@ -147,33 +139,6 @@ function mapRecommendation(r: Row): Recommendation {
     verified: (r.verified as boolean) ?? false,
     verifiedNote: (r.verified_note as string) ?? undefined,
     updatedAt: (r.updated_at as string) ?? undefined,
-  };
-}
-
-function mapCase(r: Row): Case {
-  return {
-    id: r.id as string,
-    projectId: r.project_id as string,
-    registrationId: (r.registration_id as string) ?? undefined,
-    displayName: r.display_name as string,
-    serviceType: r.service_type as Case['serviceType'],
-    status: r.status as Case['status'],
-    summary: (r.summary as string) ?? undefined,
-    createdAt: r.created_at as string,
-    updatedAt: (r.updated_at as string) ?? undefined,
-  };
-}
-
-function mapServiceRecord(r: Row): ServiceRecord {
-  return {
-    id: r.id as string,
-    caseId: r.case_id as string,
-    kind: r.kind as ServiceRecord['kind'],
-    occurredAt: r.occurred_at as string,
-    title: r.title as string,
-    content: (r.content as string) ?? '',
-    authorId: (r.author_id as string) ?? undefined,
-    createdAt: r.created_at as string,
   };
 }
 
@@ -244,7 +209,7 @@ export async function getUpcomingSessions(
       .gte('ends_at', new Date().toISOString())
       .order('starts_at', { ascending: true });
 
-  const SAFE_COLUMNS = 'id, project_id, title, starts_at, ends_at, capacity, booked_count, status, topic, guest, description, registration_deadline, slot_options, activity_id';
+  const SAFE_COLUMNS = 'id, project_id, title, starts_at, ends_at, capacity, booked_count, status, topic, guest, description, guest_url, attachments, allow_waitlist, registration_deadline, slot_options, activity_id';
   let { data, error } = await query('sessions_public', SAFE_COLUMNS);
   if (error) {
     ({ data, error } = await query('sessions', SAFE_COLUMNS));
@@ -257,7 +222,7 @@ export async function getUpcomingSessions(
  *  只取 `done`——`cancelled`（含測試資料）與未上架場次一律不進公開軌跡。
  *  走 sessions_public，因此不含 meet_url，歷史 Meet 連結自然下架。 */
 export async function getPastSessions(projectId: string): Promise<SessionSlot[]> {
-  const SAFE_COLUMNS = 'id, project_id, title, starts_at, ends_at, capacity, booked_count, status, topic, guest, description, registration_deadline, slot_options, activity_id';
+  const SAFE_COLUMNS = 'id, project_id, title, starts_at, ends_at, capacity, booked_count, status, topic, guest, description, guest_url, attachments, allow_waitlist, registration_deadline, slot_options, activity_id';
   const { data, error } = await db()
     .from('sessions_public')
     .select(SAFE_COLUMNS)
@@ -505,6 +470,12 @@ export function sessionRowFor(session: SessionSlot) {
     topic: session.topic?.trim() || null,
     guest: session.guest?.trim() || null,
     description: session.description?.trim() || null,
+    guest_url: session.guestUrl?.trim() || null,
+    // ⚠ 與 slot_options／instructor_ids 同一條教訓：這一欄是 `not null default '[]'`，
+    // 送 null 不會讓預設值生效，只會踩 not-null constraint。空陣列，不是 null。
+    attachments: session.attachments ?? [],
+    // 同上：`not null default false`，送 null 會踩 constraint。未設定＝false。
+    allow_waitlist: session.allowWaitlist ?? false,
     registration_deadline: session.registrationDeadline ?? null,
     slot_options: session.slotOptions ?? [],
     meet_url: session.meetUrl ?? null,
@@ -575,71 +546,6 @@ export async function adminReviewSubmission(
   return mapSubmission(data);
 }
 
-/** Registration＋信件串（後台工作台用）。 */
-export type RegistrationWithMessages = Registration & {
-  messages?: {
-    id: string;
-    threadId: string;
-    direction: 'outbound' | 'inbound';
-    from: string;
-    to: string;
-    subject: string;
-    body: string;
-    isRead: boolean;
-    sentAt: string;
-  }[];
-};
-
-export async function adminListRegistrations(): Promise<RegistrationWithMessages[]> {
-  const { data, error } = await db()
-    .from('registrations')
-    .select('*, email_threads(id, email_messages(*))')
-    .order('created_at', { ascending: false });
-  if (error) throw new ApiError(error.message);
-  return (data ?? []).map((row) => {
-    const threads = (row.email_threads ?? []) as {
-      id: string;
-      email_messages: Row[];
-    }[];
-    const messages = threads
-      .flatMap((thread) => thread.email_messages ?? [])
-      .map((m) => ({
-        id: m.id as string,
-        threadId: m.thread_id as string,
-        direction: m.direction as 'outbound' | 'inbound',
-        from: m.from_email as string,
-        to: m.to_email as string,
-        subject: m.subject as string,
-        body: m.body as string,
-        isRead: m.is_read as boolean,
-        sentAt: m.sent_at as string,
-      }))
-      .sort((a, b) => a.sentAt.localeCompare(b.sentAt));
-    return { ...mapRegistration(row), messages };
-  });
-}
-
-export async function adminUpdateRegistrationStatus(id: string, status: string): Promise<void> {
-  const { error } = await db().from('registrations').update({ status }).eq('id', id);
-  if (error) throw new ApiError(error.message, 'INSERT');
-}
-
-export async function adminGetStatusFlow(projectId: string): Promise<StatusFlow | null> {
-  const { data, error } = await db()
-    .from('status_flows')
-    .select('*')
-    .eq('project_id', projectId)
-    .maybeSingle();
-  if (error) throw new ApiError(error.message);
-  return data
-    ? {
-        projectId: data.project_id,
-        nodes: data.nodes as StatusFlow['nodes'],
-        transitions: (data.transitions as StatusFlow['transitions']) ?? undefined,
-      }
-    : null;
-}
-
 export async function adminListFormSchemas(): Promise<Record<string, FormSchema>> {
   const { data, error } = await db().from('form_schemas').select('project_id, fields');
   if (error) throw new ApiError(error.message);
@@ -666,10 +572,19 @@ export async function adminSaveEmailTemplate(template: EmailTemplate): Promise<E
     name: template.name.trim(),
     subject: template.subject,
     body: template.body,
+    // letter_kind 以前沒被送出去，於是後台新建的範本永遠是 null，只能靠名稱猜——
+    // 而「改期確認信」這個名字含「確認信」，會被猜成 confirm 而掛上出席確認按鈕，
+    // 但那是一封只想跟對方商量新時間的信。編輯器現在選得了類型，這裡就要一起送。
+    letter_kind: template.letterKind ?? null,
   };
   const isNew = template.id.startsWith('draft-');
   const query = isNew
-    ? db().from('email_templates').insert(payload).select().single()
+    // 新建一律寫死草稿，與「草稿必經人審」的既有裁決一致（WP5 的十封種子也是 draft）。
+    // 刻意不讀 template.reviewStatus：新建的範本沒有人審過，讓呼叫端能帶 'approved' 進來
+    // 等於開了一條繞過人審的路；而編輯器本來就不會在新草稿上設這個欄位，值一樣是 draft。
+    // 更新分支完全不碰 review_status——審閱是獨立決定，不該因為改個錯字就被翻掉
+    // （那是 setTemplateReviewStatus 的職責，也是 check-admin-operations 既有的那條守門）。
+    ? db().from('email_templates').insert({ ...payload, review_status: 'draft' }).select().single()
     : db().from('email_templates').update(payload).eq('id', template.id).select().single();
   const { data, error } = await query;
   if (error) throw new ApiError(error.message, 'INSERT');
@@ -679,45 +594,6 @@ export async function adminSaveEmailTemplate(template: EmailTemplate): Promise<E
 export async function adminDeleteEmailTemplate(id: string): Promise<void> {
   const { error } = await db().from('email_templates').delete().eq('id', id);
   if (error) throw new ApiError(error.message, 'INSERT');
-}
-
-/** 後台個案與服務紀錄。RLS 會依專案成員 cases 權限裁切。 */
-export async function adminListCasesWithRecords(): Promise<{
-  cases: Case[];
-  records: Record<string, ServiceRecord[]>;
-}> {
-  const { data, error } = await db()
-    .from('cases')
-    .select('*, service_records(*)')
-    .order('created_at', { ascending: false });
-  if (error) throw new ApiError(error.message);
-  const cases = (data ?? []).map(mapCase);
-  const records: Record<string, ServiceRecord[]> = {};
-  for (const row of data ?? []) {
-    records[row.id] = ((row.service_records ?? []) as Row[])
-      .map(mapServiceRecord)
-      .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt));
-  }
-  return { cases, records };
-}
-
-export async function adminAddServiceRecord(
-  record: Omit<ServiceRecord, 'id' | 'createdAt'>,
-): Promise<ServiceRecord> {
-  const { data, error } = await db()
-    .from('service_records')
-    .insert({
-      case_id: record.caseId,
-      kind: record.kind,
-      occurred_at: record.occurredAt,
-      title: record.title.trim(),
-      content: record.content.trim(),
-      author_id: record.authorId ?? null,
-    })
-    .select()
-    .single();
-  if (error) throw new ApiError(error.message, 'INSERT');
-  return mapServiceRecord(data);
 }
 
 /** 審核上架推薦；系統擁有者 RLS 限制寫入。 */

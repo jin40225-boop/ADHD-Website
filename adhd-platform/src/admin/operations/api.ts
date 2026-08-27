@@ -336,7 +336,7 @@ export async function setContactGroupMember(groupId: string, contactId: string, 
   assert(error, member ? '加入類群失敗' : '移出類群失敗');
 }
 
-/** 文件生成紀錄。Phase 6 之前必然是空的——生成功能還沒接上，沒有任何東西會寫入。 */
+/** 文件生成紀錄。Phase 6 的 AI 文件生成已上線，DocumentsPage 每生成一份就寫入一列（狀態 draft）。 */
 export async function listGeneratedDocuments(): Promise<GeneratedDocumentRecord[]> {
   const { data, error } = await db()
     .from('generated_documents')
@@ -349,8 +349,11 @@ export async function listGeneratedDocuments(): Promise<GeneratedDocumentRecord[
     docType: row.doc_type,
     scope: row.scope,
     title: row.title,
+    // `select('*')` 一直有把這兩欄撈回來，只是沒 map；少了它們，生成紀錄就只是一排看不到內容的標題。
+    content: row.content ?? '',
     status: row.status,
     redacted: row.redacted,
+    targetId: row.target_id ?? undefined,
     createdAt: row.created_at,
   }));
 }
@@ -555,6 +558,46 @@ export async function listInbox(): Promise<OperationalThread[]> {
     lastMessageAt: row.last_message_at ?? undefined,
     messages: (row.email_messages ?? []).map(mapMessage).sort((a: OperationalMessage, b: OperationalMessage) => a.sentAt.localeCompare(b.sentAt)),
   }));
+}
+
+/** 個案台看得到的一條往來。唯讀——個案台不寄信、也不清未讀。 */
+export interface CaseMailThread {
+  /** 深連結要指回哪一筆報名（收件匣與報名詳情都吃 `?registration=`）。 */
+  registrationId: string;
+  threadId: string;
+  mailState?: MailState;
+  /** 有未讀進來的信。個案台只顯示，不清除；清除留給收件匣與報名抽屜。 */
+  hasUnread: boolean;
+  messages: OperationalMessage[];
+}
+
+/**
+ * 個案台的信件往來：**目標式撈取**，只拿這一個人的。
+ *
+ * 刻意不走 `listContacts()`——那是「全部聯絡人 × 全部信件 × 全部附件」的重物件，
+ * 為了看一個人的信而載入全站郵件是錯的。用 contact_id 而不是 registration_id：
+ * 一個個案的人可能有多筆報名，他要看的是「這個人」的往來。
+ * mapping 重用同檔的 `mapMessage`，不另寫一份。
+ */
+export async function listCaseMail(contactId: string): Promise<CaseMailThread[]> {
+  const { data, error } = await db()
+    .from('registrations')
+    .select('id, email_threads(id, mail_state, email_messages(*, email_attachments(*)))')
+    .eq('contact_id', contactId);
+  assert(error, '讀取個案信件往來失敗');
+  return (data ?? [])
+    .flatMap((row: Row) => (row.email_threads ?? []).map((thread: Row) => {
+      const messages = (thread.email_messages ?? []).map(mapMessage).sort((a: OperationalMessage, b: OperationalMessage) => a.sentAt.localeCompare(b.sentAt));
+      return {
+        registrationId: row.id,
+        threadId: thread.id,
+        mailState: (thread.mail_state ?? undefined) as MailState | undefined,
+        hasUnread: messages.some((message: OperationalMessage) => message.direction === 'inbound' && !message.isRead),
+        messages,
+      };
+    }))
+    .filter((thread: CaseMailThread) => thread.messages.length)
+    .sort((a: CaseMailThread, b: CaseMailThread) => String(b.messages.at(-1)?.sentAt ?? '').localeCompare(String(a.messages.at(-1)?.sentAt ?? '')));
 }
 
 export async function markThreadRead(id: string) {

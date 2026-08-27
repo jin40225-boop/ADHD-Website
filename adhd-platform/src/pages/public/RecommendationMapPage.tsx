@@ -21,6 +21,132 @@ const AUDIENCE_LABELS: Record<string, string> = {
   adult: '成人 ADHD'
 };
 
+/** 一次顯示幾家機構；其餘由「載入更多」逐批補上。 */
+const GROUP_PAGE_SIZE = 20;
+/** 推薦內容短於此長度者，收成一行顯示，不與長篇經驗爭卡片高度。 */
+const SHORT_EXPERIENCE_LIMIT = 30;
+
+/** 機構名稱結尾若是這些字樣，才允許用「前綴包含」判定為同一家。 */
+const ORG_NAME_SUFFIX = /(醫院|診所|療養院|治療所|諮商所|醫學中心|附醫)$/;
+
+/**
+ * 機構名稱正規化：去空白、臺/台一致、去除法人與主管機關前綴、
+ * 「紀念醫院」視同「醫院」、去掉尾端的「◯◯分院／院區」。
+ * 只做寫法層級的統一，不推測任何未寫在資料裡的資訊。
+ */
+function normalizeHospital(raw: string): string {
+  const original = (raw || '').trim();
+  if (!original) return '';
+  let s = original.replace(/\s+/g, '').replace(/臺/g, '台');
+  s = s.replace(/^.*?(?:醫療|社團|財團)法人/, '');
+  s = s.replace(/^衛生福利部/, '');
+  s = s.replace(/紀念醫院/g, '醫院');
+  const branch = s.match(/^(.*(?:醫院|療養院|診所))(.{0,4}(?:分院|院區))$/);
+  if (branch) s = branch[1];
+  return s || original;
+}
+
+/**
+ * 同一地區內解析簡寫：「長庚」→「長庚醫院」、「台大醫院」→「台大醫院雲林分院及虎尾分院」。
+ * 只有在唯一對應時才合併；有兩個以上候選就保持原樣，寧可不合併也不合併錯。
+ */
+function resolveAliases(keys: string[]): Map<string, string> {
+  const keySet = new Set(keys);
+  const direct = new Map<string, string>();
+  for (const key of keys) {
+    let target = key;
+    if (keySet.has(`${key}醫院`)) {
+      target = `${key}醫院`;
+    } else if (key.length >= 4 && ORG_NAME_SUFFIX.test(key)) {
+      const longer = keys.filter(other => other !== key && other.startsWith(key));
+      if (longer.length === 1) target = longer[0];
+    }
+    direct.set(key, target);
+  }
+  // 解開 A→B→C 這種鏈；最多三跳，並防環。
+  const resolved = new Map<string, string>();
+  for (const key of keys) {
+    let cur = key;
+    for (let i = 0; i < 3; i += 1) {
+      const next = direct.get(cur) ?? cur;
+      if (next === cur) break;
+      cur = next;
+    }
+    resolved.set(key, cur);
+  }
+  return resolved;
+}
+
+interface InstitutionGroup {
+  key: string;
+  region: string;
+  /** 卡片標題：取該群組裡出現最多次（同票取最完整）的原始機構名稱。 */
+  displayName: string;
+  items: Recommendation[];
+}
+
+/** 先篩選、後彙整：篩選邏輯完全不變，這裡只改變同一批結果的呈現方式。 */
+function groupByInstitution(items: Recommendation[]): InstitutionGroup[] {
+  const perRegion = new Map<string, Map<string, Recommendation[]>>();
+
+  for (const item of items) {
+    const region = item.region || '未填寫地區';
+    const norm = normalizeHospital(item.hospital) || `__id__${item.id}`;
+    if (!perRegion.has(region)) perRegion.set(region, new Map());
+    const bucket = perRegion.get(region)!;
+    if (!bucket.has(norm)) bucket.set(norm, []);
+    bucket.get(norm)!.push(item);
+  }
+
+  const merged = new Map<string, InstitutionGroup>();
+  const finalOrder: string[] = [];
+
+  for (const [region, bucket] of perRegion) {
+    const aliases = resolveAliases(Array.from(bucket.keys()));
+    for (const [norm, rows] of bucket) {
+      const canonical = aliases.get(norm) ?? norm;
+      const key = `${region}||${canonical}`;
+      if (!merged.has(key)) {
+        merged.set(key, { key, region, displayName: '', items: [] });
+        finalOrder.push(key);
+      }
+      merged.get(key)!.items.push(...rows);
+    }
+  }
+
+  // 依「地區首次出現、機構首次出現」的順序輸出，維持與原始資料一致的閱讀動線。
+  const groups = finalOrder.map(key => merged.get(key)!);
+
+  for (const group of groups) {
+    const tally = new Map<string, number>();
+    for (const item of group.items) {
+      const name = (item.hospital || '').trim();
+      if (!name) continue;
+      tally.set(name, (tally.get(name) ?? 0) + 1);
+    }
+    // 有些登錄把醫師姓名寫進了院所欄位，這種寫法不適合當卡片標題。
+    const doctorNames = group.items
+      .map(i => (i.doctorOrName || '').trim())
+      .filter(n => n.length >= 2);
+    const candidates = Array.from(tally.keys());
+    const clean = candidates.filter(name => !doctorNames.some(d => d !== name && name.includes(d)));
+    const pool = clean.length > 0 ? clean : candidates;
+
+    let best = '';
+    let bestCount = -1;
+    for (const name of pool) {
+      const count = tally.get(name) ?? 0;
+      if (count > bestCount || (count === bestCount && name.length > best.length)) {
+        best = name;
+        bestCount = count;
+      }
+    }
+    group.displayName = best || '未填寫院所';
+  }
+
+  return groups;
+}
+
 export default function RecommendationMapPage() {
   const [recommendations, setRecommendations] = useState<Recommendation[]>(recommendationsData as Recommendation[]);
   const [sourceLabel, setSourceLabel] = useState('內建備份（2026-07-11）');
@@ -68,6 +194,22 @@ export default function RecommendationMapPage() {
       return true;
     });
   }, [recommendations, selectedRegion, selectedCategory, selectedAudience, searchQuery]);
+
+  const groups = useMemo(() => groupByInstitution(filtered), [filtered]);
+
+  // 卡片標題以「全部資料」算出，篩選前後才不會忽長忽短。
+  const stableNames = useMemo(
+    () => new Map(groupByInstitution(recommendations).map(g => [g.key, g.displayName])),
+    [recommendations]
+  );
+
+  const [visibleGroups, setVisibleGroups] = useState(GROUP_PAGE_SIZE);
+  useEffect(() => {
+    setVisibleGroups(GROUP_PAGE_SIZE);
+  }, [selectedRegion, selectedCategory, selectedAudience, searchQuery, recommendations]);
+
+  const shownGroups = groups.slice(0, visibleGroups);
+  const shownCount = shownGroups.reduce((sum, g) => sum + g.items.length, 0);
 
   return (
     <div className="min-h-screen bg-cream text-brown py-12 px-4 md:px-8">
@@ -157,8 +299,15 @@ export default function RecommendationMapPage() {
         </div>
 
         {/* Results count */}
-        <div className="flex justify-between items-center text-sm font-bold">
-          <span>符合條件推薦紀錄：共 {filtered.length} 筆</span>
+        <div className="flex flex-wrap justify-between items-center gap-2 text-sm font-bold">
+          <span>
+            符合條件推薦紀錄：共 {filtered.length} 筆，彙整為 {groups.length} 家機構
+            {groups.length > shownGroups.length && (
+              <span className="font-medium text-brown/70">
+                （目前顯示前 {shownGroups.length} 家 / {shownCount} 筆）
+              </span>
+            )}
+          </span>
           <span className="text-brown/70">資料來源：{sourceLabel}</span>
         </div>
 
@@ -169,81 +318,124 @@ export default function RecommendationMapPage() {
             <p className="text-sm text-brown/70 mt-1">建議放寬篩選條件或清除搜尋關鍵字</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {filtered.map(item => {
-              const isExpanded = expandedId === item.id;
-              return (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+              {shownGroups.map(group => {
+                const displayName = stableNames.get(group.key) ?? group.displayName;
+                return (
                 <div
-                  key={item.id}
-                  className="bg-white border-2 border-brown rounded-2xl p-6 shadow-warm flex flex-col justify-between space-y-4 hover:translate-y-[-2px] transition-all"
+                  key={group.key}
+                  className="bg-white border-2 border-brown rounded-2xl p-6 shadow-warm space-y-4 hover:translate-y-[-2px] transition-all"
                 >
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-start">
-                      <div className="flex flex-wrap gap-1.5">
-                        <span className="inline-flex items-center gap-1 bg-teal/30 border border-brown text-xs font-bold px-2.5 py-0.5 rounded-md">
-                          <MapPin className="w-3 h-3" />
-                          {item.region}
-                        </span>
-                        <span className="bg-accent-orange/40 border border-brown text-xs font-bold px-2.5 py-0.5 rounded-md">
-                          {CATEGORY_LABELS[item.category] || item.category}
-                        </span>
-                        <span className="bg-pink/30 border border-brown text-xs font-bold px-2.5 py-0.5 rounded-md">
-                          {AUDIENCE_LABELS[item.audience] || item.audience}
-                        </span>
-                      </div>
-                      {item.verified && (
-                        <span className="inline-flex items-center gap-1 text-xs font-bold text-line-green bg-[#F0FDF4] px-2 py-0.5 rounded border border-line-green">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          家長認證
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="inline-flex items-center gap-1 bg-teal/30 border border-brown text-xs font-bold px-2.5 py-0.5 rounded-md">
+                        <MapPin className="w-3 h-3" />
+                        {group.region}
+                      </span>
+                      {group.items.length > 1 && (
+                        <span className="bg-base-yellow border border-brown text-xs font-bold px-2.5 py-0.5 rounded-md">
+                          {group.items.length} 則推薦
                         </span>
                       )}
                     </div>
-
-                    <div>
-                      <h3 className="text-xl font-extrabold text-brown">{item.hospital || '未填寫院所'}</h3>
-                      <p className="text-base font-bold text-highlight mt-0.5">
-                        {item.doctorOrName || '醫療/諮商團隊'}
-                      </p>
-                    </div>
-
-                    <div className="bg-cream border border-brown/20 rounded-xl p-4 text-sm leading-relaxed">
-                      <p className={isExpanded ? '' : 'line-clamp-4'}>{item.experience || '無填寫詳細經驗...'}</p>
-                      {item.experience && item.experience.length > 100 && (
-                        <button
-                          onClick={() => setExpandedId(isExpanded ? null : item.id)}
-                          className="inline-flex items-center gap-1 text-xs font-bold text-highlight mt-2 hover:underline"
-                        >
-                          {isExpanded ? (
-                            <>
-                              收合經驗 <ChevronUp className="w-3.5 h-3.5" />
-                            </>
-                          ) : (
-                            <>
-                              展開閱讀完整經驗 <ChevronDown className="w-3.5 h-3.5" />
-                            </>
-                          )}
-                        </button>
-                      )}
-                    </div>
+                    <h3 className="text-xl font-extrabold text-brown">{displayName}</h3>
                   </div>
 
-                  <div className="flex justify-between items-center pt-2 border-t border-brown/10 text-xs text-brown/70 font-medium">
-                    <span>推薦人：{item.recommender || '社群夥伴'}</span>
-                    {item.urls && item.urls.length > 0 && (
-                      <a
-                        href={item.urls[0]}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-brown font-bold hover:text-highlight"
-                      >
-                        相關網址 <ExternalLink className="w-3.5 h-3.5" />
-                      </a>
-                    )}
+                  <div className="divide-y divide-brown/10">
+                    {group.items.map(item => {
+                      const isExpanded = expandedId === item.id;
+                      const experience = (item.experience || '').replace(/　/g, ' ').trim();
+                      const isShort = experience.length <= SHORT_EXPERIENCE_LIMIT;
+                      const variantName = (item.hospital || '').trim();
+                      const showVariant = variantName !== '' && variantName !== displayName;
+                      return (
+                        <div key={item.id} className="py-3 first:pt-0 last:pb-0 space-y-2">
+                          <div className="flex justify-between items-start gap-2">
+                            <div>
+                              <p className="text-base font-bold text-highlight">
+                                {item.doctorOrName || '醫療/諮商團隊'}
+                              </p>
+                              {showVariant && (
+                                <p className="text-xs text-brown/60 mt-0.5">登錄名稱：{variantName}</p>
+                              )}
+                            </div>
+                            {item.verified && (
+                              <span className="shrink-0 inline-flex items-center gap-1 text-xs font-bold text-line-green bg-[#F0FDF4] px-2 py-0.5 rounded border border-line-green">
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                家長認證
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex flex-wrap gap-1.5">
+                            <span className="bg-accent-orange/40 border border-brown text-xs font-bold px-2.5 py-0.5 rounded-md">
+                              {CATEGORY_LABELS[item.category] || item.category}
+                            </span>
+                            <span className="bg-pink/30 border border-brown text-xs font-bold px-2.5 py-0.5 rounded-md">
+                              {AUDIENCE_LABELS[item.audience] || item.audience}
+                            </span>
+                          </div>
+
+                          {experience === '' ? (
+                            <p className="text-sm text-brown/60 italic">僅推薦未附說明</p>
+                          ) : isShort ? (
+                            <p className="text-sm leading-relaxed text-brown/90">{experience}</p>
+                          ) : (
+                            <div className="bg-cream border border-brown/20 rounded-xl p-4 text-sm leading-relaxed">
+                              <p className={isExpanded ? '' : 'line-clamp-4'}>{item.experience}</p>
+                              {experience.length > 100 && (
+                                <button
+                                  onClick={() => setExpandedId(isExpanded ? null : item.id)}
+                                  className="inline-flex items-center gap-1 text-xs font-bold text-highlight mt-2 hover:underline"
+                                >
+                                  {isExpanded ? (
+                                    <>
+                                      收合經驗 <ChevronUp className="w-3.5 h-3.5" />
+                                    </>
+                                  ) : (
+                                    <>
+                                      展開閱讀完整經驗 <ChevronDown className="w-3.5 h-3.5" />
+                                    </>
+                                  )}
+                                </button>
+                              )}
+                            </div>
+                          )}
+
+                          <div className="flex justify-between items-center gap-2 text-xs text-brown/70 font-medium">
+                            <span>推薦人：{item.recommender || '社群夥伴'}</span>
+                            {item.urls && item.urls.length > 0 && (
+                              <a
+                                href={item.urls[0]}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-brown font-bold hover:text-highlight"
+                              >
+                                相關網址 <ExternalLink className="w-3.5 h-3.5" />
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+
+            {groups.length > shownGroups.length && (
+              <div className="flex justify-center">
+                <button
+                  onClick={() => setVisibleGroups(n => n + GROUP_PAGE_SIZE)}
+                  className="inline-flex items-center gap-2 bg-white border-2 border-brown px-6 py-3 rounded-2xl font-bold shadow-warm-sm hover:translate-y-[-2px] hover:shadow-warm transition-all"
+                >
+                  載入更多（還有 {groups.length - shownGroups.length} 家機構 / {filtered.length - shownCount} 筆推薦）
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

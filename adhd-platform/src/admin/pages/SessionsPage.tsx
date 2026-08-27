@@ -4,39 +4,75 @@
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { Project, SessionSlot, SessionStatus } from '@contracts/types';
-import { TextInput, Textarea, Select } from '@/components/ui/FormField/FormField';
+import type { FormSchema, Project, SessionAttachment, SessionSlot, SessionStatus } from '@contracts/types';
+import { CheckboxGroup, TextInput, Textarea, Select } from '@/components/ui/FormField/FormField';
 import { WarmButton } from '@/components/ui/WarmButton/WarmButton';
-import { adminListProjects, adminListSessions, adminSaveSession, invokeCalendarUpsert } from '@/lib/api';
+import { adminListFormSchemas, adminListProjects, adminListSessions, adminSaveSession, invokeCalendarUpsert } from '@/lib/api';
 import { isSupabaseReady } from '@/lib/supabase';
 import DemoDataNotice from '../DemoDataNotice';
 import { listActivities, listContacts } from '../operations/api';
 import type { ActivityRecord, ContactRecord } from '../operations/types';
 import { EmptyPanel, InlineSpinner, OpsNotice, PageHeader, SavingIndicator } from '../operations/components';
-import { STATUS_LABEL, toLocalInput } from '../operations/RegistrationTable';
+import { SessionRosterPanel } from '../operations/SessionRosterDrawer';
+import { toLocalInput } from '../operations/RegistrationTable';
 import { SESSION_STATUS_TEXT as STATUS_TEXT, SessionTable, sessionDateText as dateText, sessionTimeText as timeText } from '../operations/SessionTable';
 
 function toIso(value: string) { return value ? new Date(value).toISOString() : ''; }
+
+/**
+ * 延伸連結：後台用「一行一筆：標籤 | 網址」的純文字編輯，存檔時轉成 jsonb。
+ *
+ * 為什麼是純文字而不是一組動態表列：這一欄一個月大概被編輯一次，內容通常從月度的
+ * 「活動內容整理」文件貼過來。純文字貼上即可，動態表列反而要一格一格填。
+ *
+ * 沒有網址的行直接略過（只有標籤的連結按不動，等於裝飾品）；標籤留空就拿網址當標籤，
+ * 前台才不會出現一個沒有文字的連結。網址本身可能含 `|`（查詢字串），所以第一個
+ * `|` 之後全部算網址，不是 split 完取第二段。
+ */
+function parseAttachments(text: string): SessionAttachment[] {
+  return text.split('\n').map((line) => {
+    const divider = line.indexOf('|');
+    const label = divider === -1 ? '' : line.slice(0, divider).trim();
+    const url = (divider === -1 ? line : line.slice(divider + 1)).trim();
+    return { label: label || url, url, kind: 'link' as const };
+  }).filter((item) => item.url !== '');
+}
+
+function attachmentsToText(items?: SessionAttachment[]): string {
+  return (items ?? []).map((item) => `${item.label} | ${item.url}`).join('\n');
+}
 
 export default function SessionsPage() {
   const live = isSupabaseReady;
   const [sessions, setSessions] = useState<SessionSlot[]>([]); const [projects, setProjects] = useState<Project[]>([]); const [contacts, setContacts] = useState<ContactRecord[]>([]);
   const [activities, setActivities] = useState<ActivityRecord[]>([]);
+  /** 報名表定義：名冊面板拿它把答案的 key 換回家長當初看到的問法。 */
+  const [schemas, setSchemas] = useState<Record<string, FormSchema>>({});
   const [projectFilter, setProjectFilter] = useState('all'); const [selectedId, setSelectedId] = useState<string>(); const [busyId, setBusyId] = useState<string>();
   const [loading, setLoading] = useState(live); const [notice, setNotice] = useState<string>(); const [error, setError] = useState<string>();
   const [draft, setDraft] = useState<SessionSlot>();
+  /** 延伸連結的純文字編輯緩衝。不即時 parse 回 draft：打到一半的行（還沒打上網址）
+   *  會被 parse 丟掉，游標就跳掉了。存檔那一刻才轉成 jsonb。 */
+  const [attachmentsText, setAttachmentsText] = useState('');
 
   const reload = useCallback(async () => {
     if (!live) return;
-    const [nextSessions, nextProjects, nextContacts, nextActivities] = await Promise.all([adminListSessions(), adminListProjects(), listContacts(), listActivities()]);
-    setSessions(nextSessions); setProjects(nextProjects); setContacts(nextContacts); setActivities(nextActivities);
+    const [nextSessions, nextProjects, nextContacts, nextActivities, nextSchemas] = await Promise.all([adminListSessions(), adminListProjects(), listContacts(), listActivities(), adminListFormSchemas()]);
+    setSessions(nextSessions); setProjects(nextProjects); setContacts(nextContacts); setActivities(nextActivities); setSchemas(nextSchemas);
   }, [live]);
   useEffect(() => { reload().catch((e: unknown) => setError(e instanceof Error ? e.message : '載入場次失敗')).finally(() => setLoading(false)); }, [reload]);
 
   const projectName = useMemo(() => new Map(projects.map((project) => [project.id, project.name])), [projects]);
   const current = sessions.find((session) => session.id === selectedId);
-  useEffect(() => { setDraft(current ? { ...current } : undefined); }, [selectedId, sessions]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setDraft(current ? { ...current } : undefined); setAttachmentsText(attachmentsToText(current?.attachments)); }, [selectedId, sessions]); // eslint-disable-line react-hooks/exhaustive-deps
   const filtered = useMemo(() => sessions.filter((session) => projectFilter === 'all' || session.projectId === projectFilter), [sessions, projectFilter]);
+  /**
+   * 這個場次的服務線是不是申請制。只有申請制（on_confirm）支援「額滿後仍收候補」——
+   * 先到先得允許一人報多場，而名額旗標 `capacity_released_at` 是每筆報名一個，
+   * 表達不了「A 場佔位、B 場候補」（見 20260827000044）。所以那條線的開關是停用的，
+   * 而且必須把原因寫在畫面上：停用而不說原因，下一個人只會以為是壞掉了。
+   */
+  const waitlistSupported = projects.find((project) => project.id === draft?.projectId)?.seatPolicy === 'on_confirm';
   /** 這個場次的報名者；名額爭議時要看得到是誰佔著。 */
   const rosterOf = (sessionId: string) => contacts.flatMap((contact) => contact.registrations.filter((registration) => registration.sessionIds.includes(sessionId)).map((registration) => ({ contact, registration })));
 
@@ -128,12 +164,30 @@ export default function SessionsPage() {
                 <option value="">（不掛活動）</option>
                 {activities.filter((a) => a.projectId === draft.projectId).map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
               </Select></div>
+              {/* 額滿之後還收不收，改成每個場次自己決定（2026-08-27 裁決）。
+                  先到先得的服務線停用這個開關並明說原因——「不做假功能」：能勾但沒有效果，
+                  比不能勾更糟，因為前台會照著它喊出一個資料庫其實會擋下的承諾。 */}
+              <div className="ops-full"><CheckboxGroup
+                label="額滿後的報名"
+                name="session-allow-waitlist"
+                options={[{ label: '額滿後仍接受候補報名', value: 'on', disabled: !waitlistSupported }]}
+                value={draft.allowWaitlist ? ['on'] : []}
+                onChange={(values) => setDraft({ ...draft, allowWaitlist: values.includes('on') })}
+                helpText={waitlistSupported
+                  ? '勾選後，額滿仍收得到報名，但這筆不佔名額（候補）。已結束／已取消／未上架的場次一律不收，與本設定無關。'
+                  : '先到先得的服務線暫不支援候補——一人可報多場，而名額旗標是每筆報名一個，表達不了「A 場佔位、B 場候補」。'}
+              /></div>
             </div>
-            <div className="ops-panel-header" style={{ marginTop: '1rem' }}><div><h2>公布主題與客座</h2><p>三欄留空時，前台顯示「神秘驚喜！」（介紹段落留空則不顯示）——填了就等於公布。</p></div></div>
+            <div className="ops-panel-header" style={{ marginTop: '1rem' }}><div><h2>公布主題與客座</h2><p>主題與客座留空時，前台顯示「神秘驚喜！」——填了就等於公布。介紹段落與延伸連結留空則整塊不顯示。</p></div></div>
             <div className="ops-form-grid">
               <TextInput label="本場主題" value={draft.topic ?? ''} placeholder="留空＝神秘驚喜！" onChange={(e) => setDraft({ ...draft, topic: e.target.value })} />
               <TextInput label="客座來賓" value={draft.guest ?? ''} placeholder="留空＝神秘驚喜！" onChange={(e) => setDraft({ ...draft, guest: e.target.value })} />
               <div className="ops-full"><Textarea label="場次介紹（我們聊什麼）" value={draft.description ?? ''} rows={3} placeholder="留空＝前台不顯示介紹段" onChange={(e) => setDraft({ ...draft, description: e.target.value })} /></div>
+              {/* 延伸連結：來賓連結是固定語意的一列（前台顯示「認識來賓 ↗」），
+                  其餘附件走下面的純文字。兩個都空時前台整塊不出現。
+                  這一輪只做連結型——檔案上傳需要 Storage bucket 與權限設計，不在本包。 */}
+              <div className="ops-full"><TextInput label="認識來賓的連結" name="session-guest-url" value={draft.guestUrl ?? ''} placeholder="https://…（留空＝前台不顯示「認識來賓」）" onChange={(e) => setDraft({ ...draft, guestUrl: e.target.value })} /></div>
+              <div className="ops-full"><Textarea label="延伸連結／附件（一行一筆：標籤 | 網址）" name="session-attachments" value={attachmentsText} rows={3} placeholder={'活動內容整理 | https://…\n報導連結 | https://…'} helpText="沒有網址的行會被略過；標籤留空就用網址當顯示文字。目前只支援連結，尚未提供檔案上傳。" onChange={(e) => setAttachmentsText(e.target.value)} /></div>
             </div>
             {draft.slotOptions?.length ? <>
               <div className="ops-panel-header" style={{ marginTop: '1rem' }}><div><h2>候選時段（導航計畫）</h2><p>由規則自動換算成確切日期，可逐一手動調整。這 {draft.slotOptions.length} 個時段共用本月 1 個名額。</p></div></div>
@@ -145,7 +199,7 @@ export default function SessionsPage() {
               </div>)}
             </> : null}
             <div className="ops-button-row">
-              <WarmButton onClick={() => void save(current, draft, '場次已儲存，前台即時更新。')}>儲存場次</WarmButton>
+              <WarmButton onClick={() => void save(current, { ...draft, attachments: parseAttachments(attachmentsText) }, '場次已儲存，前台即時更新。')}>儲存場次</WarmButton>
               <WarmButton variant="secondary" onClick={() => void createCalendar(current)}>建立 Meet＋行事曆</WarmButton>
             </div>
             {current.meetUrl ? <p className="ops-cell-muted">目前 Meet：{current.meetUrl}</p> : null}
@@ -166,16 +220,24 @@ export default function SessionsPage() {
                 ? `名冊 ${rosterOf(current.id).length} 人（場次已結束，不再佔用名額）`
                 : `已報名 ${current.bookedCount}／名額 ${current.capacity}`}
             </p></div></div>
-            {rosterOf(current.id).length ? <div className="ops-list">{rosterOf(current.id).map(({ contact, registration }) => <div className="ops-list-row" key={registration.id}>
-              <span><strong>{contact.displayName || registration.email}</strong></span>
-              <small>{STATUS_LABEL[registration.status] ?? registration.status}
-                {registration.capacityReleasedAt ? ' · 不佔名額' : ''}</small>
-            </div>)}</div> : <EmptyPanel title="這個場次還沒有報名" />}
+            <SessionRosterPanel
+              session={current}
+              project={projects.find((project) => project.id === current.projectId)}
+              roster={rosterOf(current.id)}
+              sessions={sessions}
+              schemas={schemas}
+            />
           </article>
 
           <article className="ops-panel">
             <div className="ops-panel-header"><div><h2>行政文件區</h2><p>依本場次現況產生講師行前通知、客座邀請等文件。</p></div></div>
             <OpsNotice tone="info">文件生成已啟用。產出入口在<Link to="/admin/documents">文件產生中心</Link>，可依這個場次的現況產生講師行前通知、客座邀請等草稿。</OpsNotice>
+            {/* 這個 panel 原本只有一段說明文字，讀完還是得自己從側欄找路。兩個連結直接把
+                「產出文件」與「改範本」接上——講師行前通知的內容素材在上面的「彙整」分頁複製。 */}
+            <div className="ops-button-row">
+              <Link className="ui-button ui-button--primary ui-button--sm" to={`/admin/documents?session=${current.id}`}>開文件產生中心（帶本場次）</Link>
+              <Link className="ui-button ui-button--secondary ui-button--sm" to="/admin/templates">編輯信件與文件範本</Link>
+            </div>
           </article>
         </div>
       </aside></> : null}

@@ -12,9 +12,9 @@ import {
   adminSaveRecommendation,
   getPublicRecommendations,
 } from '@/lib/api';
-import { LoadingState } from '@/components/ui/LoadingState';
 import recommendationsData from '@/data/recommendations.json';
 import DemoDataNotice from '../DemoDataNotice';
+import { InlineSpinner, OpsNotice, PageHeader } from '../operations/components';
 
 const fallbackPublished = recommendationsData as Recommendation[];
 const validCategories = new Set<Recommendation['category']>(['doctor', 'assessment', 'therapy', 'community', 'other']);
@@ -193,28 +193,27 @@ export default function RecommendationsPage() {
     }
   };
 
-  if (loading) return <LoadingState label="讀取投稿佇列中…" />;
-
   return (
-    <div>
+    <section className="ops-section">
+      <PageHeader eyebrow="內容與系統" title="推薦資料審核" description="逐筆檢視民眾投稿，核實後寫入正式推薦資料庫；前台就醫地圖直接讀取這份資料。" />
       {demoMode ? <DemoDataNotice /> : null}
       {loadError ? (
-        <p role="alert" className="mb-4 rounded-xl border-2 border-highlight bg-accent-orange/25 px-4 py-2.5 text-sm font-bold">
+        <OpsNotice tone="danger" role="alert">
           讀取投稿佇列失敗：{loadError}（請確認已以系統擁有者帳號登入後重新整理）
-        </p>
+        </OpsNotice>
       ) : null}
-      {notice ? (
-        <p role="status" className="mb-4 rounded-xl border-2 border-brown/40 bg-accent-blue/30 px-4 py-2.5 text-sm">
-          {notice}
-        </p>
-      ) : null}
-      <RecommendationReview
-        submissions={submissions}
-        candidateMatches={candidateMatches}
-        onApplyMatch={handleApplyMatch}
-        onPublish={handlePublish}
-        onReject={handleReject}
-      />
-    </div>
+      {notice ? <OpsNotice tone="info" role="status">{notice}</OpsNotice> : null}
+      {loading ? <InlineSpinner label="讀取投稿佇列中…" /> : (
+        <article className="ops-panel">
+          <RecommendationReview
+            submissions={submissions}
+            candidateMatches={candidateMatches}
+            onApplyMatch={handleApplyMatch}
+            onPublish={handlePublish}
+            onReject={handleReject}
+          />
+        </article>
+      )}
+    </section>
   );
 }
