@@ -292,7 +292,11 @@ export async function submitRegistration(input: SubmitRegistrationInput): Promis
   }
   if (detail.includes('RATE_LIMITED')) throw new ApiError('送出次數過多，請稍後再試或聯絡管理員。', 'INSERT');
   if (detail.includes('CAPTCHA')) throw new ApiError('安全驗證未完成，請重新整理後再試。', 'INSERT');
-  throw new ApiError(detail, 'INSERT');
+  // 沒對上任何一種「使用者看得懂的守門情況」＝非預期錯誤。
+  // 這種時候把 DB 原文丟到報名頁上，對報名者沒有幫助，還會露出資料表與函式名稱；
+  // 但原文對排查是必要的，所以留在 console，畫面上只給一句能行動的話。
+  console.error('[submitRegistration] 未預期的錯誤：', detail);
+  throw new ApiError('送出失敗，請稍後再試；若持續失敗請直接來信告訴我們。', 'INSERT');
 }
 
 export interface SubmitRecommendationInput {

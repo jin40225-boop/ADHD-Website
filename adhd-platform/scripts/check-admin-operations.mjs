@@ -826,3 +826,38 @@ requireText('src/lib/api.ts', [
   }
 }
 console.log('WP10 session-content checks passed.');
+
+// ── 事故守門：報名錯誤訊息不得被 String() 抹平 ─────────────────────────
+//
+// 2026-08-27 現場事故：報名者重複報名同一場，DB 依 20260811000040 丟出
+// `DUPLICATE_REGISTRATION:<場次>`，但 Edge Function 的 catch 寫成
+// `err instanceof Error ? err.message : String(err)`。Supabase 的 error 是
+// **純物件、不是 Error 實例**，於是整段原因變成字面上的 "[object Object]"
+// 送回前端；api.ts 裡那句寫好的「您先前已報名過這些場次…」比對不到關鍵字，
+// 永遠不會出現。報名者只看到一個看不懂的錯誤框，也不知道自己其實早就報名成功。
+//
+// 這裡守的不是某一行寫法，是那個**類別**：守門例外必須能原文抵達前端。
+{
+  const fn = 'supabase/functions/submit-registration/index.ts';
+  const source = read(fn);
+  // 直接禁掉出事的那個寫法本身，而不是檢查"有沒有替代品"——
+  // 第一版寫成 !includes('function errText')，結果把函式改名成 errTextX 就繞過去了。
+  if (/instanceof Error \?[\s\S]{0,60}String\(/.test(source)) {
+    throw new Error(`${fn} falls back to String() on a thrown value; Supabase errors are plain objects and become "[object Object]", swallowing the real cause.`);
+  }
+  if (!/function errText\(/.test(source) || !source.includes("typeof err === 'object'")) {
+    throw new Error(`${fn} has no helper that unpacks a plain-object error (message/details/hint); without it the real cause never reaches the registrant.`);
+  }
+  // 額滿與重複報名都是使用者看得懂的守門情況，兩種都要放行回前端。
+  for (const guard of ['SESSION_FULL_OR_CLOSED', 'DUPLICATE_REGISTRATION']) {
+    if (!source.includes(guard)) {
+      throw new Error(`${fn} no longer forwards ${guard} to the client; api.ts turns it into the Chinese explanation the registrant needs.`);
+    }
+  }
+  // 反向守門：非預期錯誤的資料庫原文不得直接顯示在公開報名頁上。
+  const api = read('src/lib/api.ts');
+  if (!/console\.error\('\[submitRegistration\]/.test(api)) {
+    throw new Error('src/lib/api.ts no longer logs the raw detail for unexpected errors; without it an outage leaves nothing to diagnose from.');
+  }
+}
+console.log('報名錯誤訊息守門 checks passed.');
