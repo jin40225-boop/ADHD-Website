@@ -13,10 +13,13 @@ import { CoHostActivities } from '@/components/CoHostActivities';
 import { AboutFounder } from '@/components/AboutFounder';
 import { DonateFooter } from '@/components/DonateFooter';
 import { LineContact } from '@/components/LineContact';
+import { ActivityCarousel } from '@/components/ActivityCarousel';
 
 export default function CoHostPage() {
   return (
     <div className="min-h-screen bg-cream text-brown font-body">
+      {/* 海報放在最上面：從社群連過來的人是先看到海報才點進來的，第一眼要對得上。 */}
+      <ActivityCarousel page="co-host" />
       <header className="hero-section pt-10 mb-16" id="about">
         <div className="absolute top-20 right-[-50px] w-96 h-96 opacity-40 animate-blob pointer-events-none">
           <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><path d="M44.7,-76.4C58.9,-69.2,71.8,-59,79.6,-45.3C87.4,-31.7,90.2,-14.8,88.2,0.8C86.2,16.5,79.4,30.9,70.1,43.1C60.8,55.3,49,65.3,35.5,72.5C22,79.7,6.7,84.1,-8.9,83.9C-24.5,83.7,-40.4,78.9,-53.2,69.7C-66,60.5,-75.7,46.9,-81.3,31.8C-86.9,16.7,-88.4,0,-85.2,-15.2C-82,-30.4,-74.1,-44.1,-62.8,-52.9C-51.5,-61.7,-36.8,-65.7,-23.4,-73.1C-10,-80.5,2.1,-91.3,16.1,-90.8C30.1,-90.3,46,-83.5,44.7,-76.4Z" fill="#FFD6BA" transform="translate(100 100)"></path></svg>

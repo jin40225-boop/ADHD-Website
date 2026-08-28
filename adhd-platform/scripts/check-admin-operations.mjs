@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const root = resolve(import.meta.dirname, '..');
@@ -861,3 +861,63 @@ console.log('WP10 session-content checks passed.');
   }
 }
 console.log('報名錯誤訊息守門 checks passed.');
+
+// ── 海報輪播：手動維護的清單最容易出的錯 ────────────────────────────
+//
+// `src/content/posters.ts` 是刻意用手維護的（負責人選了「跟我說一聲、我改檔案重新部署」，
+// 不做後台上傳）。這個決定的代價就是：**沒有任何機制保證編號和圖檔對得起來**。
+// 打錯一個字不會有任何錯誤訊息，只會在頁面上出現一張破圖。這裡把那個代價補起來。
+{
+  const src = read('src/content/posters.ts');
+  // 逐行解析，不用跨欄位的正則。
+  // 第一版用一條橫跨多個欄位的正則，遇到「這一筆沒有 anchor」時會抓到下一筆的 anchor，
+  // 把好資料判成壞的——守門自己有 bug 比沒有守門更糟，所以這裡用最笨但不會錯的寫法。
+  const items = [];
+  for (const raw of src.split(String.fromCharCode(10))) {
+    const pair = raw.trim().match(/^(id|kind|service|date|endsAt|anchor): *'([^']*)'/);
+    if (!pair) continue;
+    const [, name, value] = pair;
+    if (name === 'id') {
+      items.push({ id: value, kind: null, service: null, date: null, endsAt: null, anchor: null });
+    } else if (items.length) {
+      items[items.length - 1][name] = value;
+    }
+  }
+  if (items.length < 13) {
+    throw new Error(`src/content/posters.ts: parsed only ${items.length} poster entries; the checks below would silently pass on an incomplete list.`);
+  }
+  for (const item of items) {
+    const file = `public/assets/posters/${item.id}.webp`;
+    if (!existsSync(resolve(root, file))) {
+      throw new Error(`${file} is missing but src/content/posters.ts references id '${item.id}'; the carousel would render a broken image.`);
+    }
+  }
+  // 協辦場次連的是 `/co-host#event-MMDD`，而那個 id 在 CoHostActivities 是從資料庫的
+  // 日期算出來的。兩邊是各自獨立的真相，對不起來就是「點了沒反應」。
+  for (const item of items) {
+    if (item.service !== 'co-host' || item.kind !== 'session') continue;
+    if (!item.anchor) {
+      throw new Error(`src/content/posters.ts: co-host session '${item.id}' has no anchor; the carousel would link to /co-host with no target.`);
+    }
+    const expected = `event-${item.date.slice(5, 7)}${item.date.slice(8, 10)}`;
+    if (item.anchor !== expected) {
+      throw new Error(`src/content/posters.ts: '${item.id}' has anchor '${item.anchor}' but its date ${item.date} yields '${expected}'; CoHostActivities derives the DOM id from the date, so the link would scroll nowhere.`);
+    }
+  }
+  // endsAt 的日期部分必須和 date 一致：兩邊各寫一次，打錯就會讓「結束了沒」整個算錯。
+  for (const item of items) {
+    if (item.kind !== 'session') continue;
+    if (!item.endsAt) {
+      throw new Error(`src/content/posters.ts: session '${item.id}' has no endsAt; the carousel would keep saying 前往報名 for hours after the event ends.`);
+    }
+    if (item.endsAt.slice(0, 10) !== item.date) {
+      throw new Error(`src/content/posters.ts: '${item.id}' has date ${item.date} but endsAt ${item.endsAt}; those must describe the same day.`);
+    }
+  }
+  const used = items.map((item) => item.anchor).filter(Boolean);
+  const dupes = used.filter((a, i) => used.indexOf(a) !== i);
+  if (dupes.length) {
+    throw new Error(`src/content/posters.ts: duplicate anchor(s) ${[...new Set(dupes)].join(', ')}; two events on the same Taipei date would produce duplicate DOM ids.`);
+  }
+}
+console.log('海報輪播資料守門 checks passed.');

@@ -16,7 +16,8 @@
  * 不寫死在這裡：既因為 `scripts/check-site.mjs` 禁止 `forms.gle` 出現在公開頁原始碼，
  * 也因為新增第三、第四個合作案時不該要改程式。
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Calendar, CalendarClock, ChevronDown, ExternalLink, Handshake } from 'lucide-react';
 import { getProjectBySlug, getPublicActivities, getUpcomingSessions } from '@/lib/api';
 import type { PublicActivity, SessionSlot } from '@contracts/types';
@@ -28,6 +29,24 @@ function fmtDateTime(startsAt: string, endsAt: string): string {
   const e = new Date(endsAt);
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${s.getMonth() + 1}月 ${s.getDate()}日 (${WEEKDAYS[s.getDay()]}) ${pad(s.getHours())}:${pad(s.getMinutes())} – ${pad(e.getHours())}:${pad(e.getMinutes())}`;
+}
+
+/**
+ * 場次的錨點 id：`event-` ＋ 該場次在台北時區的 MMDD（例：`#event-0915`）。
+ *
+ * 海報輪播用 `/co-host#event-0915` 這種網址連進本頁的單一場次，所以 id 必須跟活動
+ * 對外公布的「台北日期」一致。這裡刻意不沿用上面 fmtDateTime 的瀏覽器在地時間：
+ * 顯示給人看晚幾小時只是不精準，錨點算到前一天卻會直接跳不到那一場。
+ *
+ * 也刻意不寫死四場的清單——場次本來就全部來自資料庫，明年換一批活動時
+ * 不該要回來改這支程式。
+ */
+const TAIPEI_MMDD = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Taipei', month: '2-digit', day: '2-digit' });
+
+function eventAnchorId(startsAt: string): string {
+  const parts = TAIPEI_MMDD.formatToParts(new Date(startsAt));
+  const pick = (type: string) => parts.find((p) => p.type === type)?.value ?? '';
+  return `event-${pick('month')}${pick('day')}`;
 }
 
 /**
@@ -47,6 +66,8 @@ export function CoHostActivities({ projectSlug = 'co-host' }: { projectSlug?: st
   const [sessions, setSessions] = useState<SessionSlot[]>([]);
   const [failed, setFailed] = useState(false);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const { hash, key } = useLocation();
+  const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let alive = true;
@@ -75,6 +96,49 @@ export function CoHostActivities({ projectSlug = 'co-host' }: { projectSlug?: st
       alive = false;
     };
   }, [projectSlug]);
+
+  // 海報輪播在本頁把人送到 `/co-host#event-0919`，但**光有 id 是不夠的**：
+  //   1. 冷開啟時瀏覽器處理 hash 的那一刻，場次還在非同步載入，元素根本不存在，
+  //      瀏覽器找不到就放棄，使用者停在頁首 —— 從點擊者的角度看就是「點了沒反應」。
+  //   2. 從本頁的輪播點下去只改變 hash，元件不會重新掛載，瀏覽器也不會再跳一次。
+  //   3. 那張活動卡可能已經被使用者收合（面板是 hidden），對 hidden 的元素捲動沒有作用。
+  // 所以要自己來：等資料到齊、必要時先展開，再捲過去。
+  //   4. 同一張海報點第二次，hash 字串沒變，effect 不會重跑，pushState 也不會捲——
+  //      那張海報從此變成死的控制項。所以要一併看 location.key（每次導覽都不同）。
+  useEffect(() => {
+    if (!hash || activities === null) return;
+    const anchor = decodeURIComponent(hash.slice(1));
+    const target = sessions.find((s) => eventAnchorId(s.startsAt) === anchor);
+
+    // activityId 是選填的。有掛在合作案底下才需要展開，
+    // 因為場次**只在**該合作案的面板裡被渲染。
+    const activityId = target?.activityId;
+    if (activityId) {
+      // isOpen 是 `collapsed[id] ?? true`，所以「false 才是收起來」。只在收起來時才動它，
+      // 免得每次 hash 變動都覆寫使用者對其他卡片的展開狀態。
+      setCollapsed((c) => (c[activityId] === false ? { ...c, [activityId]: true } : c));
+    }
+
+    // 等展開後的那一次 render 畫完再捲，否則量到的還是 hidden 時的位置。
+    const raf = window.requestAnimationFrame(() => {
+      const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const behavior: ScrollBehavior = smooth ? 'smooth' : 'auto';
+      const el = document.getElementById(anchor);
+      if (el) {
+        el.scrollIntoView({ behavior, block: 'start' });
+        return;
+      }
+      // 找不到那一場時**不要什麼都不做**。已知會走到這裡的情況：
+      //   · 活動今天稍早已結束（海報用「日期」判斷是否結束，而場次清單用
+      //     `ends_at >= now` 過濾，中間有數小時的落差，那一場已經不在清單裡了）；
+      //   · 場次沒有掛在任何合作案底下，因此哪裡都沒有被渲染。
+      // 靜默失敗和「網站無視我的點擊」在使用者眼中完全一樣，所以至少把整個
+      // 協辦區塊帶到眼前，讓人知道自己確實來到了正確的頁面。
+      listRef.current?.scrollIntoView({ behavior, block: 'start' });
+    });
+    return () => window.cancelAnimationFrame(raf);
+    // key 一起看：同一個 hash 連點兩次時，只有 key 會變。
+  }, [hash, key, activities, sessions]);
 
   if (activities === null) {
     return (
@@ -105,7 +169,8 @@ export function CoHostActivities({ projectSlug = 'co-host' }: { projectSlug?: st
   }
 
   return (
-    <div className="space-y-10">
+    // ref 給錨點找不到那一場時的退路用：至少把整個協辦區塊帶到眼前，不要靜默失敗。
+    <div className="space-y-10" ref={listRef}>
       {activities.map((activity, index) => {
         const own = sessions.filter((s) => s.activityId === activity.id);
         const coHost = activity.coHost;
@@ -170,9 +235,10 @@ export function CoHostActivities({ projectSlug = 'co-host' }: { projectSlug?: st
                     aria-hidden="true"
                   />
                 </button>
+                {/* scroll-mt-24：站台頁首是 sticky（.ui-navbar），不留這段錨點跳過去會被壓在它底下。 */}
                 <ul id={panelId} className={isOpen ? 'mt-4 space-y-3' : 'hidden'}>
                   {own.map((s) => (
-                    <li className="bg-cream border-2 border-brown/20 rounded-2xl p-4 space-y-2" key={s.id}>
+                    <li className="bg-cream border-2 border-brown/20 rounded-2xl p-4 space-y-2 scroll-mt-24" id={eventAnchorId(s.startsAt)} key={s.id}>
                       <p className="font-bold text-brown text-lg">{s.title}</p>
                       <span className="flex items-center gap-1 text-sm font-bold text-gray-600">
                         <Calendar className="w-4 h-4" /> {fmtDateTime(s.startsAt, s.endsAt)}
