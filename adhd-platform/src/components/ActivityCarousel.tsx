@@ -161,7 +161,8 @@ export function ActivityCarousel({ page }: { page: CarouselPage }) {
   const items = useMemo(() => pickPosters(page, today, now), [page, today, now]);
 
   const [index, setIndex] = useState(0);
-  const [held, setHeld] = useState(false); // 使用者按了暫停鈕
+  // 「要不要自動播放」只有這一個狀態。預設跟隨系統偏好，但**使用者可以覆寫**。
+  const [wantsPlay, setWantsPlay] = useState(true);
   const [hovered, setHovered] = useState(false); // 游標或焦點停在輪播上
   const [reduceMotion, setReduceMotion] = useState(false);
   const [inView, setInView] = useState(false);
@@ -181,8 +182,13 @@ export function ActivityCarousel({ page }: { page: CarouselPage }) {
   // 不能只在掛載時讀一次。初值放在 effect 裡讀，避免 SSR／測試環境沒有 matchMedia 就爆掉。
   useEffect(() => {
     const mq = window.matchMedia(REDUCE_MOTION);
-    const sync = (event: MediaQueryListEvent) => setReduceMotion(event.matches);
-    setReduceMotion(mq.matches);
+    const apply = (matches: boolean) => {
+      setReduceMotion(matches);
+      // 系統說要減少動態效果 → 預設不播；但按鈕留著，使用者想看仍然可以自己開。
+      setWantsPlay(!matches);
+    };
+    const sync = (event: MediaQueryListEvent) => apply(event.matches);
+    apply(mq.matches);
     mq.addEventListener('change', sync);
     return () => mq.removeEventListener('change', sync);
   }, []);
@@ -216,7 +222,7 @@ export function ActivityCarousel({ page }: { page: CarouselPage }) {
     }
     const io = new IntersectionObserver(
       (entries) => setInView(entries.some((entry) => entry.isIntersecting)),
-      { rootMargin: '0px 0px -20% 0px' },
+      { threshold: 0.25 },   // 露出四分之一才算「看得見」，避免只探出一條邊就開始跑
     );
     io.observe(node);
     return () => io.disconnect();
@@ -225,13 +231,13 @@ export function ActivityCarousel({ page }: { page: CarouselPage }) {
   // 自動換頁。任一條件成立就停：按了暫停、游標/焦點停在上面、系統要求減少動態效果、
   // 或整個區塊還沒進入視野。
   useEffect(() => {
-    if (held || hovered || reduceMotion || !inView || items.length < 2) return undefined;
+    if (!wantsPlay || hovered || !inView || items.length < 2) return undefined;
     const timer = window.setInterval(
       () => setIndex((value) => (value + 1) % items.length),
       AUTOPLAY_MS,
     );
     return () => window.clearInterval(timer);
-  }, [held, hovered, reduceMotion, inView, items.length]);
+  }, [wantsPlay, hovered, inView, items.length]);
 
   if (items.length === 0) return null;
 
@@ -271,20 +277,24 @@ export function ActivityCarousel({ page }: { page: CarouselPage }) {
           <button type="button" aria-label="下一張" onClick={() => step(1)}>
             ›
           </button>
-          {/* 暫停鈕是 WCAG 2.2 SC 2.2.2 的硬性要求：自動播放超過五秒就必須有明確的
-              暫停方式。「移到上面就停」不算——觸控裝置根本沒有 hover。
-              只有在「完全不會自動播放」（減少動態效果）時才可以拿掉，因為沒有東西可暫停。 */}
-          {!reduceMotion && (
-            <button type="button" aria-pressed={held} onClick={() => setHeld((value) => !value)}>
-              {held ? '繼續' : '暫停'}
-            </button>
-          )}
+          {/* 這顆鈕永遠在。WCAG 2.2 SC 2.2.2 要求自動播放超過五秒必須有明確的暫停方式，
+              「移到上面就停」不算——觸控裝置根本沒有 hover。
+              系統要求減少動態效果時它會是「播放」：預設不動，但要看的人自己按得開。
+              第一版在那種情況直接把鈕拿掉，等於連「我想看」都表達不了。 */}
+          <button
+            type="button"
+            aria-pressed={wantsPlay}
+            onClick={() => setWantsPlay((value) => !value)}
+          >
+            {wantsPlay ? '暫停' : '播放'}
+          </button>
         </div>
       </div>
 
       <div className="ac-stage" ref={stageRef}>
         <div
-          className={`ac-rail${reduceMotion ? ' ac-rail--still' : ''}`}
+          // 使用者自己按了播放，就讓它平順地滑；沒按才維持「瞬間切換、不做動畫」。
+          className={`ac-rail${reduceMotion && !wantsPlay ? ' ac-rail--still' : ''}`}
           style={{ transform: `translateX(${-shift}px)` }}
         >
           {items.map((item, i) => {
