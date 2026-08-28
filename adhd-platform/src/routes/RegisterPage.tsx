@@ -5,6 +5,7 @@
  * 報名只接受資料庫正式場次，不再以靜態時段建立無法追蹤的報名。
  */
 import { useEffect, useMemo, useState } from 'react';
+import { seatAvailability, type SeatPolicy } from '@/lib/seatAvailability';
 import { Link } from 'react-router-dom';
 import type { FormField, FormFieldOption, FormSchema, Project, SessionSlot } from '@contracts/types';
 import { SchemaForm } from '@/features/form-engine';
@@ -62,19 +63,27 @@ function formatDeadline(iso: string) {
  * 時段共用當月唯一名額），攤成 5 個選項並以月份分組，避免把整個月的時間窗
  * render 成「9/12 20:00–10:00」這種看起來跨日的怪值。
  */
-function optionsForSession(s: SessionSlot): FormFieldOption[] {
+function optionsForSession(s: SessionSlot, seatPolicy: SeatPolicy | undefined): FormFieldOption[] {
   const remaining = Math.max(0, s.capacity - s.bookedCount);
-  const unavailable = s.status !== 'open' || remaining === 0;
+  // 收不收得到，一律問 seatAvailability——那支和資料庫那道守門說同一件事。
+  // 這裡原本自己寫 `s.status !== 'open' || remaining === 0`，漏看 allow_waitlist，
+  // 於是申請制的場次額滿後整張表單被防呆卡取代，而按鈕還在說「仍可送出候補申請」。
+  const { accepted, viaWaitlist } = seatAvailability(s, seatPolicy);
+  const unavailable = !accepted;
   if (!s.slotOptions?.length) {
+    // 申請制不扣名額，「剩 N 名」在那條線上沒有意義，不要寫出來誤導。
+    const countdown = (seatPolicy ?? 'on_submit') === 'on_confirm'
+      ? (viaWaitlist ? '（已額滿・仍可送出候補申請）' : '（申請制）')
+      : `（剩 ${remaining} 名）`;
     return [{
       value: s.id,
-      label: `${s.title}｜${formatSlot(s)}（剩 ${remaining} 名）`,
+      label: `${s.title}｜${formatSlot(s)}${countdown}`,
       disabled: unavailable,
       disabledLabel: '（額滿）',
     }];
   }
   const groupNote = [
-    unavailable ? '已額滿' : '開放中',
+    viaWaitlist ? '已額滿・仍可送出候補申請' : unavailable ? '已額滿' : '開放中',
     s.registrationDeadline ? `報名截止 ${formatDeadline(s.registrationDeadline)}` : '',
   ].filter(Boolean).join('・');
   return s.slotOptions.map((slot, index) => ({
@@ -147,8 +156,12 @@ export default function RegisterPage({ slug, showPastSessions = false }: { slug:
       required: true,
       helpText: slotMode
         ? '可跨月複選。每月僅 1 位名額，最終將由團隊與您確認其中一個時段。'
-        : '可複選；額滿場次無法勾選，名額即時更新。',
-      options: sessions.flatMap(optionsForSession),
+        // 申請制額滿後仍收候補（見 seatAvailability），這時說「額滿無法勾選」就是謊話——
+        // 使用者眼前正勾著一個標著「已額滿・仍可送出候補申請」的選項。
+        : (project?.seatPolicy === 'on_confirm'
+            ? '可複選。這是申請制：送出的是申請，錄取才算完成預約；已額滿的場次仍可送出候補申請。'
+            : '可複選；額滿場次無法勾選，名額即時更新。'),
+      options: sessions.flatMap((s) => optionsForSession(s, project?.seatPolicy)),
     };
     // 舊的靜態候選時段欄位（preferredExactSlots）已由上面的真實候選時段取代
     const withoutStatic = schema.fields.filter(
@@ -160,7 +173,8 @@ export default function RegisterPage({ slug, showPastSessions = false }: { slug:
     const fields = [...withoutStatic];
     fields.splice(slotMode || anchor < 0 ? 0 : anchor, 0, sessionField);
     return { ...schema, fields };
-  }, [schema, sessions, slotMode]);
+    // project 也要進相依：seatPolicy 決定選項能不能勾，專案載入後必須重算。
+  }, [schema, sessions, slotMode, project?.seatPolicy]);
 
   // 必填時段欄無任何可選項＝報名不可能完成 → 改顯示防呆卡（後台建立新場次後自動恢復表單）
   const noOpenSlots = useMemo(() => {

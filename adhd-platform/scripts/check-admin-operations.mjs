@@ -661,10 +661,13 @@ console.log('WP6 mail-in-place checks passed.');
 
 // WP8：誠實 CTA——頁底那顆大按鈕讀跟 UpcomingSessions 同一份資料，滿了就說滿了。
 // WP8
-// 三態判斷必須是「抄」UpcomingSessions 而不是另發明一套；兩邊講的必須是同一件事。
+// 三態判斷必須和「送出會不會被收」同一個來源，不能另發明一套。
+//
+// 這一條原本比對的是三段字面程式碼。2026-08-28 抽出共用的 seatAvailability() 之後，
+// 那三段就不存在了——而守門仍然通過的話，才是真的危險。所以改成守**行為的來源**：
+// 判斷必須來自那支共用模組，不得在這裡自己重寫。實作細節可以變，來源唯一不能變。
 requireText('src/components/RegisterCta.tsx', [
-  "session.status === 'full' || remaining === 0", "session.status === 'closed'",
-  'notYetOpen ? false : isSessionFull ? false : true',
+  'seatAvailability', "a.accepted && !a.viaWaitlist", 'a.accepted && a.viaWaitlist',
 ]);
 // 額滿文案兩款：職場談是申請制（頁面本來就承諾候補），其餘三項是月度場次。
 requireText('src/components/RegisterCta.tsx', [
@@ -686,7 +689,8 @@ requireText('src/components/RegisterCta.tsx', [
   'setIsFull(false); setWaitlistOpen(false);',
   // 額滿的說法必須逐場讀 allow_waitlist——與後端 enforce_session_capacity 同一個來源。
   // 寫死成「某條線一律可候補」會在使用者把單場候補關掉時變成謊話。
-  'session.allowWaitlist === true',
+  // 2026-08-28 起這個讀取搬進 seatAvailability()，所以這裡守的是「有逐場問過它」。
+  'sessions.map((session) => seatAvailability(session, project.seatPolicy))',
   'waitlistOpen ? copy.waitlistLabel : copy.fullLabel',
 ]);
 {
@@ -921,3 +925,33 @@ console.log('報名錯誤訊息守門 checks passed.');
   }
 }
 console.log('海報輪播資料守門 checks passed.');
+
+// ── 「能不能報名」只能有一個判斷來源 ──────────────────────────────
+//
+// 2026-08-28 的事故：職場諮詢的按鈕寫著「目前時段已滿・仍可送出候補申請」，
+// 點進報名頁卻是「目前場次皆已額滿」、連表單都不給。
+// 原因是同一個決策被寫了兩次——RegisterCta 看了 allowWaitlist，
+// RegisterPage 只寫 `status !== 'open' || remaining === 0`。候補功能上線當天就分岔了。
+// 這道守門不是檢查某一行寫法，是守住「只能有一份真相」。
+{
+  const shared = read('src/lib/seatAvailability.ts');
+  if (!shared.includes('enforce_session_capacity')) {
+    throw new Error('src/lib/seatAvailability.ts must name the SQL gate it mirrors (enforce_session_capacity); without that pointer the next person changes one side only.');
+  }
+  for (const file of ['src/routes/RegisterPage.tsx', 'src/components/RegisterCta.tsx']) {
+    const source = read(file);
+    if (!source.includes('seatAvailability')) {
+      throw new Error(`${file} no longer uses seatAvailability(); the CTA and the form must answer "can I register" from one place.`);
+    }
+    const body = withoutComments(source);
+    if (body.includes("status !== 'open'") || body.includes('isSessionBookable')) {
+      throw new Error(`${file} re-implements the availability rule inline; use seatAvailability() so the button and the form cannot contradict each other.`);
+    }
+  }
+  // 申請制的規則在 SQL 那邊，這裡確認那支 migration 仍然是這樣寫的。
+  const sql = read('supabase/migrations/20260827000044_allow_applications_when_full.sql');
+  if (!sql.includes("sess.status not in ('open', 'full')") || !sql.includes('not sess.allow_waitlist')) {
+    throw new Error('20260827000044 no longer expresses "open or (full and allow_waitlist)"; src/lib/seatAvailability.ts mirrors it and must be updated together.');
+  }
+}
+console.log('報名可用性單一來源 checks passed.');

@@ -13,6 +13,7 @@
  * 顯示過時文案，也不能讓想報名的人點不到。額滿時按鈕也仍然可點（候補／看新場次）。
  */
 import { useEffect, useState } from 'react';
+import { seatAvailability } from '@/lib/seatAvailability';
 import { getProjectBySlug, getUpcomingSessions } from '@/lib/api';
 
 const BASE = import.meta.env.BASE_URL;
@@ -61,18 +62,11 @@ export function RegisterCta({ slug }: RegisterCtaProps) {
         // 不帶 includeUnpublished：未上架場次不影響「現在能不能報名」。
         const sessions = await getUpcomingSessions(project.id);
         if (!alive) return;
-        const isSessionBookable = (session: (typeof sessions)[number]) => {
-          const remaining = Math.max(0, session.capacity - session.bookedCount);
-          const isSessionFull = session.status === 'full' || remaining === 0;
-          const notYetOpen = session.status === 'closed';
-          return notYetOpen ? false : isSessionFull ? false : true;
-        };
-        const bookable = sessions.some(isSessionBookable);
-        // 讀的是與後端 trigger 同一個欄位——說法與「送出會不會被收」同一個來源。
-        // 未上架（closed）的場次不算數：它現在本來就不收，講候補會誤導。
-        const waitlisting = sessions.some(
-          (session) => !isSessionBookable(session) && session.status !== 'closed' && session.allowWaitlist === true,
-        );
+        // 收不收得到，一律問 seatAvailability——報名頁的選項用的是同一支，
+        // 兩邊不可能再說出互相矛盾的話（2026-08-28 就是這樣分岔過一次）。
+        const availability = sessions.map((session) => seatAvailability(session, project.seatPolicy));
+        const bookable = availability.some((a) => a.accepted && !a.viaWaitlist);
+        const waitlisting = availability.some((a) => a.accepted && a.viaWaitlist);
         setIsFull(sessions.length > 0 && !bookable);
         setWaitlistOpen(waitlisting);
       } catch {
