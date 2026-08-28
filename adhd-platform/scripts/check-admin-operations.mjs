@@ -863,6 +863,15 @@ console.log('WP10 session-content checks passed.');
   if (!/console\.error\('\[submitRegistration\]/.test(api)) {
     throw new Error('src/lib/api.ts no longer logs the raw detail for unexpected errors; without it an outage leaves nothing to diagnose from.');
   }
+  // 已結束的場次不收公開報名。這一條刻意只在 Edge Function，不在資料庫觸發器：
+  // 同儕聚會允許當天直接參加，管理者事後要在後台補登，那條路不經過這裡。
+  // 擋在觸發器會連補登一起擋掉。
+  if (!source.includes("s.ends_at && new Date(s.ends_at) < new Date()")) {
+    throw new Error(`${fn} no longer rejects sessions that have already ended; session status is maintained by hand and does go stale (two past sessions were still 'open' on 2026-08-28).`);
+  }
+  if (read('supabase/migrations/20260827000044_allow_applications_when_full.sql').includes('ends_at <')) {
+    throw new Error('The ended-session check moved into enforce_session_capacity; that also blocks admins back-filling walk-in attendees after a session. Keep it in the Edge Function.');
+  }
 }
 console.log('報名錯誤訊息守門 checks passed.');
 

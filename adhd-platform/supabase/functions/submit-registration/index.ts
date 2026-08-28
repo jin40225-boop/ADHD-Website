@@ -36,6 +36,25 @@ Deno.serve(async (req) => {
     if (secret) { if (!turnstileToken) return jsonResponse({ error: 'CAPTCHA_REQUIRED' }, 400); const form = new FormData(); form.set('secret', secret); form.set('response', String(turnstileToken)); form.set('remoteip', (req.headers.get('x-forwarded-for') ?? '').split(',')[0]); const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', { method: 'POST', body: form }); const verified = await response.json(); if (!verified.success) return jsonResponse({ error: 'CAPTCHA_FAILED' }, 400); }
     const ip = (req.headers.get('x-forwarded-for') ?? req.headers.get('cf-connecting-ip') ?? 'unknown').split(',')[0].trim();
     for (const key of [`ip:${await digest(ip)}`, `email:${await digest(email)}`]) { const { data, error } = await admin.rpc('consume_registration_rate_limit', { p_bucket_key: key, p_limit: 5 }); if (error) throw error; if (!data) return jsonResponse({ error: 'RATE_LIMITED：請稍後再試或聯絡管理員' }, 429); }
+    // 場次結束了就不再收公開報名——**縱深防禦**。
+    //
+    // 前台的清單本來就用 `ends_at >= now` 過濾，所以正常操作選不到已結束的場次。
+    // 但資料庫那道守門看的是 `status`，而 status 是人工維護的：2026-08-28 的檢驗就抓到
+    // 兩場已經過去、狀態仍是 open 的場次。那種場次若被直接打 API 仍會被收下。
+    //
+    // 這個檢查刻意放在 Edge Function 而不是資料庫觸發器：同儕聚會允許「沒報名當天直接參加」，
+    // 管理者事後要在後台補登參加者，那條路徑不經過這裡。
+    // 擋在觸發器就會連補登一起擋掉——防線不該把自己人關在門外。
+    {
+      const { data: picked, error: lookupError } = await admin
+        .from('sessions').select('id, ends_at').in('id', sessionIds);
+      if (lookupError) throw lookupError;
+      const ended = (picked ?? []).filter((s) => s.ends_at && new Date(s.ends_at) < new Date());
+      if (ended.length) {
+        return jsonResponse({ error: `SESSION_FULL_OR_CLOSED:${ended.map((s) => s.id).join(',')}` }, 409);
+      }
+    }
+
     const { error } = await admin.from('registrations').insert({ project_id: projectId, session_ids: sessionIds, answers, email, status: 'pending' });
     if (error) {
       const detail = errText(error);
