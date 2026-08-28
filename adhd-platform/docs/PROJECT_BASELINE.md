@@ -10,13 +10,13 @@
 |---|---|
 | GitHub repository | `jin40225-boop/ADHD-Website` |
 | 正式 branch | `main` |
-| 正式程式 commit | `18276d7` |
-| Commit 主旨 | `feat: 後台重構與前台優化（十一個工作包）` |
+| 正式程式 commit | `7045607` |
+| Commit 主旨 | `feat(前台): 首頁與服務頁的活動海報輪播` |
 | 重構前的落點（備份） | tag `pre-rebuild-baseline-2026-08-27` → `0d06342`，已推上 GitHub |
 | 正式網站 | <https://jin40225-boop.github.io/ADHD-Website/> |
-| GitHub Pages workflow | <https://github.com/jin40225-boop/ADHD-Website/actions/runs/33053852677> |
+| GitHub Pages workflow | <https://github.com/jin40225-boop/ADHD-Website/actions/runs/33139425458> |
 | Workflow 結果 | `completed / success`（含 `check:operations`、`check:site` 兩道守門） |
-| 正式前端資源識別 | `assets/index-CHPcILmZ.js`（線上實測；無 production env 的本機 build 不用來比 hash） |
+| 正式前端資源識別 | `assets/index-DuSKtHnD.js`（2026-08-28 線上實測。同一份程式在本機 build 出來是 `index-C4v_GwN6.js`——所以本機 hash 永遠不能拿來比對線上） |
 | Supabase project ref | `sssseazkhiswjhtmbluh` |
 | Supabase migration | 58 支，local／remote 全對齊，未套用 0（最新 `20260827000046`） |
 | Production base | `/ADHD-Website/` |
@@ -1007,3 +1007,37 @@ T1 `max-w-2xl`（表單／流程頁）、T2 `max-w-4xl`（敘事與卡片內容�
 - 十封新範本仍為 `review_status='draft'`，**須逐封人工審閱改核可才算上線**。
 - `registrations.has_unread_reply` 只在「首次建立討論串」時被 gmail-sync 寫入，之後不再更新、也不會被清除。
   WP6 已改為由訊息的 `is_read` 推導未讀，該欄位形同過期旗標。
+
+---
+
+## 27. 活動海報輪播（2026-08-28）
+
+首頁與五個服務頁上方的海報輪播。**13 張海報素材在 `public/assets/posters/`，清單寫死在
+`src/content/posters.ts`**——負責人明確選了「跟我說一聲、我改檔案重新部署」，不做後台上傳。
+
+### 新增活動要改哪裡
+
+1. 產海報 → 轉 WebP（640×960）→ 放進 `public/assets/posters/<id>.webp`
+2. 在 `src/content/posters.ts` 加一列（id 要和檔名一致）
+3. 協辦活動的 `anchor` 必須是 `event-` ＋ 台北時區的 MMDD，和 `CoHostActivities` 從
+   資料庫日期算出來的 DOM id 一致
+4. `node scripts/check-admin-operations.mjs` 會擋下編號打錯、檔案不存在、錨點對不上、
+   錨點重複、漏填 `endsAt`、`endsAt` 與 `date` 不同日
+
+### 三條不能改壞的規則
+
+- **分層連結**：首頁一律進服務子頁（報名表裡沒有活動的整體說明，不能把人直接丟進去）；
+  服務子頁的單場次才進報名表；協辦沒有站內報名，改捲到該場在協辦頁的段落。
+- **時區一律 Asia/Taipei，且全程字串比對**，不做任何時區換算。`endsAt` 比到分鐘，
+  才會和報名頁的 `ends_at >= now` 是同一條線。
+- **暫停鈕不能拿掉**（WCAG 2.2 SC 2.2.2）。「移到上面才停」不算——觸控裝置沒有 hover。
+  只有在完全不自動播放（使用者要求減少動態效果）時才可以隱藏。
+
+### 已知取捨
+
+手機首頁高度 9,324 → 9,699px，離 ≤9,000 的目標更遠。輪播本身有體積，這是取捨不是 bug。
+
+### 驗證
+
+正式站實測：行為 23 項 ＋ 修正驗證 13 項全過（腳本在 session scratchpad，非 repo 內）。
+bundle 262.23 → 269.57 kB（gzip +3.0 kB）；比引入 embla 這類套件的 8.7 kB 更小。
