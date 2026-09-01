@@ -630,12 +630,23 @@ export async function setMailStateOverride(threadId: string, override: MailState
   assert(error, '覆寫信件狀態失敗');
 }
 
-/** 批次標為已處理：紅點與待回覆一起收掉，否則清單看起來還是有事情要做。 */
+/**
+ * 標為已處理：紅點與待回覆一起收掉，否則清單看起來還是有事情要做。
+ *
+ * 一定要連 `mail_state` 一起寫。在此之前這裡只改 `status`／`has_unread`／`needs_reply`，
+ * 而報名工作台上那顆紅色的「🔴 已回覆・待處理」讀的是 `mail_state`——於是按下這顆按鈕、
+ * 甚至把整封信讀完，紅點都紋風不動。宣稱標記為已處理卻留著紅點，比沒有這顆按鈕更糟。
+ *
+ * 寫 `mail_state` 而不是 `mail_state_override`：這不是人推翻系統的判斷，而是一件系統
+ * 觀察不到的事實——信被人處理掉了。寫成覆寫的話它會永遠黏住（gmail-sync 不清覆寫），
+ * 日後對方真的再來信也不會再亮紅，等於把提醒關死。寫 `mail_state` 則會被下一封更新的信
+ * 自然蓋掉（見 _shared/mailState.ts），該亮的時候還是會亮。
+ */
 export async function markThreadsHandled(ids: string[]) {
   if (!ids.length) return 0;
   const { error, count } = await db()
     .from('email_threads')
-    .update({ status: 'closed', has_unread: false, needs_reply: false }, { count: 'exact' })
+    .update({ status: 'closed', has_unread: false, needs_reply: false, mail_state: 'handled', updated_at: new Date().toISOString() }, { count: 'exact' })
     .in('id', ids);
   assert(error, '標記為已處理失敗');
   const { error: msgError } = await db().from('email_messages').update({ is_read: true }).in('thread_id', ids).eq('direction', 'inbound');

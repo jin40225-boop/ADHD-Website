@@ -195,8 +195,9 @@ requireText('supabase/functions/confirm-attendance/index.ts', [
 ]);
 // 寄出這個動作本身要推進狀態機並勾起已寄信提醒，不能再靠人手動記得。
 requireText('supabase/functions/send-email-v2/index.ts', ['reminder_sent_at', 'follow_up_due_at', 'attendance_confirmations', 'gmail_bulk_send']);
-// 收到回信＝待處理；這是紅點與催覆判斷的來源。
-requireText('supabase/functions/gmail-sync/index.ts', ["mail_state: outbound ? 'waiting_reply' : 'replied_pending'"]);
+// 收到回信＝待處理；這是紅點與催覆判斷的來源。判斷本身已移進 _shared/mailState.ts，
+// 因為留在 gmail-sync 的迴圈裡就會被處理順序影響（見本檔末的「信件狀態機」那一組）。
+requireText('supabase/functions/_shared/mailState.ts', ["outbound ? 'waiting_reply' : 'replied_pending'"]);
 // 變數必須在後台載入範本時就替換完，使用者審閱到的才會是實際寄出的字。
 requireText('src/admin/operations/emailCompose.ts', ['applyTemplate', 'missing', 'resolveBulkRecipients']);
 // 群發一定要先看到最終名單才寄得出去；寄不到的人要單獨列出，不能混進「已寄出 N 封」。
@@ -396,7 +397,8 @@ requireText('supabase/migrations/20260805000025_gmail_sync_pending_queue.sql', [
 requireText('src/admin/operations/emailCompose.ts', ['noBulkEmail', '不接收群發']);
 requireText('supabase/migrations/20260805000024_contacts_no_bulk.sql', ['add column if not exists no_bulk_email']);
 // F17：主旨在建串時決定後不再覆寫，否則轉寄一次整條串就改名成「Fwd: …」。
-requireText('supabase/functions/gmail-sync/index.ts', ['thread.subject ? {} : { subject:']);
+// 與狀態機一起搬進 _shared/mailState.ts；行為由 check-mail-state.mjs 實際跑過。
+requireText('supabase/functions/_shared/mailState.ts', ['thread.subject ? {} : { subject:']);
 // F14：導航場次的起迄是「該月候選時段最早起到最晚迄」，會跨日。只印時鐘時間會變成
 // 「20:00–10:00」，看起來像結束早於開始——資料是對的，顯示是錯的。
 requireText('src/admin/operations/SessionTable.tsx', ['sessionSpanText', 'sameDay(startsAt, endsAt)']);
@@ -964,3 +966,42 @@ console.log('海報輪播資料守門 checks passed.');
   }
 }
 console.log('報名可用性單一來源 checks passed.');
+
+/* ---------------------------------------------------------------------------
+ * 信件狀態機：紅點必須滅得掉，也必須亮得回來。
+ *
+ * 這一組守的是三個一起發生才會壞的缺陷：
+ *   1. 「標為已處理」只改 status／has_unread／needs_reply，沒有改 mail_state，
+ *      而紅色的「已回覆・待處理」讀的正是 mail_state——按了等於沒按。
+ *   2. gmail-sync 逐封寫狀態，而 Gmail 給的順序是新到舊，所以最後落地的是最舊那封，
+ *      回信轉黃之後又被更早的來信翻回紅。
+ *   3. 用 mail_state_override 當「已處理」會永遠黏住（同步端不清覆寫），從永遠紅
+ *      變成永遠不紅。
+ * 行為本身由 scripts/check-mail-state.mjs 實際執行驗證；這裡守的是入口還在不在。
+ * ------------------------------------------------------------------------- */
+{
+  const api = read('src/admin/operations/api.ts');
+  const handled = api.slice(api.indexOf('export async function markThreadsHandled'));
+  if (!handled.includes("mail_state: 'handled'")) {
+    throw new Error('markThreadsHandled() no longer writes mail_state; the red "已回覆・待處理" tag reads that column, so the button would silently do nothing.');
+  }
+  if (handled.slice(0, handled.indexOf('}')).includes('mail_state_override')) {
+    throw new Error('markThreadsHandled() writes mail_state_override; overrides are never cleared by gmail-sync, so marking handled would permanently blind the indicator.');
+  }
+  // 兩個入口都要在：報名工作台是使用者發現紅點滅不掉的地方，收件匣是讀完信的地方。
+  requireText('src/admin/operations/RegistrationTable.tsx', ['export function MailHandledButton', 'markThreadsHandled([status.threadId])']);
+  requireText('src/admin/pages/RegistrationsOperationsPage.tsx', ['<MailHandledButton']);
+  requireText('src/admin/pages/InboxPage.tsx', ['onHandled', 'markThreadsHandled([thread.id])']);
+
+  // 狀態機的判斷只能有一份，而且必須在可測試的純函式裡。
+  requireText('supabase/functions/gmail-sync/index.ts', ["from '../_shared/mailState.ts'", 'threadStateUpdate(thread, {']);
+  const sync = withoutComments(read('supabase/functions/gmail-sync/index.ts'));
+  if (/mail_state:\s*outbound/.test(sync)) {
+    throw new Error('gmail-sync decides mail_state inline again; that is the ordering bug (Gmail returns newest-first, so the oldest message in the batch wins). Keep it in _shared/mailState.ts.');
+  }
+  const pure = read('supabase/functions/_shared/mailState.ts');
+  if (!pure.includes('Date.parse')) {
+    throw new Error('_shared/mailState.ts compares timestamps without Date.parse; PostgREST returns +00:00 while we write .000Z, and string comparison flips the answer.');
+  }
+}
+console.log('信件狀態機 checks passed.');

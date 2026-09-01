@@ -36,6 +36,7 @@ jobs:
       - run: npm audit --omit=dev --audit-level=high
       - run: npm run typecheck
       - run: npm run check:operations
+      - run: npm run check:mailstate
       - run: npm run deploy
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}

@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { threadStateUpdate } from '../_shared/mailState.ts';
 const corsHeaders = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type', 'Access-Control-Allow-Methods': 'POST, OPTIONS' };
 function jsonResponse(body: unknown, status = 200) { return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }); }
 async function getGoogleAccessToken() { const clientId = Deno.env.get('GOOGLE_CLIENT_ID'); const clientSecret = Deno.env.get('GOOGLE_CLIENT_SECRET'); const refreshToken = Deno.env.get('GOOGLE_REFRESH_TOKEN'); if (!clientId || !clientSecret || !refreshToken) throw new Error('GOOGLE_SECRETS_MISSING'); const res = await fetch('https://oauth2.googleapis.com/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ client_id: clientId, client_secret: clientSecret, refresh_token: refreshToken, grant_type: 'refresh_token' }) }); const data = await res.json(); if (!res.ok || !data.access_token) throw new Error(`GOOGLE_TOKEN_ERROR:${data.error_description ?? data.error ?? res.status}`); return data.access_token as string; }
@@ -363,7 +364,7 @@ async function runSync(admin: ReturnType<typeof createClient>, actorId: string, 
       // 抓不到就從佇列消失、不重試——壞掉的 id 不該把整個佇列卡住永遠清不空。但那等於一封信
       // 無聲不見了，而且 history_id 一旦推進就再也不會被發現，所以失敗筆數一定要留在稽核裡。
       const response = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}?format=full`, { headers }); const message = await response.json(); if (!response.ok) { failed += 1; continue; } const h = Object.fromEntries((message.payload?.headers ?? []).map((item: { name: string; value: string }) => [item.name.toLowerCase(), item.value])); const parsed = collect(message.payload ?? {}); const from = address(h.from); const to = address(h.to); const outbound = from === String(mailbox.emailAddress).toLowerCase() || (message.labelIds ?? []).includes('SENT'); const counterpart = outbound ? to : from; if (!counterpart) continue;
-      let { data: thread } = await admin.from('email_threads').select('id,registration_id,contact_id,subject').eq('gmail_thread_id', message.threadId).maybeSingle();
+      let { data: thread } = await admin.from('email_threads').select('id,registration_id,contact_id,subject,last_message_at,last_outbound_at,last_inbound_at').eq('gmail_thread_id', message.threadId).maybeSingle();
       if (!thread) {
         const { data: registration } = await admin.from('registrations').select('id,contact_id').ilike('email', counterpart).order('created_at', { ascending: false }).limit(1).maybeSingle();
         // 沒有報名就找聯絡人：靠第 3 條規則（標籤）收進來的信通常屬於這一類，
@@ -371,11 +372,15 @@ async function runSync(admin: ReturnType<typeof createClient>, actorId: string, 
         const { data: contact } = registration?.contact_id
           ? { data: { id: registration.contact_id } }
           : await admin.from('contacts').select('id').ilike('primary_email', counterpart).limit(1).maybeSingle();
-        const linked = Boolean(registration?.id || contact?.id);
-        const { data: created, error } = await admin.from('email_threads').insert({ registration_id: registration?.id ?? null, contact_id: contact?.id ?? null, gmail_thread_id: message.threadId, subject: h.subject ?? '', counterpart_email: counterpart, has_unread: !outbound && !(message.labelIds ?? []).includes('READ'),
-          // 只有掛在報名或聯絡人身上的信件串才可能需要回覆。掛不上的信（例如靠標籤收進來、
-          // 但寄件人還不是任何人）不該跑去待辦清單上排隊。
-          needs_reply: !outbound && linked, status: outbound ? 'waiting' : 'open', mail_state: outbound ? 'waiting_reply' : 'replied_pending', ...(outbound ? { last_outbound_at: new Date(Number(message.internalDate)).toISOString() } : { last_inbound_at: new Date(Number(message.internalDate)).toISOString() }), last_message_at: new Date(Number(message.internalDate)).toISOString() }).select('id,registration_id,contact_id,subject').single(); if (error) throw error; thread = created; if (registration?.id) await admin.from('registrations').update({ thread_id: created.id, has_unread_reply: !outbound }).eq('id', registration.id); }
+        // 建串只寫「這條串是誰的」。狀態機欄位一律留給下面那一次 threadStateUpdate：
+        // 這裡再寫一份等於同一條規則有兩個版本，而它們過去確實不一致——建串時的已讀判斷
+        // 看的是不存在的 'READ' 標籤，且從沒設過 follow_up_due_at（於是新建的等待回覆串
+        // 永遠不會變成逾期）。以前這兩個錯都被緊接著的無條件覆寫蓋掉，看不出來；
+        // 現在狀態只由最新的信決定，蓋不掉了，所以規則必須只有一份。
+        // 未寫入的欄位都有 not null 預設（mail_state='not_sent'、status='open'、
+        // needs_reply=false、has_unread=false），last_message_at 為 null 代表「還沒有信」，
+        // 下一步的判斷因此一定會套用。
+        const { data: created, error } = await admin.from('email_threads').insert({ registration_id: registration?.id ?? null, contact_id: contact?.id ?? null, gmail_thread_id: message.threadId, subject: h.subject ?? '', counterpart_email: counterpart }).select('id,registration_id,contact_id,subject,last_message_at,last_outbound_at,last_inbound_at').single(); if (error) throw error; thread = created; if (registration?.id) await admin.from('registrations').update({ thread_id: created.id, has_unread_reply: !outbound }).eq('id', registration.id); }
       const { data: saved, error } = await admin.from('email_messages').upsert({ thread_id: thread.id, direction: outbound ? 'outbound' : 'inbound', from_email: from || h.from || '', to_email: to || h.to || '', cc_email: listAddresses(h.cc), bcc_email: listAddresses(h.bcc), subject: h.subject ?? '', body: parsed.text || htmlToText(parsed.html), body_html: parsed.html || null, snippet: message.snippet ?? null, gmail_message_id: message.id, is_read: outbound || !(message.labelIds ?? []).includes('UNREAD'), label_ids: message.labelIds ?? [], delivery_status: outbound ? 'sent' : 'received', raw_headers: h, sent_at: new Date(Number(message.internalDate)).toISOString() }, { onConflict: 'gmail_message_id' }).select('id').single(); if (error) throw error;
       for (const item of parsed.attachments) {
         let storagePath: string | null = null;
@@ -403,21 +408,18 @@ async function runSync(admin: ReturnType<typeof createClient>, actorId: string, 
       // 信件狀態機（計畫第七節）：收到回信＝「已回覆・待處理」，需要人看；
       // 直接從 Gmail 寄出（沒走 send-email-v2）的信也要把等待回覆的計時重新起算。
       // 手動覆寫存在 mail_state_override，前台顯示以它優先，所以這裡不必迴避覆寫。
+      //
+      // 判斷本身在 _shared/mailState.ts：這一批的處理順序是 Gmail 給的新到舊，直接每封
+      // 都寫一次狀態的話，最後落地的會是**最舊**那一封。狀態機欄位因此改成只認目前
+      // 已知最新的信，順序再怎麼跑結果都一樣。
       const messageAt = new Date(Number(message.internalDate)).toISOString();
-      await admin.from('email_threads').update({
-        // 主旨在建串時就定了，之後不再覆寫：轉寄一次整條串就會改名成「Fwd: …」，
-        // 而使用者是靠這個名字在收件匣裡找那條往來的。只有原本是空的才補寫。
-        ...(thread.subject ? {} : { subject: h.subject ?? '' }),
-        counterpart_email: counterpart,
-        has_unread: !outbound && (message.labelIds ?? []).includes('UNREAD'),
-        // 同上：掛不到報名或聯絡人的信件串不會被標成「要回覆」。
-        needs_reply: !outbound && Boolean(thread.registration_id || thread.contact_id), status: outbound ? 'waiting' : 'open',
-        mail_state: outbound ? 'waiting_reply' : 'replied_pending',
-        ...(outbound
-          ? { last_outbound_at: messageAt, follow_up_due_at: new Date(new Date(messageAt).getTime() + followUpDays * 86400000).toISOString() }
-          : { last_inbound_at: messageAt }),
-        last_message_at: messageAt, updated_at: new Date().toISOString(),
-      }).eq('id', thread.id); synced += 1;
+      await admin.from('email_threads').update(threadStateUpdate(thread, {
+        messageAt,
+        outbound,
+        unread: (message.labelIds ?? []).includes('UNREAD'),
+        subject: h.subject ?? '',
+        counterpart,
+      }, followUpDays)).eq('id', thread.id); synced += 1;
     }
     const remaining = leftover.length;
     /* 剩下的寫回佇列，下一批接著做。

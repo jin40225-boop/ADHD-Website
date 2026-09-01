@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import type { SessionSlot } from '@contracts/types';
 import { Select, TextInput } from '@/components/ui/FormField/FormField';
 import { WarmButton } from '@/components/ui/WarmButton/WarmButton';
-import { setMailStateOverride } from './api';
+import { markThreadsHandled, setMailStateOverride } from './api';
 import type { ContactRecord, MailState, OperationalRegistration } from './types';
 
 /** 03_v4 的核可狀態流。值一個都沒改，只有標籤改成定稿用語＋新增 reschedule。 */
@@ -87,6 +87,36 @@ export function MailStatusTag({ registration }: { registration: OperationalRegis
 
 function daysSince(iso: string) {
   return Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86400000));
+}
+
+/**
+ * 一鍵「標為已處理」。
+ *
+ * 為什麼不是叫使用者去用手動覆寫：覆寫要填原因、藏在覆寫面板裡，而且一旦寫下去
+ * gmail-sync 永遠不會清掉它——日後對方再來信也不會再亮紅。把「我處理完了」這件每天
+ * 都要做很多次的事塞進那個入口，結果就是要嘛沒人用、要嘛用了之後提醒整個關死。
+ *
+ * 這顆按鈕寫的是 `mail_state`，會被下一封更新的信自然蓋掉，所以按了不會瞎掉。
+ * 只在「還有事要做」的狀態下出現；已處理、已確認出席這些不需要再按一次。
+ */
+const OPEN_MAIL_STATES: MailState[] = ['replied_pending', 'overdue', 'waiting_reply', 'reminded'];
+
+export function MailHandledButton({ registration, onDone, onError }: {
+  registration: OperationalRegistration;
+  onDone: (message: string) => Promise<void> | void;
+  onError: (message: string) => void;
+}) {
+  const status = registration.mailStatus;
+  const [busy, setBusy] = useState(false);
+  if (!status?.threadId || !OPEN_MAIL_STATES.includes(status.effective)) return null;
+  return <WarmButton size="sm" variant="secondary" disabled={busy} onClick={async () => {
+    setBusy(true);
+    try {
+      await markThreadsHandled([status.threadId]);
+      await onDone('已標為已處理。對方再來新信時會自動重新亮起。');
+    } catch (e) { onError(e instanceof Error ? e.message : '標記為已處理失敗'); }
+    finally { setBusy(false); }
+  }}>{busy ? '處理中…' : '標為已處理'}</WarmButton>;
 }
 
 /**
